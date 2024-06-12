@@ -181,11 +181,9 @@
 
 (defn test-loop [state]
   (projection (perspective (width) (height) (radians 60) 0.01 100))
-  (push-matrix)
-  (apply-matrix (translation 0 -2 5))
+  (camera (orbital-camera (vec3f 0 2 0) (vec3f 0 0 0) 5))
   (model (state :scene))
   (animated-model (state :model) (animate (state :anim) (get-time)))
-  (pop-matrix)
   state
 )
 
