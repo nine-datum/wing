@@ -11,5 +11,5 @@ pom.xml.asc
 /.prepl-port
 .hgignore
 .hg/
-!/deps/*
-!/deps/lib/*
+!/lib/*
+!/lib/lib/*

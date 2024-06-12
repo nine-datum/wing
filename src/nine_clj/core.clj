@@ -1,7 +1,22 @@
 (ns nine-clj.core
-  (:gen-class))
+  (:gen-class)
+  (:import
+    [nine.lwjgl
+      LWJGL_Window
+    ]
+    [nine.opengl
+      WindowStartAction
+      WindowLoopAction
+    ]
+  )
+)
 
-(defn -main
-  "I don't do a whole lot ... yet."
-  [& args]
-  (println "Hello, World!"))
+(defn windowLoop [id] (proxy [WindowLoopAction] [] (call [w h] ())))
+
+(defn windowStart [] (proxy [WindowStartAction] [] (start [id] (windowLoop id))))
+
+
+(defn -main [& args]
+  (println "Hello, World!")
+  (.run (LWJGL_Window.) 600 400 (windowStart))
+)
