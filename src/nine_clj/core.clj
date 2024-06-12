@@ -14,6 +14,7 @@
       Vector3f
       Matrix4f
       FloatFunc
+      Time
     ]
     [nine.opengl
       Shader
@@ -41,6 +42,9 @@
   (. FloatFunc toRadians d)
 )
 
+(def time-obj (Time.))
+(defn get-time [] (.value time-obj))
+
 (def window-width (atom 0))
 (def window-height (atom 0))
 
@@ -65,12 +69,26 @@
 
 (def matrix-stack (atom (list (. Matrix4f identity))))
 (def projection-matrix (atom (. Matrix4f identity)))
+(def camera-matrix (atom (. Matrix4f identity)))
+(def world-light-vec (atom (. Vector3f newXYZ 0 0 1)))
 
 (defn projection [p]
   (reset! projection-matrix p)
 )
 
 (defn get-projection [] @projection-matrix)
+
+(defn camera [c]
+  (reset! camera-matrix c)
+)
+
+(defn get-camera [] @camera-matrix)
+
+(defn world-light [l]
+  (reset! world-light-vec l)
+)
+
+(defn get-world-light [] @world-light-vec)
 
 (defn push-matrix [] (swap! matrix-stack #(cons (first %) %)))
 (defn pop-matrix [] (swap! matrix-stack rest))
@@ -89,7 +107,38 @@
 
 (defn load-model [graphics file] (.model graphics file))
 
-(defn model [m] (.draw (.transform m (get-projection) (vec3f 0 0 1) (peek-matrix))))
+(defn load-anim [graphics file] (.animation graphics file))
+
+(defn load-animated-model [graphics file] (.animatedModel graphics file))
+
+(defn animated-model [m anim]
+  (.draw
+    (.animate m
+      (.mul
+        (get-projection)
+        (get-camera)
+      )
+      (get-world-light)
+      (peek-matrix)
+      anim
+    )
+  )
+)
+
+(defn animate [anim t] (.animate anim t))
+
+(defn model [m]
+  (.draw
+    (.transform m
+      (.mul
+        (get-projection)
+        (get-camera)
+      )
+      (get-world-light)
+      (peek-matrix)
+    )
+  )
+)
 
 (def state (atom {}))
 
@@ -122,9 +171,11 @@
       skin-shader (load-shader gl "res/shaders/diffuse_skin_vertex.glsl" "res/shaders/diffuse_fragment.glsl")
       diffuse-shader (load-shader gl "res/shaders/diffuse_vertex.glsl" "res/shaders/diffuse_fragment.glsl")
       graphics (load-graphics gl diffuse-shader skin-shader)
-      model (load-model graphics "res/models/Knight/Idle.dae")
+      model (load-animated-model graphics "res/models/Knight/LongSword_Idle.dae")
+      anim (load-anim graphics "res/models/Knight/LongSword_Idle.dae")
+      scene (load-model graphics "res/models/Scenes/Mountains.dae")
     ]
-    { :model model }
+    { :model model :anim anim :scene scene }
   )
 )
 
@@ -132,7 +183,8 @@
   (projection (perspective (width) (height) (radians 60) 0.01 100))
   (push-matrix)
   (apply-matrix (translation 0 -2 5))
-  (model (state :model))
+  (model (state :scene))
+  (animated-model (state :model) (animate (state :anim) (get-time)))
   (pop-matrix)
   state
 )
