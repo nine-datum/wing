@@ -30,6 +30,8 @@
   )
 )
 
+(defn new-gl [] (LWJGL_OpenGL.))
+
 (defn floats-from-mat4f [m] ((comp vec map) #(.at m %) (range 16)))
 (defn floats-from-vec2f [v] [(.x v) (.y v)])
 (defn floats-from-vec3f [v] [(.x v) (.y v) (.z v)])
@@ -167,7 +169,7 @@
 (defn test-setup []
   (let
     [
-      gl (LWJGL_OpenGL.)
+      gl (new-gl)
       skin-shader (load-shader gl "res/shaders/diffuse_skin_vertex.glsl" "res/shaders/diffuse_fragment.glsl")
       diffuse-shader (load-shader gl "res/shaders/diffuse_vertex.glsl" "res/shaders/diffuse_fragment.glsl")
       graphics (load-graphics gl diffuse-shader skin-shader)
