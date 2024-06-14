@@ -187,8 +187,12 @@
   state
 )
 
-(defn -main [& args]
-  (.run (LWJGL_Window.) 600 400
-    (windowStart test-setup test-loop)
+(defn window [w h setup loop params]
+  (.run (LWJGL_Window.) w h
+    (windowStart setup loop)
   )
+)
+
+(defn -main [& args]
+  (window 800 600 test-setup test-loop {})
 )
