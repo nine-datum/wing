@@ -9,6 +9,9 @@
       RefreshStatus
       UpdateRefreshStatus
     ]
+    [nine.buffer
+      Buffer
+    ]
     [nine.math
       Vector2f
       Vector3f
@@ -17,6 +20,7 @@
       Time
     ]
     [nine.opengl
+      Drawing
       Shader
       WindowStartAction
       WindowLoopAction
@@ -26,6 +30,9 @@
     ]
     [nine.game
       Graphics
+    ]
+    [nine.geometry.procedural
+      Geometry
     ]
   )
 )
@@ -95,7 +102,8 @@
 (defn push-matrix [] (swap! matrix-stack #(cons (first %) %)))
 (defn pop-matrix [] (swap! matrix-stack rest))
 (defn peek-matrix [] (first @matrix-stack))
-(defn apply-matrix [m] (swap! matrix-stack #(cons (-> % first (.mul m)) (rest %))))
+(defn swap-matrix [f] (swap! matrix-stack #(cons (->> % first f) (rest %))))
+(defn apply-matrix [m] (swap-matrix #(.mul m %)))
 
 (def storage (FileStorage.))
 
@@ -105,6 +113,53 @@
 
 (defn load-graphics [gl diffuse-shader skin-shader]
   (. Graphics collada gl diffuse-shader skin-shader storage refresh-status)
+)
+
+(defn load-image [gl file]
+  (let
+    [
+      tex (.texture gl (.open storage file))
+      bl [0 0 0]
+      br [1 0 0]
+      tl [0 1 0]
+      tr [1 1 0]
+      bl-uv [0 0]
+      br-uv [1 0]
+      tl-uv [0 1]
+      tr-uv [1 1]
+      to-float (partial map float)
+      buf (comp vec to-float concat)
+      geom (-> gl
+        (.vao (. Buffer range 6))
+        (.attribute 3 (. Buffer of (buf tl bl br br tr tl)))
+        (.attribute 2 (. Buffer of (buf tl-uv bl-uv br-uv br-uv tr-uv tl-uv)))
+        (.attribute 3 (. Buffer of (apply buf (repeat 6 [0 0 -1]))))
+        (.drawing)
+      )
+      res (.apply tex geom)
+    ]
+    res
+  )
+)
+
+(defn image [img shader x y w h]
+  (let
+    [
+      player (.player shader)
+      uniforms (.uniforms player)
+      trans (.uniformMatrix uniforms "transform")
+    ]
+    (.draw
+      (.play player
+        (proxy [Drawing] []
+          (draw []
+            (.load trans (transform (vec3f x y 0) (vec3f 0 0 0) (vec3f w h 1)))
+            (.draw img)
+          )
+        )
+      )
+    )
+  )
 )
 
 (defn load-model [graphics file] (.model graphics file))
@@ -176,8 +231,10 @@
       model (load-animated-model graphics "res/models/Knight/LongSword_Idle.dae")
       anim (load-anim graphics "res/models/Knight/LongSword_Idle.dae")
       scene (load-model graphics "res/models/Scenes/Mountains.dae")
+      image (load-image gl "res/images/example.png")
+      image-shader (load-shader gl "res/shaders/image_vertex.glsl" "res/shaders/image_fragment.glsl")
     ]
-    { :model model :anim anim :scene scene }
+    { :model model :anim anim :scene scene :image image :image-shader image-shader }
   )
 )
 
@@ -186,6 +243,9 @@
   (camera (orbital-camera (vec3f 0 2 0) (vec3f 0 0 0) 5))
   (model (state :scene))
   (animated-model (state :model) (animate (state :anim) (get-time)))
+  (image (state :image) (state :image-shader) 0 -0.5 0.5 0.5)
+  (image (state :image) (state :image-shader) -1 -1 0.75 1)
+  (image (state :image) (state :image-shader) -1 0 1.5 1)
   state
 )
 
