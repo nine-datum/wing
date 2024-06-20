@@ -262,7 +262,6 @@
   (image (state :image) (state :image-shader) 0 -0.5 0.5 0.5)
   (image (state :image) (state :image-shader) -1 -1 0.75 1)
   (image (state :image) (state :image-shader) -1 0 1.5 1)
-  (when (> (get-time) 10) (unload-image (state :image)))
   state
 )
 
