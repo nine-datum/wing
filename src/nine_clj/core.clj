@@ -17,7 +17,7 @@
       Vector3f
       Matrix4f
       FloatFunc
-      Time
+      LocalTime
     ]
     [nine.opengl
       Drawing
@@ -51,7 +51,7 @@
   (. FloatFunc toRadians d)
 )
 
-(def time-obj (Time.))
+(def time-obj (LocalTime.))
 (defn get-time [] (.value time-obj))
 
 (def window-width (atom 0))
@@ -136,10 +136,17 @@
         (.attribute 3 (. Buffer of (apply buf (repeat 6 [0 0 -1]))))
         (.drawing)
       )
-      res (.apply tex geom)
+      res { :geom geom :tex tex :drawing (.apply tex geom) :disposed (atom false) }
     ]
     res
   )
+)
+
+(defn unload-image [img]
+  (->> img :tex .dispose)
+  (->> img :geom .dispose)
+  (-> img :disposed (reset! true))
+  ()
 )
 
 (defn image [img shader x y w h]
@@ -154,7 +161,10 @@
         (proxy [Drawing] []
           (draw []
             (.load trans (transform (vec3f x y 0) (vec3f 0 0 0) (vec3f w h 1)))
-            (.draw img)
+            (cond
+              (-> img :disposed deref true?) (throw (RuntimeException. "Texture cannot be used, it was disposed"))
+              :else (-> img :drawing .draw)
+            )
           )
         )
       )
@@ -234,7 +244,13 @@
       image (load-image gl "res/images/example.png")
       image-shader (load-shader gl "res/shaders/image_vertex.glsl" "res/shaders/image_fragment.glsl")
     ]
-    { :model model :anim anim :scene scene :image image :image-shader image-shader }
+    {
+      :model model
+      :anim anim
+      :scene scene
+      :image image
+      :image-shader image-shader
+    }
   )
 )
 
@@ -246,6 +262,7 @@
   (image (state :image) (state :image-shader) 0 -0.5 0.5 0.5)
   (image (state :image) (state :image-shader) -1 -1 0.75 1)
   (image (state :image) (state :image-shader) -1 0 1.5 1)
+  (when (> (get-time) 10) (unload-image (state :image)))
   state
 )
 
