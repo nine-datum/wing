@@ -17,7 +17,7 @@ org.clojars.taqmuraz/nine-clj {:mvn/version "0.1.1"}
 implementation("org.clojars.taqmuraz:nine-clj:0.1.1")
 ```
 
-## As Maven dependency
+## As a Maven dependency
 ```
 <dependency>
   <groupId>org.clojars.taqmuraz</groupId>
