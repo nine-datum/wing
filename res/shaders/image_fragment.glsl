@@ -7,4 +7,8 @@ uniform sampler2D texture2d;
 void main (void)
 {	
 	out_Color = texture(texture2d, uv);
+	if(out_Color.a < 0.5)
+	{
+		discard;
+	}
 }

@@ -1,5 +1,8 @@
 (ns nine-clj.core
   (:gen-class)
+  (:require
+    [nine-clj.text :as text]
+  )
   (:import
     [nine.lwjgl
       LWJGL_Window
@@ -115,10 +118,9 @@
   (. Graphics collada gl diffuse-shader skin-shader storage refresh-status)
 )
 
-(defn load-image [gl file]
+(defn load-image-tex [gl tex]
   (let
     [
-      tex (.texture gl (.open storage file))
       bl [0 0 0]
       br [1 0 0]
       tl [0 1 0]
@@ -139,6 +141,18 @@
       res { :geom geom :tex tex :drawing (.apply tex geom) :disposed (atom false) }
     ]
     res
+  )
+)
+
+(defn load-image [gl file]
+  (load-image-tex gl
+    (.texture gl (.open storage file))
+  )
+)
+
+(defn load-image-img [gl img]
+  (load-image-tex gl
+    (. LWJGL_OpenGL texture img)
   )
 )
 
@@ -170,6 +184,22 @@
       )
     )
   )
+)
+
+(defn load-font [name] (text/font name))
+
+(defn load-text [gl text font]
+  (let
+    [
+      img (text/text-image text font)
+      tex (load-image-img gl img)
+    ]
+    tex
+  )
+)
+
+(defn text [tx shader x y w h]
+  (image tx shader x y w h)
 )
 
 (defn load-model [graphics file] (.model graphics file))
@@ -241,6 +271,7 @@
       model (load-animated-model graphics "res/models/Knight/LongSword_Idle.dae")
       anim (load-anim graphics "res/models/Knight/LongSword_Idle.dae")
       scene (load-model graphics "res/models/Scenes/Mountains.dae")
+      text (load-text gl "Hello, text!" (text/default-font 250))
       image (load-image gl "res/images/example.png")
       image-shader (load-shader gl "res/shaders/image_vertex.glsl" "res/shaders/image_fragment.glsl")
     ]
@@ -249,7 +280,9 @@
       :anim anim
       :scene scene
       :image image
+      :text text
       :image-shader image-shader
+      :text-shader image-shader
     }
   )
 )
@@ -262,6 +295,7 @@
   (image (state :image) (state :image-shader) 0 -0.5 0.5 0.5)
   (image (state :image) (state :image-shader) -1 -1 0.75 1)
   (image (state :image) (state :image-shader) -1 0 1.5 1)
+  (text (state :text) (state :text-shader) 0 -1 1 0.5)
   state
 )
 
