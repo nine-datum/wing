@@ -198,8 +198,19 @@
   )
 )
 
+(defn unload-text [text] (unload-image text))
+
 (defn text [tx shader x y w h]
   (image tx shader x y w h)
+)
+
+(defn live-text [gl shader]
+  (fn [str font x y w h]
+    (let [t (load-text gl str font)]
+      (text t shader x y w h)
+      (unload-text t)
+    )
+  )
 )
 
 (defn load-model [graphics file] (.model graphics file))
@@ -271,18 +282,20 @@
       model (load-animated-model graphics "res/models/Knight/LongSword_Idle.dae")
       anim (load-anim graphics "res/models/Knight/LongSword_Idle.dae")
       scene (load-model graphics "res/models/Scenes/Mountains.dae")
-      text (load-text gl "Hello, text!" (text/default-font 250))
       image (load-image gl "res/images/example.png")
       image-shader (load-shader gl "res/shaders/image_vertex.glsl" "res/shaders/image_fragment.glsl")
+      font (text/default-font 12)
+      text-shader image-shader
+      textfn (live-text gl text-shader)
     ]
     {
+      :font font
+      :textfn textfn
       :model model
       :anim anim
       :scene scene
       :image image
-      :text text
       :image-shader image-shader
-      :text-shader image-shader
     }
   )
 )
@@ -295,7 +308,9 @@
   (image (state :image) (state :image-shader) 0 -0.5 0.5 0.5)
   (image (state :image) (state :image-shader) -1 -1 0.75 1)
   (image (state :image) (state :image-shader) -1 0 1.5 1)
-  (text (state :text) (state :text-shader) 0 -1 1 0.5)
+  (doseq [i (range 0 40)]
+    ((state :textfn) "Hello, text!" (state :font) -0.5 (- 1 (* i 0.05)) 0.5 0.05)
+  )
   state
 )
 
