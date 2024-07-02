@@ -7,6 +7,8 @@
     [nine.lwjgl
       LWJGL_Window
       LWJGL_OpenGL
+      LWJGL_Keyboard
+      LWJGL_Mouse
     ]
     [nine.function
       RefreshStatus
@@ -248,16 +250,37 @@
   )
 )
 
+(defn mouse [wid]
+  (LWJGL_Mouse. wid refresh-status)
+)
+
+(defn keyboard [wid]
+  (let [
+      k (LWJGL_Keyboard. wid)
+      m { :down (memfn isDown) :up (memfn isUp) }
+      f (memfn keyOf symbol)
+      f (partial f k)
+    ]
+    (fn 
+      ([s] (case s :update (.update k) :else ()))
+      ([c s]
+        ((comp (partial apply (m s)) vector f first) c)
+      )
+    )
+  )
+)
+
 (def state (atom {}))
 
-(defn windowLoop [id loop]
+(defn windowLoop [id dev loop]
   (proxy [WindowLoopAction] []
     (call [w h]
       (.update refresh-status)
+      (reduce (comp apply) [dev [:keyboard] [:update]])
       (reset! matrix-stack (list (. Matrix4f identity)))
       (reset! window-width w)
       (reset! window-height h)
-      (swap! state loop)
+      (swap! state (partial loop dev))
     )
   )
 )
@@ -265,14 +288,16 @@
 (defn windowStart [setup loop]
   (proxy [WindowStartAction] []
     (start [id]
-      (.update refresh-status)
-      (reset! state (setup))
-      (windowLoop id loop)
+      (let [dev { :keyboard (keyboard id) }]
+        (.update refresh-status)
+        (reset! state (setup dev))
+        (windowLoop id dev loop)
+      )
     )
   )
 )
 
-(defn test-setup []
+(defn test-setup [dev]
   (let
     [
       gl (new-gl)
@@ -300,7 +325,7 @@
   )
 )
 
-(defn test-loop [state]
+(defn test-loop [dev state]
   (projection (perspective (width) (height) (radians 60) 0.01 100))
   (camera (orbital-camera (vec3f 0 2 0) (vec3f 0 0 0) 5))
   (model (state :scene))
@@ -308,8 +333,10 @@
   (image (state :image) (state :image-shader) 0 -0.5 0.5 0.5)
   (image (state :image) (state :image-shader) -1 -1 0.75 1)
   (image (state :image) (state :image-shader) -1 0 1.5 1)
-  (doseq [i (range 0 40)]
-    ((state :textfn) "Hello, text!" (state :font) -0.5 (- 1 (* i 0.05)) 0.5 0.05)
+  (when ((dev :keyboard) "c" :down)
+    (doseq [i (range 0 40)]
+      ((state :textfn) "Hello, text!" (state :font) -0.5 (- 1 (* i 0.05)) 0.5 0.05)
+    )
   )
   state
 )
