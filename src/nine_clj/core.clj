@@ -294,7 +294,10 @@
     (call [name, anim]
       (proxy [Animation] []
         (animate [t]
-          (.mul (.animate anim t) (func t name))
+          (.mul
+            (.animate anim t)
+            (func t name)
+          )
         )
       )
     )
@@ -314,7 +317,7 @@
             ft (vec ft)
             [k m] (get ft 0 (first ls))
             mat (mat4f m)
-            flip (mat4f [1 0 0 0    0 0 1 0   0 1 0 0    0 0 0 1])
+            flip (mat4f [-1 0 0 0    0 0 1 0   0 1 0 0    0 0 0 1])
             mat (.mul (.mul flip mat) flip)
           ]
           mat
@@ -418,10 +421,10 @@
       skin-shader (load-shader gl "res/shaders/diffuse_skin_vertex.glsl" "res/shaders/diffuse_fragment.glsl")
       diffuse-shader (load-shader gl "res/shaders/diffuse_vertex.glsl" "res/shaders/diffuse_fragment.glsl")
       graphics (load-graphics gl diffuse-shader skin-shader)
-      model (load-animated-model graphics "res/datum/mage.dae")
+      model (load-animated-model graphics "res/datum/ninja.dae")
       anim (load-anim graphics "res/datum/mage.dae")
-      obj-anim (load-obj-anim graphics "res/datum/mage.dae")
-      clj-anim (load-anim-clj "res/datum/anims/mage/test.clj" "res/datum/mage.dae")
+      obj-anim (load-obj-anim graphics "res/datum/ninja.dae")
+      clj-anim (load-anim-clj "res/datum/anims/ninja/walk.clj" "res/datum/ninja.dae")
       scene (load-model graphics "res/models/Scenes/Mountains.dae")
       image (load-image gl "res/images/example.png")
       image-shader (load-shader gl "res/shaders/image_vertex.glsl" "res/shaders/image_fragment.glsl")
@@ -434,7 +437,7 @@
       :textfn textfn
       :model model
       :anim clj-anim
-      :obj-anim obj-anim
+      :obj-anim clj-anim
       :scene scene
       :image image
       :image-shader image-shader
@@ -448,7 +451,7 @@
   (model (state :scene))
   
   (push-matrix)
-  (apply-matrix (translation 0 1 0))
+  (apply-matrix (translation 0 0 0))
   (apply-matrix (rotation 0 (get-time) 0))
   (animated-model (state :model) (animate (state :anim) (get-time)) (animate (state :obj-anim) (get-time)))
   (pop-matrix)

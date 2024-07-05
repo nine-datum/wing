@@ -21,13 +21,15 @@ void main (void)
 	
 	vec3 totalPos = vec3(0);
 	vec3 totalNormal = vec3(0);
+	vec3 pos = position;
+	pos.y += 1;
 
 	for (int i = 0; i < 4; i++)
 	{
 		int j = int(joints[i]);
 		if (j != -1)
 		{
-			totalPos += (transform * jointTransforms[j] * vec4(position, 1)).xyz * weights[i];
+			totalPos += (transform * jointTransforms[j] * vec4(pos, 1)).xyz * weights[i];
 			totalNormal += (transform * jointTransforms[j] * vec4(normal, 0)).xyz * weights[i];
 		}
 	}
