@@ -39,6 +39,10 @@
     [nine.geometry.procedural
       Geometry
     ]
+    [nine.geometry.collada
+      Skeleton
+      AnimatedSkeleton
+    ]
   )
 )
 
@@ -65,8 +69,14 @@
 (defn width [] @window-width)
 (defn height [] @window-height)
 
+(defn mat-identity [] (. Matrix4f identity))
+
 (defn perspective [w h fov near far]
   (. Matrix4f perspective (/ w (float h)) fov near far)
+)
+
+(defn scale [x y z]
+  (. Matrix4f scale (vec3f x y z))
 )
 
 (defn transform [pos rot scale]
@@ -217,11 +227,29 @@
 
 (defn load-model [graphics file] (.model graphics file))
 
-(defn load-anim [graphics file] (.animation graphics file))
+(defn load-anim [graphics file] (.animation graphics file "JOINT"))
+
+(defn empty-skeleton []
+  (proxy [Skeleton] []
+    (transform [b]
+      (mat-identity)
+    )
+  )
+)
+
+(defn empty-anim []
+  (proxy [AnimatedSkeleton] []
+    (animate [b]
+      (empty-skeleton)
+    )
+  )
+)
+
+(defn load-obj-anim [graphics file] (.animation graphics file "NODE"))
 
 (defn load-animated-model [graphics file] (.animatedModel graphics file))
 
-(defn animated-model [m anim]
+(defn animated-model [m anim obj-anim]
   (.draw
     (.animate m
       (.mul
@@ -231,6 +259,7 @@
       (get-world-light)
       (peek-matrix)
       anim
+      obj-anim
     )
   )
 )
@@ -306,6 +335,7 @@
       graphics (load-graphics gl diffuse-shader skin-shader)
       model (load-animated-model graphics "res/models/Knight/LongSword_Idle.dae")
       anim (load-anim graphics "res/models/Knight/LongSword_Idle.dae")
+      obj-anim (load-obj-anim graphics "res/models/Knight/LongSword_Idle.dae")
       scene (load-model graphics "res/models/Scenes/Mountains.dae")
       image (load-image gl "res/images/example.png")
       image-shader (load-shader gl "res/shaders/image_vertex.glsl" "res/shaders/image_fragment.glsl")
@@ -318,6 +348,7 @@
       :textfn textfn
       :model model
       :anim anim
+      :obj-anim obj-anim
       :scene scene
       :image image
       :image-shader image-shader
@@ -329,10 +360,11 @@
   (projection (perspective (width) (height) (radians 60) 0.01 100))
   (camera (orbital-camera (vec3f 0 2 0) (vec3f 0 0 0) 5))
   (model (state :scene))
-  (animated-model (state :model) (animate (state :anim) (get-time)))
-  (image (state :image) (state :image-shader) 0 -0.5 0.5 0.5)
-  (image (state :image) (state :image-shader) -1 -1 0.75 1)
-  (image (state :image) (state :image-shader) -1 0 1.5 1)
+  ;(push-matrix)
+  ;(apply-matrix (scale 10 10 10))
+  (animated-model (state :model) (animate (state :anim) (get-time)) (animate (state :obj-anim) (get-time)))
+  ;(pop-matrix)
+  (image (state :image) (state :image-shader) -1 -0.5 0.5 0.5)
   (when ((dev :keyboard) "c" :down)
     (doseq [i (range 0 40)]
       ((state :textfn) "Hello, text!" (state :font) -0.5 (- 1 (* i 0.05)) 0.5 0.05)
