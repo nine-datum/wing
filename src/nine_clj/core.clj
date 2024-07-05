@@ -13,6 +13,7 @@
     [nine.function
       RefreshStatus
       UpdateRefreshStatus
+      FunctionDouble
     ]
     [nine.buffer
       Buffer
@@ -42,6 +43,14 @@
     [nine.geometry
       Skeleton
       AnimatedSkeleton
+      Animation
+    ]
+    [nine.geometry.collada
+      ColladaBasicAnimationParser
+      ColladaBasicSkeletonParser
+      ColladaAnimationReader
+      ColladaAnimationParser
+      ColladaNode
     ]
     [java.util
       Arrays
@@ -62,7 +71,7 @@
       ar (make-array Float/TYPE 16)
       v (vec fs)
     ]
-    (doseq [i (range 16)] (aset ar i (v i)))
+    (doseq [i (range 16)] (aset ar i (float (v i))))
     (. Matrix4f fromArray ar)
   )
 )
@@ -96,6 +105,10 @@
 
 (defn translation [x y z]
   (. Matrix4f translation (vec3f x y z))
+)
+
+(defn rotation [x y z]
+  (. Matrix4f rotation (vec3f x y z))
 )
 
 (defn orbital-camera [pos rot dist]
@@ -270,15 +283,28 @@
           at (.transform (.animate a t) k)
           bt (.transform (.animate b t) k)
         ]
-        (.mul bt at)
+        (.mul at bt)
       )
     )
   )
 )
 
-(defn load-anim-clj [file]
+(defn anim-process-func [func]
+  (proxy [FunctionDouble] []
+    (call [name, anim]
+      (proxy [Animation] []
+        (animate [t]
+          (.mul (.animate anim t) (func t name))
+        )
+      )
+    )
+  )
+)
+
+(defn load-anim-clj [anim-file model-file]
   (let [
-      db ((comp read-string slurp) file)
+      db ((comp read-string slurp) anim-file)
+      bone-names ((comp vec map) first (db :bones))
       f
       (fn [t b]
         (let [
@@ -287,13 +313,20 @@
             ft (drop-while #(> t (first %)) ls)
             ft (vec ft)
             [k m] (get ft 0 (first ls))
-            nums (map float m)
+            mat (mat4f m)
+            flip (mat4f [1 0 0 0    0 0 1 0   0 1 0 0    0 0 0 1])
+            mat (.mul (.mul flip mat) flip)
           ]
-          (mat4f nums)
+          mat
         )
       )
+      process (anim-process-func f)
+      node (. ColladaNode fromFile (.open storage model-file))
+      aparser (ColladaBasicAnimationParser.)
+      sparser (ColladaBasicSkeletonParser. "JOINT" process)
+      anim (. AnimatedSkeleton fromCollada node aparser sparser refresh-status)
     ]
-    (anim-func f)
+    anim
   )
 )
 
@@ -385,10 +418,10 @@
       skin-shader (load-shader gl "res/shaders/diffuse_skin_vertex.glsl" "res/shaders/diffuse_fragment.glsl")
       diffuse-shader (load-shader gl "res/shaders/diffuse_vertex.glsl" "res/shaders/diffuse_fragment.glsl")
       graphics (load-graphics gl diffuse-shader skin-shader)
-      model (load-animated-model graphics "res/datum/ninja.dae")
-      anim (load-anim graphics "res/datum/ninja.dae")
-      obj-anim (load-obj-anim graphics "res/datum/ninja.dae")
-      clj-anim (load-anim-clj "res/datum/anims/ninja/walk.clj")
+      model (load-animated-model graphics "res/datum/mage.dae")
+      anim (load-anim graphics "res/datum/mage.dae")
+      obj-anim (load-obj-anim graphics "res/datum/mage.dae")
+      clj-anim (load-anim-clj "res/datum/anims/mage/test.clj" "res/datum/mage.dae")
       scene (load-model graphics "res/models/Scenes/Mountains.dae")
       image (load-image gl "res/images/example.png")
       image-shader (load-shader gl "res/shaders/image_vertex.glsl" "res/shaders/image_fragment.glsl")
@@ -400,7 +433,7 @@
       :font font
       :textfn textfn
       :model model
-      :anim (comp-anim anim clj-anim)
+      :anim clj-anim
       :obj-anim obj-anim
       :scene scene
       :image image
@@ -415,8 +448,8 @@
   (model (state :scene))
   
   (push-matrix)
-  (apply-matrix (scale 0.01 0.01 0.01))
   (apply-matrix (translation 0 1 0))
+  (apply-matrix (rotation 0 (get-time) 0))
   (animated-model (state :model) (animate (state :anim) (get-time)) (animate (state :obj-anim) (get-time)))
   (pop-matrix)
   
