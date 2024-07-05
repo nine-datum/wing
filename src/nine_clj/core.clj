@@ -39,9 +39,12 @@
     [nine.geometry.procedural
       Geometry
     ]
-    [nine.geometry.collada
+    [nine.geometry
       Skeleton
       AnimatedSkeleton
+    ]
+    [java.util
+      Arrays
     ]
   )
 )
@@ -54,7 +57,15 @@
 
 (defn vec2f [x y] (. Vector2f newXY x y))
 (defn vec3f [x y z] (. Vector3f newXYZ x y z))
-(defn mat4f [& fs] (. Matrix4f fromArray fs))
+(defn mat4f [fs]
+  (let [
+      ar (make-array Float/TYPE 16)
+      v (vec fs)
+    ]
+    (doseq [i (range 16)] (aset ar i (v i)))
+    (. Matrix4f fromArray ar)
+  )
+)
 
 (defn radians [d]
   (. FloatFunc toRadians d)
@@ -164,7 +175,7 @@
 
 (defn load-image-img [gl img]
   (load-image-tex gl
-    (. LWJGL_OpenGL texture img)
+    (.texture gl img)
   )
 )
 
@@ -229,19 +240,60 @@
 
 (defn load-anim [graphics file] (.animation graphics file "JOINT"))
 
-(defn empty-skeleton []
+
+(defn skeleton-func [func]
   (proxy [Skeleton] []
     (transform [b]
-      (mat-identity)
+      (func b)
     )
   )
 )
 
-(defn empty-anim []
+(defn anim-func [func]
   (proxy [AnimatedSkeleton] []
-    (animate [b]
-      (empty-skeleton)
+    (animate [t]
+      (skeleton-func
+        (fn [b] (func t b))
+      )
     )
+  )
+)
+
+(defn empty-skeleton [] (skeleton-func (constantly (mat-identity))))
+
+(defn empty-anim [] (anim-func (constantly (empty-skeleton))))
+
+(defn comp-anim [a b]
+  (anim-func
+    (fn [t k]
+      (let [
+          at (.transform (.animate a t) k)
+          bt (.transform (.animate b t) k)
+        ]
+        (.mul bt at)
+      )
+    )
+  )
+)
+
+(defn load-anim-clj [file]
+  (let [
+      db ((comp read-string slurp) file)
+      f
+      (fn [t b]
+        (let [
+            t (mod t (db :length))
+            ls ((db :bones) b)
+            ft (drop-while #(> t (first %)) ls)
+            ft (vec ft)
+            [k m] (get ft 0 (first ls))
+            nums (map float m)
+          ]
+          (mat4f nums)
+        )
+      )
+    ]
+    (anim-func f)
   )
 )
 
@@ -333,9 +385,10 @@
       skin-shader (load-shader gl "res/shaders/diffuse_skin_vertex.glsl" "res/shaders/diffuse_fragment.glsl")
       diffuse-shader (load-shader gl "res/shaders/diffuse_vertex.glsl" "res/shaders/diffuse_fragment.glsl")
       graphics (load-graphics gl diffuse-shader skin-shader)
-      model (load-animated-model graphics "res/models/Knight/LongSword_Idle.dae")
-      anim (load-anim graphics "res/models/Knight/LongSword_Idle.dae")
-      obj-anim (load-obj-anim graphics "res/models/Knight/LongSword_Idle.dae")
+      model (load-animated-model graphics "res/datum/ninja.dae")
+      anim (load-anim graphics "res/datum/ninja.dae")
+      obj-anim (load-obj-anim graphics "res/datum/ninja.dae")
+      clj-anim (load-anim-clj "res/datum/anims/ninja/walk.clj")
       scene (load-model graphics "res/models/Scenes/Mountains.dae")
       image (load-image gl "res/images/example.png")
       image-shader (load-shader gl "res/shaders/image_vertex.glsl" "res/shaders/image_fragment.glsl")
@@ -347,7 +400,7 @@
       :font font
       :textfn textfn
       :model model
-      :anim anim
+      :anim (comp-anim anim clj-anim)
       :obj-anim obj-anim
       :scene scene
       :image image
@@ -360,10 +413,13 @@
   (projection (perspective (width) (height) (radians 60) 0.01 100))
   (camera (orbital-camera (vec3f 0 2 0) (vec3f 0 0 0) 5))
   (model (state :scene))
-  ;(push-matrix)
-  ;(apply-matrix (scale 10 10 10))
+  
+  (push-matrix)
+  (apply-matrix (scale 0.01 0.01 0.01))
+  (apply-matrix (translation 0 1 0))
   (animated-model (state :model) (animate (state :anim) (get-time)) (animate (state :obj-anim) (get-time)))
-  ;(pop-matrix)
+  (pop-matrix)
+  
   (image (state :image) (state :image-shader) -1 -0.5 0.5 0.5)
   (when ((dev :keyboard) "c" :down)
     (doseq [i (range 0 40)]
