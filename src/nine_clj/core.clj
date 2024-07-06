@@ -17,6 +17,7 @@
     ]
     [nine.buffer
       Buffer
+      CachedBuffer
     ]
     [nine.math
       Vector2f
@@ -48,7 +49,9 @@
     [nine.geometry.collada
       ColladaBasicAnimationParser
       ColladaBasicSkeletonParser
+      ColladaBasicSkinParser
       ColladaBasicGeometryParser
+      ColladaBasicMaterialParser
       ColladaAnimationReader
       ColladaAnimationParser
       ColladaGeometryParser
@@ -329,24 +332,24 @@
   )
 )
 
-(defn geom-offset-parser [sources offset]
+(defn geom-offset-parser [source-pred offset]
   (proxy [ColladaGeometryParser] []
     (read [node reader]
       (.read (ColladaBasicGeometryParser.) node
         (proxy [BuffersReader] []
           (read [source mat floats ints]
             (.read reader source mat
-              (if (contains? sources source)
+              (if (source-pred source)
                 (proxy [BufferMapping] []
                   (map [semantic]
                     (let [sr (.map floats semantic)]
                       (case semantic "VERTEX"
-                        (proxy [Buffer] []
+                        (CachedBuffer. (proxy [Buffer] []
                           (length [] (.length sr))
                           (at [i]
-                            (+ (.at sr i) (offset (mod i 3)))
+                            ((comp float +) (.at sr i) (offset (mod i 3)))
                           )
-                        )
+                        ))
                         sr
                       )
                     )
@@ -483,7 +486,13 @@
       skin-shader (load-shader gl "res/shaders/diffuse_skin_vertex.glsl" "res/shaders/diffuse_fragment.glsl")
       diffuse-shader (load-shader gl "res/shaders/diffuse_vertex.glsl" "res/shaders/diffuse_fragment.glsl")
       graphics (load-graphics gl diffuse-shader skin-shader)
-      model (load-animated-model graphics "res/datum/ninja.dae")
+      offset-graphics (load-graphics gl diffuse-shader skin-shader
+        (geom-offset-parser (partial = "Cube_003-mesh") [0 0 1])
+        (ColladaBasicSkinParser.)
+        (ColladaBasicAnimationParser.)
+        (ColladaBasicMaterialParser.)
+      )
+      model (load-animated-model offset-graphics "res/datum/ninja.dae")
       anim (load-anim graphics "res/datum/mage.dae")
       obj-anim (load-obj-anim graphics "res/datum/ninja.dae")
       clj-anim (load-anim-clj "res/datum/anims/ninja/walk.clj" "res/datum/ninja.dae")

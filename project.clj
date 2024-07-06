@@ -5,7 +5,7 @@
             :url "https://opensource.org/licenses/MIT"}
   :dependencies [
     [org.clojure/clojure "1.11.1"]
-    [io.github.taqmuraz/nine "1.2.23"]
+    [io.github.taqmuraz/nine "1.2.24"]
   ]
   :main ^:skip-aot nine-clj.core
   :target-path "target/%s"
