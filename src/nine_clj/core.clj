@@ -304,6 +304,22 @@
   )
 )
 
+(defn anim-parser-func [func bones]
+  (proxy [ColladaAnimationParser] []
+    (read [node reader]
+      (doseq [bone bones]
+        (->>
+          (proxy [Animation] []
+            (animate [t] (func t bone))
+          )
+          (.read reader (str "Armature_" bone))
+          (.read reader bone)
+        )
+      )
+    )
+  )
+)
+
 (defn load-anim-clj [anim-file model-file]
   (let [
       db ((comp read-string slurp) anim-file)
@@ -323,10 +339,9 @@
           mat
         )
       )
-      process (anim-process-func f)
       node (. ColladaNode fromFile (.open storage model-file))
-      aparser (ColladaBasicAnimationParser.)
-      sparser (ColladaBasicSkeletonParser. "JOINT" process)
+      aparser (anim-parser-func f bone-names)
+      sparser (ColladaBasicSkeletonParser. "JOINT")
       anim (. AnimatedSkeleton fromCollada node aparser sparser refresh-status)
     ]
     anim
