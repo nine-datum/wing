@@ -48,9 +48,13 @@
     [nine.geometry.collada
       ColladaBasicAnimationParser
       ColladaBasicSkeletonParser
+      ColladaBasicGeometryParser
       ColladaAnimationReader
       ColladaAnimationParser
+      ColladaGeometryParser
       ColladaNode
+      BuffersReader
+      BufferMapping
     ]
     [java.util
       Arrays
@@ -150,8 +154,13 @@
 
 (defn load-shader [gl vert frag] (.load (. Shader loader storage gl) vert frag))
 
-(defn load-graphics [gl diffuse-shader skin-shader]
-  (. Graphics collada gl diffuse-shader skin-shader storage refresh-status)
+(defn load-graphics
+  ([gl diffuse-shader skin-shader]
+    (. Graphics collada gl diffuse-shader skin-shader storage refresh-status)
+  )
+  ([gl diffuse-shader skin-shader geom-parser skin-parser anim-parser material-parser]
+    (. Graphics collada gl diffuse-shader skin-shader storage refresh-status geom-parser skin-parser anim-parser material-parser)
+  )
 )
 
 (defn load-image-tex [gl tex]
@@ -318,6 +327,41 @@
       )
     )
   )
+)
+
+(defn geom-offset-parser [offset]
+  (proxy [ColladaGeometryParser] []
+    (read [node reader]
+      (.read (ColladaBasicGeometryParser.) node
+        (proxy [BuffersReader] []
+          (read [source mat floats ints]
+            (.read reader source mat
+              (proxy [BufferMapping] []
+                (map [semantic]
+                  (let [sr (.map floats semantic)]
+                    (proxy [Buffer] []
+                      (length [] (.length sr))
+                      (at [i]
+                        (case (mod i 3)
+                          2 (inc (.at sr i))
+                          (.at sr i)
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+              ints
+            )
+          )
+        )
+      )
+    )
+  )
+)
+
+(defn load-offset-graphics [gl offset]
+  ()
 )
 
 (defn load-anim-clj [anim-file model-file]
