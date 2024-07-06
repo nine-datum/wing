@@ -370,7 +370,7 @@
   ()
 )
 
-(defn load-anim-clj [anim-file model-file]
+(defn load-anim-clj [bone-type anim-file model-file]
   (let [
       db ((comp read-string slurp) anim-file)
       bone-names ((comp vec map) first (db :bones))
@@ -391,7 +391,7 @@
       )
       node (. ColladaNode fromFile (.open storage model-file))
       aparser (anim-parser-func f bone-names)
-      sparser (ColladaBasicSkeletonParser. "JOINT")
+      sparser (ColladaBasicSkeletonParser. bone-type)
       anim (. AnimatedSkeleton fromCollada node aparser sparser refresh-status)
     ]
     anim
@@ -495,7 +495,8 @@
       model (load-animated-model offset-graphics "res/datum/ninja.dae")
       anim (load-anim graphics "res/datum/mage.dae")
       obj-anim (load-obj-anim graphics "res/datum/ninja.dae")
-      clj-anim (load-anim-clj "res/datum/anims/ninja/walk.clj" "res/datum/ninja.dae")
+      clj-anim (load-anim-clj "JOINT" "res/datum/anims/ninja/walk.clj" "res/datum/ninja.dae")
+      clj-obj-anim (load-anim-clj "NODE" "res/datum/anims/ninja/walk.clj" "res/datum/ninja.dae")
       scene (load-model graphics "res/models/Scenes/Mountains.dae")
       image (load-image gl "res/images/example.png")
       image-shader (load-shader gl "res/shaders/image_vertex.glsl" "res/shaders/image_fragment.glsl")
@@ -508,7 +509,7 @@
       :textfn textfn
       :model model
       :anim clj-anim
-      :obj-anim clj-anim
+      :obj-anim obj-anim
       :scene scene
       :image image
       :image-shader image-shader
