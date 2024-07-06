@@ -343,10 +343,7 @@
                       (proxy [Buffer] []
                         (length [] (.length sr))
                         (at [i]
-                          (case (mod i 3)
-                            2 (inc (.at sr i))
-                            (.at sr i)
-                          )
+                          (+ (.at sr i) (offset (mod i 3)))
                         )
                       )
                       sr
