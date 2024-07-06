@@ -329,27 +329,30 @@
   )
 )
 
-(defn geom-offset-parser [offset]
+(defn geom-offset-parser [sources offset]
   (proxy [ColladaGeometryParser] []
     (read [node reader]
       (.read (ColladaBasicGeometryParser.) node
         (proxy [BuffersReader] []
           (read [source mat floats ints]
             (.read reader source mat
-              (proxy [BufferMapping] []
-                (map [semantic]
-                  (let [sr (.map floats semantic)]
-                    (case semantic "VERTEX"
-                      (proxy [Buffer] []
-                        (length [] (.length sr))
-                        (at [i]
-                          (+ (.at sr i) (offset (mod i 3)))
+              (if (contains? sources source)
+                (proxy [BufferMapping] []
+                  (map [semantic]
+                    (let [sr (.map floats semantic)]
+                      (case semantic "VERTEX"
+                        (proxy [Buffer] []
+                          (length [] (.length sr))
+                          (at [i]
+                            (+ (.at sr i) (offset (mod i 3)))
+                          )
                         )
+                        sr
                       )
-                      sr
                     )
                   )
                 )
+                floats
               )
               ints
             )
