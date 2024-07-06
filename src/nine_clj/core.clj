@@ -339,14 +339,17 @@
               (proxy [BufferMapping] []
                 (map [semantic]
                   (let [sr (.map floats semantic)]
-                    (proxy [Buffer] []
-                      (length [] (.length sr))
-                      (at [i]
-                        (case (mod i 3)
-                          2 (inc (.at sr i))
-                          (.at sr i)
+                    (case semantic "VERTEX"
+                      (proxy [Buffer] []
+                        (length [] (.length sr))
+                        (at [i]
+                          (case (mod i 3)
+                            2 (inc (.at sr i))
+                            (.at sr i)
+                          )
                         )
                       )
+                      sr
                     )
                   )
                 )
