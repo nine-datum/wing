@@ -13,7 +13,9 @@
     [nine.function
       RefreshStatus
       UpdateRefreshStatus
+      FunctionSingle
       FunctionDouble
+      Condition
     ]
     [nine.buffer
       Buffer
@@ -45,8 +47,10 @@
       Skeleton
       AnimatedSkeleton
       Animation
+      Animator
     ]
     [nine.geometry.collada
+      NoAnimationParser
       ColladaBasicAnimationParser
       ColladaBasicSkeletonParser
       ColladaBasicSkinParser
@@ -153,16 +157,19 @@
 
 (def storage (FileStorage.))
 
-(def refresh-status (UpdateRefreshStatus.))
+(defn new-status [] (UpdateRefreshStatus.))
+(defn update-status [status] (.update status))
+
+(def proc-refresh-status (new-status))
 
 (defn load-shader [gl vert frag] (.load (. Shader loader storage gl) vert frag))
 
 (defn load-graphics
   ([gl diffuse-shader skin-shader]
-    (. Graphics collada gl diffuse-shader skin-shader storage refresh-status)
+    (. Graphics collada gl diffuse-shader skin-shader storage)
   )
   ([gl diffuse-shader skin-shader geom-parser skin-parser anim-parser material-parser]
-    (. Graphics collada gl diffuse-shader skin-shader storage refresh-status geom-parser skin-parser anim-parser material-parser)
+    (. Graphics collada gl diffuse-shader skin-shader storage geom-parser skin-parser anim-parser material-parser)
   )
 )
 
@@ -261,10 +268,13 @@
   )
 )
 
+(defn condition-func [func] (proxy [Condition] [] (match [t] (func t))))
+(defn condition-equality [item] (. Condition equality item))
+
 (defn load-model [graphics file] (.model graphics file))
 
-(defn load-anim [graphics file] (.animation graphics file "JOINT"))
-
+(defn load-anim [graphics file] (.animation graphics file (condition-equality "JOINT")))
+(defn load-obj-anim [graphics file] (.animation graphics file (condition-equality "NODE")))
 
 (defn skeleton-func [func]
   (proxy [Skeleton] []
@@ -301,31 +311,22 @@
   )
 )
 
-(defn anim-process-func [func]
-  (proxy [FunctionDouble] []
-    (call [name, anim]
-      (proxy [Animation] []
-        (animate [t]
-          (.mul
-            (.animate anim t)
-            (func t name)
-          )
-        )
-      )
-    )
-  )
-)
-
-(defn anim-parser-func [func bones]
+(defn anim-parser-func [func bone-pred]
   (proxy [ColladaAnimationParser] []
     (read [node reader]
-      (doseq [bone bones]
-        (->>
-          (proxy [Animation] []
-            (animate [t] (func t bone))
+      (.read reader
+        (proxy [Animator] []
+          (animation [id name]
+            (cond
+              (bone-pred name)
+              (proxy [Animation] []
+                (animate [t]
+                  (func t name)
+                )
+              )
+              :else nil
+            )
           )
-          (.read reader (str "Armature_" bone))
-          (.read reader bone)
         )
       )
     )
@@ -366,19 +367,17 @@
   )
 )
 
-(defn load-offset-graphics [gl offset]
-  ()
-)
+(defn instance [source refresh-status] (.instance source refresh-status))
 
 (defn load-anim-clj [bone-type anim-file model-file]
   (let [
       db ((comp read-string slurp) anim-file)
-      bone-names ((comp vec map) first (db :bones))
+      bone-names ((comp set map) first (db :bones))
       f
       (fn [t b]
         (let [
-            t (mod t (db :length))
             ls ((db :bones) b)
+            t (mod t (db :length))
             ft (drop-while #(> t (first %)) ls)
             ft (vec ft)
             [k m] (get ft 0 (first ls))
@@ -390,15 +389,13 @@
         )
       )
       node (. ColladaNode fromFile (.open storage model-file))
-      aparser (anim-parser-func f bone-names)
+      aparser (anim-parser-func f (partial contains? bone-names))
       sparser (ColladaBasicSkeletonParser. bone-type)
-      anim (. AnimatedSkeleton fromCollada node aparser sparser refresh-status)
+      anim (. AnimatedSkeleton fromCollada node aparser sparser)
     ]
     anim
   )
 )
-
-(defn load-obj-anim [graphics file] (.animation graphics file "NODE"))
 
 (defn load-animated-model [graphics file] (.animatedModel graphics file))
 
@@ -433,7 +430,7 @@
 )
 
 (defn mouse [wid]
-  (LWJGL_Mouse. wid refresh-status)
+  (LWJGL_Mouse. wid proc-refresh-status)
 )
 
 (defn keyboard [wid]
@@ -457,7 +454,7 @@
 (defn windowLoop [id dev loop]
   (proxy [WindowLoopAction] []
     (call [w h]
-      (.update refresh-status)
+      (update-status proc-refresh-status)
       (reduce (comp apply) [dev [:keyboard] [:update]])
       (reset! matrix-stack (list (. Matrix4f identity)))
       (reset! window-width w)
@@ -471,7 +468,6 @@
   (proxy [WindowStartAction] []
     (start [id]
       (let [dev { :keyboard (keyboard id) }]
-        (.update refresh-status)
         (reset! state (setup dev))
         (windowLoop id dev loop)
       )
@@ -493,23 +489,24 @@
         (ColladaBasicMaterialParser.)
       )
       model (load-animated-model offset-graphics "res/datum/ninja.dae")
-      anim (load-anim graphics "res/datum/mage.dae")
+      anim (load-anim graphics "res/datum/ninja.dae")
       obj-anim (load-obj-anim graphics "res/datum/ninja.dae")
-      clj-anim (load-anim-clj "JOINT" "res/datum/anims/ninja/walk.clj" "res/datum/ninja.dae")
-      clj-obj-anim (load-anim-clj "NODE" "res/datum/anims/ninja/walk.clj" "res/datum/ninja.dae")
+      clj-anim (load-anim-clj (condition-equality "JOINT") "res/datum/anims/ninja/walk.clj" "res/datum/ninja.dae")
+      clj-obj-anim (load-anim-clj (condition-equality "NODE") "res/datum/anims/ninja/walk.clj" "res/datum/ninja.dae")
       scene (load-model graphics "res/models/Scenes/Mountains.dae")
       image (load-image gl "res/images/example.png")
       image-shader (load-shader gl "res/shaders/image_vertex.glsl" "res/shaders/image_fragment.glsl")
       font (text/default-font 12)
       text-shader image-shader
       textfn (live-text gl text-shader)
+      status (new-status)
     ]
     {
       :font font
       :textfn textfn
       :model model
-      :anim clj-anim
-      :obj-anim obj-anim
+      :anim (instance clj-anim status)
+      :obj-anim (instance clj-obj-anim status)
       :scene scene
       :image image
       :image-shader image-shader
@@ -523,7 +520,6 @@
   (model (state :scene))
   
   (push-matrix)
-  (apply-matrix (translation 0 0 0))
   (apply-matrix (rotation 0 (get-time) 0))
   (animated-model (state :model) (animate (state :anim) (get-time)) (animate (state :obj-anim) (get-time)))
   (pop-matrix)
