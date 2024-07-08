@@ -483,7 +483,7 @@
       diffuse-shader (load-shader gl "res/shaders/diffuse_vertex.glsl" "res/shaders/diffuse_fragment.glsl")
       graphics (load-graphics gl diffuse-shader skin-shader)
       offset-graphics (load-graphics gl diffuse-shader skin-shader
-        (geom-offset-parser (partial contains? (hash-set "Cube_002-mesh" "Cube_003-mesh")) [0 0 1])
+        (geom-offset-parser (partial contains? (hash-set "Cube_001-mesh" "Cube_002-mesh" "Cube_003-mesh")) [0 0 1])
         (ColladaBasicSkinParser.)
         (ColladaBasicAnimationParser.)
         (ColladaBasicMaterialParser.)
@@ -495,7 +495,7 @@
           (load-anim-clj (condition-equality "NODE") (format "res/datum/anims/%s/walk.clj" name) (format "res/datum/%s.dae" name))
         ]
       )
-      [model clj-anim clj-obj-anim] (datum-model-fn "mage")
+      [model clj-anim clj-obj-anim] (datum-model-fn "archer")
       scene (load-model graphics "res/models/Scenes/Mountains.dae")
       image (load-image gl "res/images/example.png")
       image-shader (load-shader gl "res/shaders/image_vertex.glsl" "res/shaders/image_fragment.glsl")
