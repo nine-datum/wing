@@ -483,7 +483,7 @@
       diffuse-shader (load-shader gl "res/shaders/diffuse_vertex.glsl" "res/shaders/diffuse_fragment.glsl")
       graphics (load-graphics gl diffuse-shader skin-shader)
       offset-graphics (load-graphics gl diffuse-shader skin-shader
-        (geom-offset-parser (partial = "Cube_003-mesh") [0 0 1])
+        (geom-offset-parser (partial contains? (hash-set "Cube_002-mesh" "Cube_003-mesh")) [0 0 1])
         (ColladaBasicSkinParser.)
         (ColladaBasicAnimationParser.)
         (ColladaBasicMaterialParser.)
@@ -491,11 +491,11 @@
       datum-model-fn (fn [name]
         [
           (load-animated-model offset-graphics (format "res/datum/%s.dae" name))
-          (load-anim-clj (condition-equality "JOINT") (format "res/datum/anims/%s/idle.clj" name) (format "res/datum/%s.dae" name))
-          (load-anim-clj (condition-equality "NODE") (format "res/datum/anims/%s/idle.clj" name) (format "res/datum/%s.dae" name))
+          (load-anim-clj (condition-equality "JOINT") (format "res/datum/anims/%s/walk.clj" name) (format "res/datum/%s.dae" name))
+          (load-anim-clj (condition-equality "NODE") (format "res/datum/anims/%s/walk.clj" name) (format "res/datum/%s.dae" name))
         ]
       )
-      [model clj-anim clj-obj-anim] (datum-model-fn "ninja")
+      [model clj-anim clj-obj-anim] (datum-model-fn "mage")
       scene (load-model graphics "res/models/Scenes/Mountains.dae")
       image (load-image gl "res/images/example.png")
       image-shader (load-shader gl "res/shaders/image_vertex.glsl" "res/shaders/image_fragment.glsl")
