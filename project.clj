@@ -5,7 +5,7 @@
             :url "https://opensource.org/licenses/MIT"}
   :dependencies [
     [org.clojure/clojure "1.11.1"]
-    [io.github.taqmuraz/nine "1.2.24"]
+    [io.github.taqmuraz/nine "1.2.25"]
   ]
   ;:jvm-opts ["-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005"]
   :main ^:skip-aot nine-clj.core
