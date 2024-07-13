@@ -492,8 +492,7 @@
         [
           (load-animated-model offset-graphics (format "res/datum/%s.dae" name))
           (load-anim-clj (condition-equality "JOINT") (format "res/datum/anims/%s/idle.clj" name) (format "res/datum/%s.dae" name))
-          ;(load-anim-clj (condition-equality "NODE") (format "res/datum/anims/%s/idle.clj" name) (format "res/datum/%s.dae" name))
-          (load-obj-anim graphics (format "res/datum/%s.dae" name))
+          (load-anim-clj (condition-equality "NODE") (format "res/datum/anims/%s/idle.clj" name) (format "res/datum/%s.dae" name))
         ]
       )
       [model clj-anim clj-obj-anim] (datum-model-fn "fighter")
