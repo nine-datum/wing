@@ -491,11 +491,12 @@
       datum-model-fn (fn [name]
         [
           (load-animated-model offset-graphics (format "res/datum/%s.dae" name))
-          (load-anim-clj (condition-equality "JOINT") (format "res/datum/anims/%s/walk.clj" name) (format "res/datum/%s.dae" name))
-          (load-anim-clj (condition-equality "NODE") (format "res/datum/anims/%s/walk.clj" name) (format "res/datum/%s.dae" name))
+          (load-anim-clj (condition-equality "JOINT") (format "res/datum/anims/%s/idle.clj" name) (format "res/datum/%s.dae" name))
+          ;(load-anim-clj (condition-equality "NODE") (format "res/datum/anims/%s/idle.clj" name) (format "res/datum/%s.dae" name))
+          (load-obj-anim graphics (format "res/datum/%s.dae" name))
         ]
       )
-      [model clj-anim clj-obj-anim] (datum-model-fn "archer")
+      [model clj-anim clj-obj-anim] (datum-model-fn "fighter")
       scene (load-model graphics "res/models/Scenes/Mountains.dae")
       image (load-image gl "res/images/example.png")
       image-shader (load-shader gl "res/shaders/image_vertex.glsl" "res/shaders/image_fragment.glsl")
