@@ -482,20 +482,34 @@
       skin-shader (load-shader gl "res/shaders/diffuse_skin_vertex.glsl" "res/shaders/diffuse_fragment.glsl")
       diffuse-shader (load-shader gl "res/shaders/diffuse_vertex.glsl" "res/shaders/diffuse_fragment.glsl")
       graphics (load-graphics gl diffuse-shader skin-shader)
-      offset-graphics (load-graphics gl diffuse-shader skin-shader
-        (geom-offset-parser (partial contains? (hash-set "Cube_001-mesh" "Cube_002-mesh" "Cube_003-mesh")) [0 0 1])
-        (ColladaBasicSkinParser.)
-        (ColladaBasicAnimationParser.)
-        (ColladaBasicMaterialParser.)
+      load-offset-animated-model (fn [file & offset-geom-names]
+        (load-animated-model
+          (load-graphics gl diffuse-shader skin-shader
+            (geom-offset-parser (partial contains? (apply hash-set offset-geom-names)) [0 0 1])
+            (ColladaBasicSkinParser.)
+            (ColladaBasicAnimationParser.)
+            (ColladaBasicMaterialParser.)
+          )
+          file
+        )
       )
-      datum-model-fn (fn [name]
+      datum-model-fn (fn [name offset-geom]
         [
-          (load-animated-model offset-graphics (format "res/datum/%s.dae" name))
-          (load-anim-clj (condition-equality "JOINT") (format "res/datum/anims/%s/idle.clj" name) (format "res/datum/%s.dae" name))
-          (load-anim-clj (condition-equality "NODE") (format "res/datum/anims/%s/idle.clj" name) (format "res/datum/%s.dae" name))
+          (load-offset-animated-model (format "res/datum/%s.dae" name) offset-geom)
+          (load-anim-clj (condition-equality "JOINT") (format "res/datum/anims/%s/walk.clj" name) (format "res/datum/%s.dae" name))
+          (load-anim-clj (condition-equality "NODE") (format "res/datum/anims/%s/walk.clj" name) (format "res/datum/%s.dae" name))
         ]
       )
-      [model clj-anim clj-obj-anim] (datum-model-fn "fighter")
+      presets [
+        ["archer" "Cube_001-mesh"]
+        ["mage" "Cube_002-mesh"]
+        ["fighter" "Cube_002-mesh"]
+        ["ninja" "Cube_003-mesh"]
+      ]
+      load-preset (fn [index]
+        (apply datum-model-fn (presets index))
+      )
+      [model clj-anim clj-obj-anim] (load-preset 3)
       scene (load-model graphics "res/models/Scenes/Mountains.dae")
       image (load-image gl "res/images/example.png")
       image-shader (load-shader gl "res/shaders/image_vertex.glsl" "res/shaders/image_fragment.glsl")
