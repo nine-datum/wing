@@ -19,6 +19,7 @@
     ]
     [nine.buffer
       Buffer
+      FloatArrayBuffer
       CachedBuffer
     ]
     [nine.math
@@ -48,6 +49,7 @@
       AnimatedSkeleton
       Animation
       Animator
+      KeyFrameAnimation
     ]
     [nine.geometry.collada
       NoAnimationParser
@@ -271,7 +273,16 @@
 (defn condition-func [func] (proxy [Condition] [] (match [t] (func t))))
 (defn condition-equality [item] (. Condition equality item))
 
-(defn load-model [graphics file] (.model graphics file))
+(defn load-materials [graphics file]
+  (.materials graphics file)
+)
+
+(defn load-model [graphics file]
+  {
+    :model (.model graphics file)
+    :materials (load-materials graphics file)
+  }
+)
 
 (defn load-anim [graphics file] (.animation graphics file (condition-equality "JOINT")))
 (defn load-obj-anim [graphics file] (.animation graphics file (condition-equality "NODE")))
@@ -373,20 +384,30 @@
   (let [
       db ((comp read-string slurp) anim-file)
       bone-names ((comp set map) first (db :bones))
-      f
-      (fn [t b]
-        (let [
-            ls ((db :bones) b)
-            t (mod t (db :length))
-            ft (drop-while #(> t (first %)) ls)
-            ft (vec ft)
-            [k m] (get ft 0 (first ls))
+      flip-mat (fn [m]
+        (let
+          [
             mat (mat4f m)
             flip (mat4f [-1 0 0 0    0 0 1 0   0 1 0 0    0 0 0 1])
-            mat (.mul (.mul flip mat) flip)
           ]
-          mat
+          (.mul (.mul flip mat) flip)
         )
+      )
+      make-buffer (fn [n vs]
+        (. Buffer of (if (= (count vs) 1) (conj vs (n (first vs))) vs))
+      )
+      anims (db :bones)
+      anims ((comp concat map) (fn [[n v]] (cons n (apply mapv vector v))) anims)
+      anims (mapv
+        (fn [[n k v]]
+          [n (KeyFrameAnimation. (make-buffer (comp float inc) (mapv float k)) (make-buffer identity (mapv flip-mat v)))]
+        )
+        anims
+      )
+      anims ((comp (partial apply hash-map) flatten) anims)
+      f
+      (fn [t b]
+        (.animate (anims b) t)
       )
       node (. ColladaNode fromFile (.open storage model-file))
       aparser (anim-parser-func f (partial contains? bone-names))
@@ -397,36 +418,49 @@
   )
 )
 
-(defn load-animated-model [graphics file] (.animatedModel graphics file))
+(defn load-animated-model [graphics file]
+  {
+    :model (.animatedModel graphics file)
+    :materials (load-materials graphics file)
+  }
+)
 
-(defn animated-model [m anim obj-anim]
-  (.draw
-    (.animate m
-      (.mul
-        (get-projection)
-        (get-camera)
+(defn animated-model
+  ([md anim obj-anim] (animated-model md anim obj-anim (md :materials)))
+  ([md anim obj-anim mats]
+    (.draw
+      (.animate (md :model)
+        (.mul
+          (get-projection)
+          (get-camera)
+        )
+        (get-world-light)
+        (peek-matrix)
+        anim
+        obj-anim
+        mats
       )
-      (get-world-light)
-      (peek-matrix)
-      anim
-      obj-anim
     )
   )
 )
 
 (defn animate [anim t] (.animate anim t))
 
-(defn model [m]
-  (.draw
-    (.transform m
-      (.mul
-        (get-projection)
-        (get-camera)
+(defn model
+  ([md] (model md (md :materials)))
+  ([md mats]
+    (.draw
+      (.transform (md :model)
+        (.mul
+          (get-projection)
+          (get-camera)
+        )
+        (get-world-light)
+        (peek-matrix)
+        mats
       )
-      (get-world-light)
-      (peek-matrix)
     )
-  )
+)
 )
 
 (defn mouse [wid]
@@ -500,16 +534,16 @@
           (load-anim-clj (condition-equality "NODE") (format "res/datum/anims/%s/walk.clj" name) (format "res/datum/%s.dae" name))
         ]
       )
-      presets [
-        ["archer" "Cube_001-mesh"]
-        ["mage" "Cube_002-mesh"]
-        ["fighter" "Cube_002-mesh"]
-        ["ninja" "Cube_003-mesh"]
-      ]
-      load-preset (fn [index]
-        (apply datum-model-fn (presets index))
+      presets {
+        :archer ["archer" "Cube_001-mesh"]
+        :mage ["mage" "Cube_002-mesh"]
+        :fighter ["fighter" "Cube_002-mesh"]
+        :ninja ["ninja" "Cube_003-mesh"]
+      }
+      load-preset (fn [name]
+        (apply datum-model-fn (presets name))
       )
-      [model clj-anim clj-obj-anim] (load-preset 3)
+      [model clj-anim clj-obj-anim] (load-preset :fighter)
       scene (load-model graphics "res/models/Scenes/Mountains.dae")
       image (load-image gl "res/images/example.png")
       image-shader (load-shader gl "res/shaders/image_vertex.glsl" "res/shaders/image_fragment.glsl")
