@@ -389,16 +389,29 @@
       flip-mat (fn [m]
         (.mul (.mul flip (mat4f m)) flip)
       )
+      make-buffer (fn [n vs]
+        (. Buffer of (if (= 1 (count vs)) (conj vs (n vs)) vs))
+      )
       anims (db :bones)
       anims (mapv
         (fn [[n v]]
           [
             n
-            (mapv
-              (fn [[k m]]
-                [k (flip-mat m)]
+            (let
+              [
+                [ks vs] (->> v
+                  (map
+                    (fn [[k m]]
+                      [k (flip-mat m)]
+                    )
+                  )
+                  (apply mapv vector)
+                )
+              ]
+              (KeyFrameAnimation.
+                (make-buffer (comp float inc first) (mapv float ks))
+                (make-buffer first vs)
               )
-              v
             )
           ]
         )
@@ -406,25 +419,26 @@
       )
       anims (apply hash-map (apply concat anims))
       lerp (fn [a b t] (+ a (* (- b a) t)))
-      f (fn [t name]
-        (let [
-            an (anims name)
-            t (mod t len)
-            f (->> an
-              count
-              (range 1)
-              (filter (comp (partial < t) first an))
-              (map (comp an dec))
-            )
-            f (if (empty? f) an f)
-            f (cycle f)
-            fl [(first f) (second f)]
-            [[a am] [b bm]] fl
-            d (- b a)
-            lt (if (zero? d) 0 (/ (- t a) d))
-          ]
-          (.lerp am bm lt)
-        )
+      f (fn [t name] (.animate (anims name) t)
+        ;; (let [
+        ;;     an (anims name)
+        ;;     ;; t (mod t len)
+        ;;     ;; f (->> an
+        ;;     ;;   count
+        ;;     ;;   (range 1)
+        ;;     ;;   (filter (comp (partial < t) first an))
+        ;;     ;;   (map (comp an dec))
+        ;;     ;; )
+        ;;     ;; f (if (empty? f) an f)
+        ;;     ;; f (cycle f)
+        ;;     ;; fl [(first f) (second f)]
+        ;;     ;; [[a am] [b bm]] fl
+        ;;     ;; d (- b a)
+        ;;     ;; lt (if (zero? d) 0 (/ (- t a) d))
+        ;;   ]
+        ;;   v
+        ;;   ;(.lerp am bm lt)
+        ;; )
       )
       node (. ColladaNode fromFile (.open storage model-file))
       aparser (anim-parser-func f (partial contains? bone-names))
