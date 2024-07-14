@@ -385,16 +385,25 @@
       db ((comp read-string slurp) anim-file)
       bone-names ((comp set map) first (db :bones))
       len (db :length)
+      flip (mat4f [-1 0 0 0    0 0 1 0   0 1 0 0    0 0 0 1])
       flip-mat (fn [m]
-        (let
-          [
-            mat (mat4f m)
-            flip (mat4f [-1 0 0 0    0 0 1 0   0 1 0 0    0 0 0 1])
-          ]
-          (.mul (.mul flip mat) flip)
-        )
+        (.mul (.mul flip (mat4f m)) flip)
       )
       anims (db :bones)
+      anims (mapv
+        (fn [[n v]]
+          [
+            n
+            (mapv
+              (fn [[k m]]
+                [k (flip-mat m)]
+              )
+              v
+            )
+          ]
+        )
+        anims
+      )
       anims (apply hash-map (apply concat anims))
       lerp (fn [a b t] (+ a (* (- b a) t)))
       f (fn [t name]
@@ -413,9 +422,8 @@
             [[a am] [b bm]] fl
             d (- b a)
             lt (if (zero? d) 0 (/ (- t a) d))
-            v (mapv lerp am bm (repeat lt))
           ]
-          (flip-mat v)
+          (.lerp am bm lt)
         )
       )
       node (. ColladaNode fromFile (.open storage model-file))
@@ -469,7 +477,7 @@
         mats
       )
     )
-)
+  )
 )
 
 (defn mouse [wid]
@@ -502,7 +510,7 @@
       (reset! matrix-stack (list (. Matrix4f identity)))
       (reset! window-width w)
       (reset! window-height h)
-      (swap! state (partial loop dev))
+      (time(swap! state (partial loop dev)))
     )
   )
 )
@@ -539,6 +547,8 @@
       datum-model-fn (fn [name offset-geom]
         [
           (load-offset-animated-model (format "res/datum/%s.dae" name) offset-geom)
+          ;(load-anim graphics (format "res/datum/%s.dae" name))
+          ;(load-obj-anim graphics (format "res/datum/%s.dae" name))
           (load-anim-clj (condition-equality "JOINT") (format "res/datum/anims/%s/walk.clj" name) (format "res/datum/%s.dae" name))
           (load-anim-clj (condition-equality "NODE") (format "res/datum/anims/%s/walk.clj" name) (format "res/datum/%s.dae" name))
         ]
@@ -579,10 +589,13 @@
   (camera (orbital-camera (vec3f 0 2 0) (vec3f 0 0 0) 5))
   (model (state :scene))
   
-  (push-matrix)
-  (apply-matrix (rotation 0 (get-time) 0))
-  (animated-model (state :model) (animate (state :anim) (get-time)) (animate (state :obj-anim) (get-time)))
-  (pop-matrix)
+  (doseq [i (range 20)]
+    (push-matrix)
+    (apply-matrix (rotation 0 (get-time) 0))
+    (apply-matrix (translation (- (mod i 10) 4) ((comp int /) i 4) ((comp int /) i 2)))
+    (animated-model (state :model) (animate (state :anim) (get-time)) (animate (state :obj-anim) (get-time)))
+    (pop-matrix)
+  )
   
   (image (state :image) (state :image-shader) -1 -0.5 0.5 0.5)
   (when ((dev :keyboard) "c" :down)
