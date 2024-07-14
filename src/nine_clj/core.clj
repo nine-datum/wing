@@ -395,22 +395,11 @@
       anims (db :bones)
       anims (mapv
         (fn [[n v]]
-          [
-            n
-            (let
-              [
-                [ks vs] (->> v
-                  (map
-                    (fn [[k m]]
-                      [k (flip-mat m)]
-                    )
-                  )
-                  (apply mapv vector)
-                )
-              ]
+          [n
+            (let [[ks vs] (apply mapv vector v)]
               (KeyFrameAnimation.
                 (make-buffer (comp float inc first) (mapv float ks))
-                (make-buffer first vs)
+                (make-buffer first (mapv flip-mat vs))
               )
             )
           ]
@@ -418,27 +407,8 @@
         anims
       )
       anims (apply hash-map (apply concat anims))
-      lerp (fn [a b t] (+ a (* (- b a) t)))
-      f (fn [t name] (.animate (anims name) t)
-        ;; (let [
-        ;;     an (anims name)
-        ;;     ;; t (mod t len)
-        ;;     ;; f (->> an
-        ;;     ;;   count
-        ;;     ;;   (range 1)
-        ;;     ;;   (filter (comp (partial < t) first an))
-        ;;     ;;   (map (comp an dec))
-        ;;     ;; )
-        ;;     ;; f (if (empty? f) an f)
-        ;;     ;; f (cycle f)
-        ;;     ;; fl [(first f) (second f)]
-        ;;     ;; [[a am] [b bm]] fl
-        ;;     ;; d (- b a)
-        ;;     ;; lt (if (zero? d) 0 (/ (- t a) d))
-        ;;   ]
-        ;;   v
-        ;;   ;(.lerp am bm lt)
-        ;; )
+      f (fn [t name]
+        (.animate (anims name) t)
       )
       node (. ColladaNode fromFile (.open storage model-file))
       aparser (anim-parser-func f (partial contains? bone-names))
@@ -563,8 +533,8 @@
           (load-offset-animated-model (format "res/datum/%s.dae" name) offset-geom)
           ;(load-anim graphics (format "res/datum/%s.dae" name))
           ;(load-obj-anim graphics (format "res/datum/%s.dae" name))
-          (load-anim-clj (condition-equality "JOINT") (format "res/datum/anims/%s/walk.clj" name) (format "res/datum/%s.dae" name))
-          (load-anim-clj (condition-equality "NODE") (format "res/datum/anims/%s/walk.clj" name) (format "res/datum/%s.dae" name))
+          (load-anim-clj (condition-equality "JOINT") (format "res/datum/anims/%s/attack.clj" name) (format "res/datum/%s.dae" name))
+          (load-anim-clj (condition-equality "NODE") (format "res/datum/anims/%s/attack.clj" name) (format "res/datum/%s.dae" name))
         ]
       )
       presets {
@@ -576,7 +546,7 @@
       load-preset (fn [name]
         (apply datum-model-fn (presets name))
       )
-      [model clj-anim clj-obj-anim] (load-preset :fighter)
+      [model clj-anim clj-obj-anim] (load-preset :ninja)
       scene (load-model graphics "res/models/Scenes/Mountains.dae")
       image (load-image gl "res/images/example.png")
       image-shader (load-shader gl "res/shaders/image_vertex.glsl" "res/shaders/image_fragment.glsl")
@@ -603,7 +573,7 @@
   (camera (orbital-camera (vec3f 0 2 0) (vec3f 0 0 0) 5))
   (model (state :scene))
   
-  (doseq [i (range 20)]
+  (doseq [i (range 60)]
     (push-matrix)
     (apply-matrix (rotation 0 (get-time) 0))
     (apply-matrix (translation (- (mod i 10) 4) ((comp int /) i 4) ((comp int /) i 2)))
