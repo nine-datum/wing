@@ -47,6 +47,7 @@
     [nine.geometry
       Skeleton
       AnimatedSkeleton
+      AnimatedSkeletonSource
       Animation
       Animator
       KeyFrameAnimation
@@ -415,7 +416,7 @@
       sparser (ColladaBasicSkeletonParser. bone-type)
       anim (. AnimatedSkeleton fromCollada node aparser sparser)
     ]
-    anim
+    (proxy [AnimatedSkeletonSource] [] (instance [status] (. AnimatedSkeleton cached (.instance anim status) bone-names 30 len)))
   )
 )
 
@@ -573,10 +574,10 @@
   (camera (orbital-camera (vec3f 0 2 0) (vec3f 0 0 0) 5))
   (model (state :scene))
   
-  (doseq [i (range 60)]
+  (doseq [i (range 100)]
     (push-matrix)
     (apply-matrix (rotation 0 (get-time) 0))
-    (apply-matrix (translation (- (mod i 10) 4) ((comp int /) i 4) ((comp int /) i 2)))
+    (apply-matrix (translation (- (mod i 10) 4) ((comp (partial * 0.5) int /) i 10) ((comp int /) i 10)))
     (animated-model (state :model) (animate (state :anim) (get-time)) (animate (state :obj-anim) (get-time)))
     (pop-matrix)
   )
