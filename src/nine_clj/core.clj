@@ -384,6 +384,7 @@
   (let [
       db ((comp read-string slurp) anim-file)
       bone-names ((comp set map) first (db :bones))
+      len (db :length)
       flip-mat (fn [m]
         (let
           [
@@ -393,21 +394,29 @@
           (.mul (.mul flip mat) flip)
         )
       )
-      make-buffer (fn [n vs]
-        (. Buffer of (if (= (count vs) 1) (conj vs (n (first vs))) vs))
-      )
       anims (db :bones)
-      anims ((comp concat map) (fn [[n v]] (cons n (apply mapv vector v))) anims)
-      anims (mapv
-        (fn [[n k v]]
-          [n (KeyFrameAnimation. (make-buffer (comp float inc) (mapv float k)) (make-buffer identity (mapv flip-mat v)))]
+      anims (apply hash-map (apply concat anims))
+      lerp (fn [a b t] (+ a (* (- b a) t)))
+      f (fn [t name]
+        (let [
+            an (anims name)
+            t (mod t len)
+            f (->> an
+              count
+              (range 1)
+              (filter (comp (partial < t) first an))
+              (map (comp an dec))
+            )
+            f (if (empty? f) an f)
+            f (cycle f)
+            fl [(first f) (second f)]
+            [[a am] [b bm]] fl
+            d (- b a)
+            lt (if (zero? d) 0 (/ (- t a) d))
+            v (mapv lerp am bm (repeat lt))
+          ]
+          (flip-mat v)
         )
-        anims
-      )
-      anims ((comp (partial apply hash-map) flatten) anims)
-      f
-      (fn [t b]
-        (.animate (anims b) t)
       )
       node (. ColladaNode fromFile (.open storage model-file))
       aparser (anim-parser-func f (partial contains? bone-names))
