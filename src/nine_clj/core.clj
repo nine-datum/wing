@@ -390,17 +390,14 @@
       flip-mat (fn [m]
         (.mul (.mul flip (mat4f m)) flip)
       )
-      make-buffer (fn [n vs]
-        (. Buffer of (if (= 1 (count vs)) (conj vs (n vs)) vs))
-      )
       anims (db :bones)
       anims (mapv
         (fn [[n v]]
           [n
             (let [[ks vs] (apply mapv vector v)]
               (KeyFrameAnimation.
-                (make-buffer (comp float inc first) (mapv float ks))
-                (make-buffer first (mapv flip-mat vs))
+                (. Buffer of (mapv float ks))
+                (. Buffer of (mapv flip-mat vs))
               )
             )
           ]
@@ -554,14 +551,13 @@
       font (text/default-font 12)
       text-shader image-shader
       textfn (live-text gl text-shader)
-      status (new-status)
     ]
     {
       :font font
       :textfn textfn
       :model model
-      :anim (instance clj-anim status)
-      :obj-anim (instance clj-obj-anim status)
+      :anim (instance clj-anim (. RefreshStatus always))
+      :obj-anim (instance clj-obj-anim (. RefreshStatus always))
       :scene scene
       :image image
       :image-shader image-shader
@@ -574,7 +570,7 @@
   (camera (orbital-camera (vec3f 0 2 0) (vec3f 0 0 0) 5))
   (model (state :scene))
   
-  (doseq [i (range 100)]
+  (doseq [i (range 300)]
     (push-matrix)
     (apply-matrix (rotation 0 (get-time) 0))
     (apply-matrix (translation (- (mod i 10) 4) ((comp (partial * 0.5) int /) i 10) ((comp int /) i 10)))
@@ -588,6 +584,7 @@
       ((state :textfn) "Hello, text!" (state :font) -0.5 (- 1 (* i 0.05)) 0.5 0.05)
     )
   )
+
   state
 )
 
