@@ -579,6 +579,7 @@
   
   (push-matrix)
   (apply-matrix (mat4f (phys/get-matrix (state :body))))
+  (apply-matrix (translation 0 -1 0))
   (animated-model (state :model) (animate (state :anim) (get-time)) (animate (state :obj-anim) (get-time)))
   (pop-matrix)
 
