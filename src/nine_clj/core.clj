@@ -2,6 +2,7 @@
   (:gen-class)
   (:require
     [nine-clj.text :as text]
+    [nine-clj.phys :as phys]
   )
   (:import
     [nine.lwjgl
@@ -94,8 +95,18 @@
   (. FloatFunc toRadians d)
 )
 
+(def storage (FileStorage.))
+
+(defn new-status [] (UpdateRefreshStatus.))
+(defn update-status [status] (.update status))
+
+(def proc-refresh-status (new-status))
+
 (def time-obj (LocalTime.))
 (defn get-time [] (.value time-obj))
+
+(def delta-time-obj (.delta time-obj proc-refresh-status))
+(defn get-delta-time [] (.value delta-time-obj))
 
 (def window-width (atom 0))
 (def window-height (atom 0))
@@ -157,13 +168,6 @@
 (defn peek-matrix [] (first @matrix-stack))
 (defn swap-matrix [f] (swap! matrix-stack #(cons (->> % first f) (rest %))))
 (defn apply-matrix [m] (swap-matrix #(.mul m %)))
-
-(def storage (FileStorage.))
-
-(defn new-status [] (UpdateRefreshStatus.))
-(defn update-status [status] (.update status))
-
-(def proc-refresh-status (new-status))
 
 (defn load-shader [gl vert frag] (.load (. Shader loader storage gl) vert frag))
 
@@ -492,7 +496,7 @@
       (reset! matrix-stack (list (. Matrix4f identity)))
       (reset! window-width w)
       (reset! window-height h)
-      (time(swap! state (partial loop dev)))
+      (swap! state (partial loop dev))
     )
   )
 )
@@ -561,21 +565,25 @@
       :scene scene
       :image image
       :image-shader image-shader
+      :body (do (phys/plane [0 1 0] 0) (phys/box [0 10 0] [0 0 0] [1 1 1] 1))
     }
   )
 )
 
 (defn test-loop [dev state]
+  (phys/update (get-delta-time))
+
   (projection (perspective (width) (height) (radians 60) 0.01 100))
-  (camera (orbital-camera (vec3f 0 2 0) (vec3f 0 0 0) 5))
+  (camera (orbital-camera (vec3f 0 2 0) (vec3f 0 0 0) 15))
   (model (state :scene))
   
-  (doseq [i (range 300)]
-    (push-matrix)
-    (apply-matrix (rotation 0 (get-time) 0))
-    (apply-matrix (translation (- (mod i 10) 4) ((comp (partial * 0.5) int /) i 10) ((comp int /) i 10)))
-    (animated-model (state :model) (animate (state :anim) (get-time)) (animate (state :obj-anim) (get-time)))
-    (pop-matrix)
+  (push-matrix)
+  (apply-matrix (mat4f (phys/get-matrix (state :body))))
+  (animated-model (state :model) (animate (state :anim) (get-time)) (animate (state :obj-anim) (get-time)))
+  (pop-matrix)
+
+  (when ((dev :keyboard) "v" :down)
+    (phys/set-velocity (state :body) [0 10 0])
   )
   
   (image (state :image) (state :image-shader) -1 -0.5 0.5 0.5)
