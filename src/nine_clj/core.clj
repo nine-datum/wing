@@ -1,38 +1,25 @@
 (ns nine-clj.core
   (:gen-class)
   (:require
+    [nine-clj.graph :as graph]
+    [nine-clj.math :as math]
     [nine-clj.text :as text]
     [nine-clj.phys :as phys]
+    [nine-clj.input :as input]
   )
   (:import
     [nine.lwjgl
       LWJGL_Window
-      LWJGL_OpenGL
-      LWJGL_Keyboard
-      LWJGL_Mouse
     ]
     [nine.function
       RefreshStatus
       UpdateRefreshStatus
-      FunctionSingle
-      FunctionDouble
       Condition
     ]
-    [nine.buffer
-      Buffer
-      FloatArrayBuffer
-      CachedBuffer
-    ]
     [nine.math
-      Vector2f
-      Vector3f
-      Matrix4f
-      FloatFunc
       LocalTime
     ]
     [nine.opengl
-      Drawing
-      Shader
       WindowStartAction
       WindowLoopAction
     ]
@@ -45,54 +32,12 @@
     [nine.geometry.procedural
       Geometry
     ]
-    [nine.geometry
-      Skeleton
-      AnimatedSkeleton
-      AnimatedSkeletonSource
-      Animation
-      Animator
-      KeyFrameAnimation
-    ]
     [nine.geometry.collada
-      NoAnimationParser
       ColladaBasicAnimationParser
-      ColladaBasicSkeletonParser
       ColladaBasicSkinParser
-      ColladaBasicGeometryParser
       ColladaBasicMaterialParser
-      ColladaAnimationReader
-      ColladaAnimationParser
-      ColladaGeometryParser
-      ColladaNode
-      BuffersReader
-      BufferMapping
-    ]
-    [java.util
-      Arrays
     ]
   )
-)
-
-(defn new-gl [] (LWJGL_OpenGL.))
-
-(defn floats-from-mat4f [m] ((comp vec map) #(.at m %) (range 16)))
-(defn floats-from-vec2f [v] [(.x v) (.y v)])
-(defn floats-from-vec3f [v] [(.x v) (.y v) (.z v)])
-
-(defn vec2f [x y] (. Vector2f newXY x y))
-(defn vec3f [x y z] (. Vector3f newXYZ x y z))
-(defn mat4f [fs]
-  (let [
-      ar (make-array Float/TYPE 16)
-      v (vec fs)
-    ]
-    (doseq [i (range 16)] (aset ar i (float (v i))))
-    (. Matrix4f fromArray ar)
-  )
-)
-
-(defn radians [d]
-  (. FloatFunc toRadians d)
 )
 
 (def storage (FileStorage.))
@@ -114,386 +59,15 @@
 (defn width [] @window-width)
 (defn height [] @window-height)
 
-(defn mat-identity [] (. Matrix4f identity))
-
-(defn perspective [w h fov near far]
-  (. Matrix4f perspective (/ w (float h)) fov near far)
-)
-
-(defn scale [x y z]
-  (. Matrix4f scale (vec3f x y z))
-)
-
-(defn transform [pos rot scale]
-  (. Matrix4f transform pos rot scale)
-)
-
-(defn translation [x y z]
-  (. Matrix4f translation (vec3f x y z))
-)
-
-(defn rotation [x y z]
-  (. Matrix4f rotation (vec3f x y z))
-)
-
-(defn orbital-camera [pos rot dist]
-  (. Matrix4f orbitalCamera pos rot dist)
-)
-
-(def matrix-stack (atom (list (. Matrix4f identity))))
-(def projection-matrix (atom (. Matrix4f identity)))
-(def camera-matrix (atom (. Matrix4f identity)))
-(def world-light-vec (atom (. Vector3f newXYZ 0 0 1)))
-
-(defn projection [p]
-  (reset! projection-matrix p)
-)
-
-(defn get-projection [] @projection-matrix)
-
-(defn camera [c]
-  (reset! camera-matrix c)
-)
-
-(defn get-camera [] @camera-matrix)
-
-(defn world-light [l]
-  (reset! world-light-vec l)
-)
-
-(defn get-world-light [] @world-light-vec)
-
-(defn push-matrix [] (swap! matrix-stack #(cons (first %) %)))
-(defn pop-matrix [] (swap! matrix-stack rest))
-(defn peek-matrix [] (first @matrix-stack))
-(defn swap-matrix [f] (swap! matrix-stack #(cons (->> % first f) (rest %))))
-(defn apply-matrix [m] (swap-matrix #(.mul m %)))
-
-(defn load-shader [gl vert frag] (.load (. Shader loader storage gl) vert frag))
-
-(defn load-graphics
-  ([gl diffuse-shader skin-shader]
-    (. Graphics collada gl diffuse-shader skin-shader storage)
-  )
-  ([gl diffuse-shader skin-shader geom-parser skin-parser anim-parser material-parser]
-    (. Graphics collada gl diffuse-shader skin-shader storage geom-parser skin-parser anim-parser material-parser)
-  )
-)
-
-(defn load-image-tex [gl tex]
-  (let
-    [
-      bl [0 0 0]
-      br [1 0 0]
-      tl [0 1 0]
-      tr [1 1 0]
-      bl-uv [0 0]
-      br-uv [1 0]
-      tl-uv [0 1]
-      tr-uv [1 1]
-      to-float (partial map float)
-      buf (comp vec to-float concat)
-      geom (-> gl
-        (.vao (. Buffer range 6))
-        (.attribute 3 (. Buffer of (buf tl bl br br tr tl)))
-        (.attribute 2 (. Buffer of (buf tl-uv bl-uv br-uv br-uv tr-uv tl-uv)))
-        (.attribute 3 (. Buffer of (apply buf (repeat 6 [0 0 -1]))))
-        (.drawing)
-      )
-      res { :geom geom :tex tex :drawing (.apply tex geom) :disposed (atom false) }
-    ]
-    res
-  )
-)
-
-(defn load-image [gl file]
-  (load-image-tex gl
-    (.texture gl (.open storage file))
-  )
-)
-
-(defn load-image-img [gl img]
-  (load-image-tex gl
-    (.texture gl img)
-  )
-)
-
-(defn unload-image [img]
-  (->> img :tex .dispose)
-  (->> img :geom .dispose)
-  (-> img :disposed (reset! true))
-  ()
-)
-
-(defn image [img shader x y w h]
-  (let
-    [
-      player (.player shader)
-      uniforms (.uniforms player)
-      trans (.uniformMatrix uniforms "transform")
-    ]
-    (.draw
-      (.play player
-        (proxy [Drawing] []
-          (draw []
-            (.load trans (transform (vec3f x y 0) (vec3f 0 0 0) (vec3f w h 1)))
-            (cond
-              (-> img :disposed deref true?) (throw (RuntimeException. "Texture cannot be used, it was disposed"))
-              :else (-> img :drawing .draw)
-            )
-          )
-        )
-      )
-    )
-  )
-)
-
-(defn load-font [name] (text/font name))
-
-(defn load-text [gl text font]
-  (let
-    [
-      img (text/text-image text font)
-      tex (load-image-img gl img)
-    ]
-    tex
-  )
-)
-
-(defn unload-text [text] (unload-image text))
-
-(defn text [tx shader x y w h]
-  (image tx shader x y w h)
-)
-
-(defn live-text [gl shader]
-  (fn [str font x y w h]
-    (let [t (load-text gl str font)]
-      (text t shader x y w h)
-      (unload-text t)
-    )
-  )
-)
-
-(defn condition-func [func] (proxy [Condition] [] (match [t] (func t))))
-(defn condition-equality [item] (. Condition equality item))
-
-(defn load-materials [graphics file]
-  (.materials graphics file)
-)
-
-(defn load-model [graphics file]
-  {
-    :model (.model graphics file)
-    :materials (load-materials graphics file)
-  }
-)
-
-(defn load-anim [graphics file] (.animation graphics file (condition-equality "JOINT")))
-(defn load-obj-anim [graphics file] (.animation graphics file (condition-equality "NODE")))
-
-(defn skeleton-func [func]
-  (proxy [Skeleton] []
-    (transform [b]
-      (func b)
-    )
-  )
-)
-
-(defn anim-func [func]
-  (proxy [AnimatedSkeleton] []
-    (animate [t]
-      (skeleton-func
-        (fn [b] (func t b))
-      )
-    )
-  )
-)
-
-(defn empty-skeleton [] (skeleton-func (constantly (mat-identity))))
-
-(defn empty-anim [] (anim-func (constantly (empty-skeleton))))
-
-(defn comp-anim [a b]
-  (anim-func
-    (fn [t k]
-      (let [
-          at (.transform (.animate a t) k)
-          bt (.transform (.animate b t) k)
-        ]
-        (.mul at bt)
-      )
-    )
-  )
-)
-
-(defn anim-parser-func [func bone-pred]
-  (proxy [ColladaAnimationParser] []
-    (read [node reader]
-      (.read reader
-        (proxy [Animator] []
-          (animation [id name]
-            (cond
-              (bone-pred name)
-              (proxy [Animation] []
-                (animate [t]
-                  (func t name)
-                )
-              )
-              :else nil
-            )
-          )
-        )
-      )
-    )
-  )
-)
-
-(defn geom-offset-parser [source-pred offset]
-  (proxy [ColladaGeometryParser] []
-    (read [node reader]
-      (.read (ColladaBasicGeometryParser.) node
-        (proxy [BuffersReader] []
-          (read [source mat floats ints]
-            (.read reader source mat
-              (if (source-pred source)
-                (proxy [BufferMapping] []
-                  (map [semantic]
-                    (let [sr (.map floats semantic)]
-                      (case semantic "VERTEX"
-                        (CachedBuffer. (proxy [Buffer] []
-                          (length [] (.length sr))
-                          (at [i]
-                            ((comp float +) (.at sr i) (offset (mod i 3)))
-                          )
-                        ))
-                        sr
-                      )
-                    )
-                  )
-                )
-                floats
-              )
-              ints
-            )
-          )
-        )
-      )
-    )
-  )
-)
-
-(defn instance [source refresh-status] (.instance source refresh-status))
-
-(defn load-anim-clj [bone-type anim-file model-file]
-  (let [
-      db ((comp read-string slurp) anim-file)
-      bone-names ((comp set map) first (db :bones))
-      len (db :length)
-      flip (mat4f [-1 0 0 0    0 0 1 0   0 1 0 0    0 0 0 1])
-      flip-mat (fn [m]
-        (.mul (.mul flip (mat4f m)) flip)
-      )
-      anims (db :bones)
-      anims (mapv
-        (fn [[n v]]
-          [n
-            (let [[ks vs] (apply mapv vector v)]
-              (KeyFrameAnimation.
-                (. Buffer of (mapv float ks))
-                (. Buffer of (mapv flip-mat vs))
-              )
-            )
-          ]
-        )
-        anims
-      )
-      anims (apply hash-map (apply concat anims))
-      f (fn [t name]
-        (.animate (anims name) t)
-      )
-      node (. ColladaNode fromFile (.open storage model-file))
-      aparser (anim-parser-func f (partial contains? bone-names))
-      sparser (ColladaBasicSkeletonParser. bone-type)
-      anim (. AnimatedSkeleton fromCollada node aparser sparser)
-    ]
-    (proxy [AnimatedSkeletonSource] [] (instance [status] (. AnimatedSkeleton cached (.instance anim status) bone-names 30 len)))
-  )
-)
-
-(defn load-animated-model [graphics file]
-  {
-    :model (.animatedModel graphics file)
-    :materials (load-materials graphics file)
-  }
-)
-
-(defn animated-model
-  ([md anim obj-anim] (animated-model md anim obj-anim (md :materials)))
-  ([md anim obj-anim mats]
-    (.draw
-      (.animate (md :model)
-        (.mul
-          (get-projection)
-          (get-camera)
-        )
-        (get-world-light)
-        (peek-matrix)
-        anim
-        obj-anim
-        mats
-      )
-    )
-  )
-)
-
-(defn animate [anim t] (.animate anim t))
-
-(defn model
-  ([md] (model md (md :materials)))
-  ([md mats]
-    (.draw
-      (.transform (md :model)
-        (.mul
-          (get-projection)
-          (get-camera)
-        )
-        (get-world-light)
-        (peek-matrix)
-        mats
-      )
-    )
-  )
-)
-
-(defn mouse [wid]
-  (LWJGL_Mouse. wid proc-refresh-status)
-)
-
-(defn keyboard [wid]
-  (let [
-      k (LWJGL_Keyboard. wid)
-      m { :down (memfn isDown) :up (memfn isUp) }
-      f (memfn keyOf symbol)
-      f (partial f k)
-    ]
-    (fn 
-      ([s] (case s :update (.update k) :else ()))
-      ([c s]
-        ((comp (partial apply (m s)) vector f first) c)
-      )
-    )
-  )
-)
-
 (def state (atom {}))
 
 (defn windowLoop [id dev loop]
   (proxy [WindowLoopAction] []
     (call [w h]
       (update-status proc-refresh-status)
-      (reduce (comp apply) [dev [:keyboard] [:update]])
-      (reset! matrix-stack (list (. Matrix4f identity)))
+      ((dev :mouse) :update)
+      ((dev :keyboard) :update)
+      (graph/reset-matrix-stack)
       (reset! window-width w)
       (reset! window-height h)
       (swap! state (partial loop dev))
@@ -504,7 +78,7 @@
 (defn windowStart [setup loop]
   (proxy [WindowStartAction] []
     (start [id]
-      (let [dev { :keyboard (keyboard id) }]
+      (let [dev { :keyboard (input/keyboard id) :mouse (input/mouse id proc-refresh-status) }]
         (reset! state (setup dev))
         (windowLoop id dev loop)
       )
@@ -515,14 +89,14 @@
 (defn test-setup [dev]
   (let
     [
-      gl (new-gl)
-      skin-shader (load-shader gl "res/shaders/diffuse_skin_vertex.glsl" "res/shaders/diffuse_fragment.glsl")
-      diffuse-shader (load-shader gl "res/shaders/diffuse_vertex.glsl" "res/shaders/diffuse_fragment.glsl")
-      graphics (load-graphics gl diffuse-shader skin-shader)
+      gl (graph/new-gl)
+      skin-shader (graph/load-shader gl storage "res/shaders/diffuse_skin_vertex.glsl" "res/shaders/diffuse_fragment.glsl")
+      diffuse-shader (graph/load-shader gl storage "res/shaders/diffuse_vertex.glsl" "res/shaders/diffuse_fragment.glsl")
+      graphics (graph/load-graphics gl storage diffuse-shader skin-shader)
       load-offset-animated-model (fn [file & offset-geom-names]
-        (load-animated-model
-          (load-graphics gl diffuse-shader skin-shader
-            (geom-offset-parser (partial contains? (apply hash-set offset-geom-names)) [0 0 1])
+        (graph/load-animated-model
+          (graph/load-graphics gl storage diffuse-shader skin-shader
+            (graph/geom-offset-parser (partial contains? (apply hash-set offset-geom-names)) [0 0 1])
             (ColladaBasicSkinParser.)
             (ColladaBasicAnimationParser.)
             (ColladaBasicMaterialParser.)
@@ -533,10 +107,8 @@
       datum-model-fn (fn [name offset-geom]
         [
           (load-offset-animated-model (format "res/datum/%s.dae" name) offset-geom)
-          ;(load-anim graphics (format "res/datum/%s.dae" name))
-          ;(load-obj-anim graphics (format "res/datum/%s.dae" name))
-          (load-anim-clj (condition-equality "JOINT") (format "res/datum/anims/%s/attack.clj" name) (format "res/datum/%s.dae" name))
-          (load-anim-clj (condition-equality "NODE") (format "res/datum/anims/%s/attack.clj" name) (format "res/datum/%s.dae" name))
+          (graph/load-anim-clj storage (partial = "JOINT") (format "res/datum/anims/%s/attack.clj" name) (format "res/datum/%s.dae" name))
+          (graph/load-anim-clj storage (partial = "NODE") (format "res/datum/anims/%s/attack.clj" name) (format "res/datum/%s.dae" name))
         ]
       )
       presets {
@@ -549,23 +121,24 @@
         (apply datum-model-fn (presets name))
       )
       [model clj-anim clj-obj-anim] (load-preset :ninja)
-      scene (load-model graphics "res/models/Scenes/Mountains.dae")
-      image (load-image gl "res/images/example.png")
-      image-shader (load-shader gl "res/shaders/image_vertex.glsl" "res/shaders/image_fragment.glsl")
+      scene (graph/load-model graphics "res/models/Scenes/Mountains.dae")
+      image (graph/load-image gl storage "res/images/example.png")
+      image-shader (graph/load-shader gl storage "res/shaders/image_vertex.glsl" "res/shaders/image_fragment.glsl")
       font (text/default-font 12)
       text-shader image-shader
-      textfn (live-text gl text-shader)
+      textfn (graph/live-text gl text-shader)
     ]
     {
       :font font
       :textfn textfn
       :model model
-      :anim (instance clj-anim (. RefreshStatus always))
-      :obj-anim (instance clj-obj-anim (. RefreshStatus always))
+      :anim (graph/instance clj-anim (. RefreshStatus always))
+      :obj-anim (graph/instance clj-obj-anim (. RefreshStatus always))
       :scene scene
       :image image
       :image-shader image-shader
       :body (do (phys/plane [0 1 0] 0) (phys/box [0 10 0] [0 0 0] [1 1 1] 1))
+      :camrot [0 0 0]
     }
   )
 )
@@ -573,28 +146,46 @@
 (defn test-loop [dev state]
   (phys/update (get-delta-time))
 
-  (projection (perspective (width) (height) (radians 60) 0.01 100))
-  (camera (orbital-camera (vec3f 0 2 0) (vec3f 0 0 0) 15))
-  (model (state :scene))
-  
-  (push-matrix)
-  (apply-matrix (mat4f (phys/get-matrix (state :body))))
-  (apply-matrix (translation 0 -1 0))
-  (animated-model (state :model) (animate (state :anim) (get-time)) (animate (state :obj-anim) (get-time)))
-  (pop-matrix)
+  (let [
+      {:keys [
+          scene
+          model
+          anim
+          body
+          camrot
+          obj-anim
+          image
+          image-shader
+          textfn
+          font
+        ]
+      } state
+      { :keys [keyboard mouse] } dev
+    ]
 
-  (when ((dev :keyboard) "v" :down)
-    (phys/set-velocity (state :body) [0 10 0])
-  )
-  
-  (image (state :image) (state :image-shader) -1 -0.5 0.5 0.5)
-  (when ((dev :keyboard) "c" :down)
-    (doseq [i (range 0 40)]
-      ((state :textfn) "Hello, text!" (state :font) -0.5 (- 1 (* i 0.05)) 0.5 0.05)
+    (graph/projection (math/perspective (width) (height) (math/radians 60) 0.01 100))
+    (graph/camera (math/orbital-camera (math/vec3f 0 2 0) (apply math/vec3f camrot) 15))
+    (graph/model scene)
+    
+    (graph/push-matrix)
+    (graph/apply-matrix (math/mat4f (phys/get-matrix body)))
+    (graph/apply-matrix (math/translation 0 -1 0))
+    (graph/animated-model model (graph/animate anim (get-time)) (graph/animate obj-anim (get-time)))
+    (graph/pop-matrix)
+
+    (when (keyboard "v" :down)
+      (phys/set-velocity body [0 10 0])
     )
-  )
+    
+    (graph/image image image-shader -1 -0.5 0.5 0.5)
 
-  state
+    (when (keyboard "c" :down)
+      (doseq [i (range 0 40)]
+        (textfn "Hello, text!" font -0.5 (- 1 (* i 0.05)) 0.5 0.05)
+      )
+    )
+    state
+  )
 )
 
 (defn window [w h setup loop params]
