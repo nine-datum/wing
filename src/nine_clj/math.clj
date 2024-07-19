@@ -53,5 +53,11 @@
 )
 
 (defn orbital-camera [pos rot dist]
-  (. Matrix4f orbitalCamera pos rot dist)
+  (->
+    (. Matrix4f translation (vec3f 0 0 dist))
+    (.mul (. Matrix4f rotationX (- (.x rot))))
+    (.mul (. Matrix4f rotationY (- (.y rot))))
+    (.mul (. Matrix4f rotationZ (- (.z rot))))
+    (.mul (. Matrix4f translation (.negative pos)))
+  )
 )

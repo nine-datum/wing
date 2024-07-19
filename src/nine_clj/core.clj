@@ -163,10 +163,15 @@
         ]
       } state
       { :keys [keyboard mouse] } dev
+      [camx camy camz] camrot
+      [mousex mousey] (mapv (partial * 0.01) (mouse :delta))
+      camrot [(- camx mousey) (+ camy mousex) camz]
+      state (assoc state :camrot camrot)
+      campos (phys/get-position body)
     ]
 
     (graph/projection (math/perspective (width) (height) (math/radians 60) 0.01 100))
-    (graph/camera (math/orbital-camera (math/vec3f 0 2 0) (apply math/vec3f camrot) 15))
+    (graph/camera (math/orbital-camera (apply math/vec3f campos) (apply math/vec3f camrot) 5))
     (graph/model scene)
     
     (graph/push-matrix)

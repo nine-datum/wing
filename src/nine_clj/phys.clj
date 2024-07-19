@@ -150,6 +150,17 @@
   )
 )
 
+(defn get-position [body]
+  (let [
+      t (.getCenterOfMassTransform body (Transform.))
+      m (.getMatrix t (Matrix4f.))
+      fs (make-array Float/TYPE 4)
+    ]
+    (.getColumn m 3 fs)
+    (vec (take 3 fs))
+  )
+)
+
 (defn update [time-step]
   (.stepSimulation dynamics-world time-step)
 )
