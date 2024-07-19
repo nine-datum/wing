@@ -127,6 +127,8 @@
       font (text/default-font 12)
       text-shader image-shader
       textfn (graph/live-text gl text-shader)
+      body (do (phys/plane [0 1 0] 0) (phys/box [0 10 0] [0 0 0] [1 1 1] 1))
+      body (phys/set-rotation-enabled body false)
     ]
     {
       :font font
@@ -137,7 +139,7 @@
       :scene scene
       :image image
       :image-shader image-shader
-      :body (do (phys/plane [0 1 0] 0) (phys/box [0 10 0] [0 0 0] [1 1 1] 1))
+      :body body
       :camrot [0 0 0]
     }
   )

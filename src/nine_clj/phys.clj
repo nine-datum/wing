@@ -100,10 +100,43 @@
 
 (defn set-velocity [body [vx vy vz]]
   (.setLinearVelocity body (Vector3f. vx vy vz))
+  body
 )
 
 (defn set-angular-velocity [body [vx vy vz]]
   (.setAngularVelocity body (Vector3f. vx vy vz))
+  body
+)
+
+(defn set-matrix [body mat]
+  (let [
+      m (Matrix4f.)
+      cs (partition 4 (map float mat))
+      m (doseq [[i [x y z w]] (map vector (range) cs)]
+        (.setColumn m i x y z w)
+      )
+      t (Transform. m)
+    ]
+    (.setCenterOfMassTransform body t)
+  )
+  body
+)
+
+(defn set-rotation-enabled [body v]
+  (.setAngularFactor body (if v 1 0))
+  body
+)
+
+(defn set-position [body [x y z]]
+  (let [
+      t (.getCenterOfMassTransform body (Transform.))
+      m (.getMatrix t (Matrix4f.))
+      m (do (.setColumn 3 x y z 1) m)
+      t (Transform. m)
+    ]
+    (.setCenterOfMassTransform body t)
+  )
+  body
 )
 
 (defn get-matrix [body]
