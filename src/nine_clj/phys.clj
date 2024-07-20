@@ -99,13 +99,22 @@
 )
 
 (defn set-velocity [body [vx vy vz]]
+  (.activate body)
   (.setLinearVelocity body (Vector3f. vx vy vz))
   body
+)
+
+(defn get-velocity [body]
+  (.getLinearVelocity body (Vector3f.))
 )
 
 (defn set-angular-velocity [body [vx vy vz]]
   (.setAngularVelocity body (Vector3f. vx vy vz))
   body
+)
+
+(defn get-angular-velocity [body]
+  (.getAngularVelocity body (Vector3f.))
 )
 
 (defn set-matrix [body mat]
