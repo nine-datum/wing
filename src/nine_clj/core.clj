@@ -166,9 +166,19 @@
       [camx camy camz] camrot
       [mousex mousey] (mapv (partial * 0.01) (mouse :delta))
       camrot [(- camx mousey) (+ camy mousex) camz]
-      state (assoc state :camrot camrot)
       campos (phys/get-position body)
+      [wasd-x wasd-y] (input/wasd keyboard)
+      cammat (apply math/rotation camrot)
+      cam-fwd (math/get-column-3 cammat 2)
+      cam-right (math/get-column-3 cammat 0)
+      cam-fwd (mapv (partial * wasd-y) cam-fwd)
+      cam-right (mapv (partial * wasd-x) cam-right)
+      [mov-x mov-y mov-z] (mapv (comp (partial * 3) +) cam-fwd cam-right)
+      [vel-x vel-y vel-z] (phys/get-velocity body)
+      state (assoc state :camrot camrot)
     ]
+
+    (phys/set-velocity body [mov-x vel-y mov-z])
 
     (graph/projection (math/perspective (width) (height) (math/radians 60) 0.01 100))
     (graph/camera (math/orbital-camera (apply math/vec3f campos) (apply math/vec3f camrot) 5))
@@ -179,10 +189,6 @@
     (graph/apply-matrix (math/translation 0 -1 0))
     (graph/animated-model model (graph/animate anim (get-time)) (graph/animate obj-anim (get-time)))
     (graph/pop-matrix)
-
-    (when (keyboard "v" :down)
-      (phys/set-velocity body [0 10 0])
-    )
     
     (graph/image image image-shader -1 -0.5 0.5 0.5)
 

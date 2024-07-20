@@ -52,6 +52,10 @@
   (. Matrix4f rotation (vec3f x y z))
 )
 
+(defn get-column-3 [mat n]
+  (mapv #(.at mat (+ % (* n 4))) (range 3))
+)
+
 (defn orbital-camera [pos rot dist]
   (->
     (. Matrix4f translation (vec3f 0 0 dist))

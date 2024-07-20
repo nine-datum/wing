@@ -105,7 +105,11 @@
 )
 
 (defn get-velocity [body]
-  (.getLinearVelocity body (Vector3f.))
+  (let [
+      v (.getLinearVelocity body (Vector3f.))
+    ]
+    [(.x v) (.y v) (.z v)]
+  )
 )
 
 (defn set-angular-velocity [body [vx vy vz]]
@@ -114,7 +118,11 @@
 )
 
 (defn get-angular-velocity [body]
-  (.getAngularVelocity body (Vector3f.))
+  (let [
+      v (.getAngularVelocity body (Vector3f.))
+    ]
+    [(.x v) (.y v) (.z v)]
+  )
 )
 
 (defn set-matrix [body mat]

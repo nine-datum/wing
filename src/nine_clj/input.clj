@@ -7,6 +7,9 @@
       LWJGL_Keyboard
       LWJGL_Mouse
     ]
+    [nine.math
+      Vector2f
+    ]
   ]
 )
 
@@ -37,5 +40,14 @@
         ((comp (partial apply (m s)) vector f first) c)
       )
     )
+  )
+)
+
+(defn wasd [kb]
+  (mapv +
+    (if (kb "w" :down) [0 1] [0 0])
+    (if (kb "a" :down) [-1 0] [0 0])
+    (if (kb "s" :down) [0 -1] [0 0])
+    (if (kb "d" :down) [1 0] [0 0])
   )
 )

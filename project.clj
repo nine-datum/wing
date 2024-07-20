@@ -5,6 +5,7 @@
             :url "https://opensource.org/licenses/MIT"}
   :dependencies [
     [org.clojure/clojure "1.11.1"]
+    [net.mikera/core.matrix "0.63.0"]
     [io.github.taqmuraz/nine "1.2.25"]
     [cz.advel.jbullet/jbullet "20101010-1"]
   ]
