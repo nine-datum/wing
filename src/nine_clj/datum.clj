@@ -7,6 +7,13 @@
     [nine-clj.input :as input]
     [clojure.core.matrix :as mat]
   ]
+  [:import
+    [nine.geometry.collada
+      ColladaBasicSkinParser
+      ColladaBasicAnimationParser
+      ColladaBasicMaterialParser
+    ]
+  ]
 )
 
 (defn load-offset-animated-model [gl storage diffuse-shader skin-shader file & offset-geom-names]
@@ -40,7 +47,7 @@
 (defn preset [model-name offset-geom-name & anims]
   {
     :model-name model-name
-    :offset-geom offset-geom
+    :offset-geom offset-geom-name
     :anims anims
   }
 )
@@ -92,14 +99,14 @@
           offset-geom
           anims
         ]
-      } (datum-presets key)
+      } (presets key)
       model (load-model gl storage diffuse-shader skin-shader model-name offset-geom)
       anims (
         (comp
           (partial apply hash-map)
           (partial apply concat)
           (partial map vector anims)
-          (partial map (partial load-anim model-name))
+          (partial map (partial load-anim storage model-name))
         )
         anims
       )
@@ -111,20 +118,27 @@
 )
 
 (defn update-player-state [dev state]
-  (let
-    { :keys [camrot movement] } state
-    { :keys [keyboard mouse] } dev
-    [camx camy camz] camrot
-    [mousex mousey] (mapv (partial * 0.01) (mouse :delta))
-    camrot [(- camx mousey) (+ camy mousex) camz]
-    [wasd-x wasd-y] (input/wasd keyboard)
-    cammat (apply math/rotation camrot)
-    cam-fwd (math/get-column-3 cammat 2)
-    cam-right (math/get-column-3 cammat 0)
-    cam-fwd (mapv (partial * wasd-y) cam-fwd)
-    cam-right (mapv (partial * wasd-x) cam-right)
-    movement ((comp mat/normalise mapv) + cam-fwd cam-right)
-    state (assoc state :camrot camrot :movement movement)
+  (let [
+      { :keys [camrot] } state
+      { :keys [keyboard mouse] } dev
+      [camx camy camz] camrot
+      [mousex mousey] (mapv (partial * 0.01) (mouse :delta))
+      camrot [(- camx mousey) (+ camy mousex) camz]
+      [camx camy camz] camrot
+      hpi (/ 3.14 2)
+      camx (->> camx (max (- hpi)) (min hpi))
+      camrot [ camx camy camz ]
+      [wasd-x wasd-y] (input/wasd keyboard)
+      cammat (apply math/rotation camrot)
+      cam-fwd (math/get-column-3 cammat 2)
+      cam-right (math/get-column-3 cammat 0)
+      cam-fwd (mapv (partial * wasd-y) cam-fwd)
+      cam-right (mapv (partial * wasd-x) cam-right)
+      [mov-x mov-y mov-z] (mapv + cam-fwd cam-right)
+      movement ((comp (partial mapv math/escape-nan) mat/normalise) [mov-x 0 mov-z])
+      state (assoc state :camrot camrot :movement movement)
+    ]
+    state
   )
 )
 

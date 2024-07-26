@@ -113,6 +113,7 @@
 )
 
 (defn set-angular-velocity [body [vx vy vz]]
+  (.activate body)
   (.setAngularVelocity body (Vector3f. vx vy vz))
   body
 )

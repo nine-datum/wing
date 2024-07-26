@@ -9,6 +9,8 @@
   ]
 )
 
+(defn escape-nan [f] (if (Double/isNaN f) 0 f))
+
 (defn mat-identity [] (. Matrix4f identity))
 
 (defn floats-from-mat4f [m] ((comp vec map) #(.at m %) (range 16)))

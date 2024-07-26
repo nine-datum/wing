@@ -13,6 +13,7 @@
     ]
     [nine.function
       Condition
+      RefreshStatus
     ]
     [nine.game
       Graphics
@@ -198,8 +199,8 @@
   }
 )
 
-(defn load-anim [graphics file] (.animation graphics file (condition-equality "JOINT")))
-(defn load-obj-anim [graphics file] (.animation graphics file (condition-equality "NODE")))
+(defn load-anim [graphics file] (.instance-always (.animation graphics file (condition-equality "JOINT"))))
+(defn load-obj-anim [graphics file] (.instance-always (.animation graphics file (condition-equality "NODE"))))
 
 (defn skeleton-func [func]
   (proxy [Skeleton] []
@@ -293,6 +294,7 @@
 )
 
 (defn instance [source refresh-status] (.instance source refresh-status))
+(defn instance-always [source] (.instance source (. RefreshStatus always)))
 
 (defn load-anim-clj [storage bone-type anim-file model-file]
   (let [
@@ -326,7 +328,7 @@
       sparser (ColladaBasicSkeletonParser. (condition-func bone-type))
       anim (. AnimatedSkeleton fromCollada node aparser sparser)
     ]
-    (proxy [AnimatedSkeletonSource] [] (instance [status] (. AnimatedSkeleton cached (.instance anim status) bone-names 30 len)))
+    (. AnimatedSkeleton cached (instance-always anim) bone-names 30 len)
   )
 )
 
