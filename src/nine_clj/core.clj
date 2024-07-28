@@ -111,6 +111,7 @@
       :image-shader image-shader
       :body body
       :camrot [0 0 0]
+      :look [0 0 1]
     }
   )
 )
@@ -128,11 +129,13 @@
           camrot
           image
           image-shader
+          look
           movement
         ]
       } state
       [mov-x mov-y mov-z] (mapv (partial * 6) movement)
       [vel-x vel-y vel-z] (phys/get-velocity body)
+      [look-x look-y look-z] look
       campos (phys/get-position body)
     ]
 
@@ -143,6 +146,7 @@
     (graph/model scene)
     
     (graph/push-matrix)
+    (graph/apply-matrix (math/rotation 0 (math/clock look-x look-z) 0))
     (graph/apply-matrix (math/mat4f (phys/get-matrix body)))
     (graph/apply-matrix (math/translation 0 -1 0))
     (dat/render-preset preset "walk" (get-time))

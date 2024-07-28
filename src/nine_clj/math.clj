@@ -1,4 +1,7 @@
 (ns nine-clj.math
+  [:require
+    [clojure.core.matrix :as mat]
+  ]
   [:import
     [nine.math
       Vector2f
@@ -40,6 +43,15 @@
 
 (defn scale [x y z]
   (. Matrix4f scale (vec3f x y z))
+)
+
+(defn clock [x y]
+  (let [
+      len (mat/length [x y])
+      [y x] (if (zero? len) [1 0] (mat/normalise [x y]))
+    ]
+    (* (Math/acos x) (if (> y 0) 1 -1))
+  )
 )
 
 (defn transform [pos rot scale]

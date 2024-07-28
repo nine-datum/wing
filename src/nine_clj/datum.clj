@@ -119,7 +119,7 @@
 
 (defn update-player-state [dev state]
   (let [
-      { :keys [camrot] } state
+      { :keys [camrot look] } state
       { :keys [keyboard mouse] } dev
       [camx camy camz] camrot
       [mousex mousey] (mapv (partial * 0.01) (mouse :delta))
@@ -136,7 +136,8 @@
       cam-right (mapv (partial * wasd-x) cam-right)
       [mov-x mov-y mov-z] (mapv + cam-fwd cam-right)
       movement ((comp (partial mapv math/escape-nan) mat/normalise) [mov-x 0 mov-z])
-      state (assoc state :camrot camrot :movement movement)
+      look (if (zero? (mat/length movement)) look movement)
+      state (assoc state :camrot camrot :movement movement :look look)
     ]
     state
   )
