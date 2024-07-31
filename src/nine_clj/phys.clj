@@ -23,6 +23,8 @@
     )
     (com.bulletphysics.collision.shapes
       BoxShape
+      CapsuleShape
+      SphereShape
       StaticPlaneShape
     )
     (javax.vecmath
@@ -33,7 +35,7 @@
   )
 )
 
-(defn create-physics-world []
+(defn dynamics-world []
   (let [
       collision-config (DefaultCollisionConfiguration.)
       dispatcher (CollisionDispatcher. collision-config)
@@ -69,11 +71,11 @@
       mat4 (Matrix4f. mat3 (Vector3f. px py pz) (float 1))
       transform (Transform. mat4)
       motion-state (DefaultMotionState. transform)
-      local-inertion (Vector3f. 0 0 0)
+      local-inertia (Vector3f. 0 0 0)
     ]
-    (.calculateLocalInertia shape mass local-inertion)
+    (.calculateLocalInertia shape mass local-inertia)
     (let [
-        rbci (RigidBodyConstructionInfo. mass motion-state shape local-inertion)
+        rbci (RigidBodyConstructionInfo. mass motion-state shape local-inertia)
         body (RigidBody. rbci)
       ]
       (.addRigidBody dynamics-world body)
@@ -82,17 +84,26 @@
   )
 )
 
-(def dynamics-world (create-physics-world))
-(def box-shape (BoxShape. (Vector3f. 1 1 1)))
-
-(defn box [pos rot scale mass]
-  (add-rigid-body dynamics-world box-shape
+(defn box [world pos rot scale mass]
+  (add-rigid-body world (BoxShape. (Vector3f. 1 1 1))
     pos rot scale mass
   )
 )
 
-(defn plane[[nx ny nz] const]
-  (add-rigid-body dynamics-world
+(defn capsule [world pos rot radius height mass]
+  (add-rigid-body world (CapsuleShape. radius height)
+    pos rot [1 1 1] mass
+  )
+)
+
+(defn sphere [world pos rot radius mass]
+  (add-rigid-body world (SphereShape. radius)
+    pos rot [1 1 1] mass
+  )
+)
+
+(defn plane[world [nx ny nz] const]
+  (add-rigid-body world
     (StaticPlaneShape. (Vector3f. nx ny nz) const)
     [0 0 0] [0 0 0] [1 1 1] 0
   )
@@ -179,6 +190,7 @@
   )
 )
 
-(defn update [time-step]
-  (.stepSimulation dynamics-world time-step)
+(defn update-world [world time-step]
+  (.stepSimulation world time-step)
+  world
 )

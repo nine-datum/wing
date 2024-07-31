@@ -125,7 +125,7 @@
       [mousex mousey] (mapv (partial * 0.01) (mouse :delta))
       camrot [(- camx mousey) (+ camy mousex) camz]
       [camx camy camz] camrot
-      hpi (/ 3.14 2)
+      hpi (/ Math/PI 2)
       camx (->> camx (max (- hpi)) (min hpi))
       camrot [ camx camy camz ]
       [wasd-x wasd-y] (input/wasd keyboard)

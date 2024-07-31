@@ -101,10 +101,12 @@
       scene (graph/load-model graphics "res/models/Scenes/Mountains.dae")
       image (graph/load-image gl storage "res/images/example.png")
       image-shader (graph/load-shader gl storage "res/shaders/image_vertex.glsl" "res/shaders/image_fragment.glsl")
-      body (do (phys/plane [0 1 0] 0) (phys/box [0 10 0] [0 0 0] [1 1 1] 1))
+      phys-world (phys/dynamics-world)
+      body (do (phys/plane phys-world [0 1 0] 0) (phys/box phys-world [0 10 0] [0 0 0] [1 1 1] 1))
       body (phys/set-rotation-enabled body false)
     ]
     {
+      :phys-world phys-world
       :preset preset
       :scene scene
       :image image
@@ -117,11 +119,10 @@
 )
 
 (defn test-loop [dev state]
-  (phys/update (get-delta-time))
-
   (let [
       state (dat/update-player-state dev state)
       {:keys [
+          phys-world
           preset
           scene
           body
@@ -133,12 +134,13 @@
           movement
         ]
       } state
+      phys-world (phys/update-world phys-world (get-delta-time))
       [mov-x mov-y mov-z] (mapv (partial * 6) movement)
       [vel-x vel-y vel-z] (phys/get-velocity body)
+      vel-y (if ((dev :keyboard) " " :up) (inc vel-y) vel-y)
       [look-x look-y look-z] look
       campos (phys/get-position body)
     ]
-
     (phys/set-velocity body [mov-x vel-y mov-z])
 
     (graph/projection (math/perspective (width) (height) (math/radians 60) 0.01 100))
