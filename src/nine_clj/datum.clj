@@ -1,6 +1,7 @@
 (ns nine-clj.datum
   [:require
     [nine-clj.graph :as graph]
+    [nine-clj.geom :as geom]
     [nine-clj.math :as math]
     [nine-clj.text :as text]
     [nine-clj.phys :as phys]
@@ -19,7 +20,7 @@
 (defn load-offset-animated-model [gl storage diffuse-shader skin-shader file & offset-geom-names]
   (graph/load-animated-model
     (graph/load-graphics gl storage diffuse-shader skin-shader
-      (graph/geom-offset-parser (partial contains? (apply hash-set offset-geom-names)) [0 0 1])
+      (geom/geom-offset-parser (partial contains? (apply hash-set offset-geom-names)) [0 0 1])
       (ColladaBasicSkinParser.)
       (ColladaBasicAnimationParser.)
       (ColladaBasicMaterialParser.)

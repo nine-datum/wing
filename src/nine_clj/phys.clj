@@ -1,4 +1,7 @@
 (ns nine-clj.phys
+  (:require
+    [nine-clj.geom :as geom]
+  )
   (:import
     (com.bulletphysics.dynamics
       DiscreteDynamicsWorld
@@ -26,11 +29,17 @@
       CapsuleShape
       SphereShape
       StaticPlaneShape
+      BvhTriangleMeshShape
+      TriangleIndexVertexArray
     )
     (javax.vecmath
       Vector3f
       Matrix4f
       Matrix3f
+    )
+    (java.nio
+      ByteBuffer
+      ByteOrder
     )
   )
 )
@@ -48,21 +57,13 @@
   )
 )
 
-(defn add-rigid-body [dynamics-world shape pos rot scale mass]
+(defn add-rigid-body [dynamics-world shape pos rot mass]
   (let [
       [px py pz] pos
       [rx ry rz] rot
-      [sx sy sz] scale
-      arr (make-array Float/TYPE 9)
-      mat3 (Matrix3f.
-        (do
-          (aset arr 0 (float sx))
-          (aset arr 4 (float sy))
-          (aset arr 8 (float sz))
-          arr
-        )
-      )
+      mat3 (Matrix3f.)
       mat3 (do
+        (.setIdentity mat3)
         (.rotX mat3 rx)
         (.rotY mat3 ry)
         (.rotZ mat3 rz)
@@ -84,28 +85,28 @@
   )
 )
 
-(defn box [world pos rot scale mass]
-  (add-rigid-body world (BoxShape. (Vector3f. 1 1 1))
-    pos rot scale mass
+(defn box [world pos rot [scale-x scale-y scale-z] mass]
+  (add-rigid-body world (BoxShape. (Vector3f. scale-x scale-y scale-z))
+    pos rot mass
   )
 )
 
 (defn capsule [world pos rot radius height mass]
   (add-rigid-body world (CapsuleShape. radius height)
-    pos rot [1 1 1] mass
+    pos rot mass
   )
 )
 
 (defn sphere [world pos rot radius mass]
   (add-rigid-body world (SphereShape. radius)
-    pos rot [1 1 1] mass
+    pos rot mass
   )
 )
 
 (defn plane[world [nx ny nz] const]
   (add-rigid-body world
     (StaticPlaneShape. (Vector3f. nx ny nz) const)
-    [0 0 0] [0 0 0] [1 1 1] 0
+    [0 0 0] [0 0 0] 0
   )
 )
 
@@ -193,4 +194,48 @@
 (defn update-world [world time-step]
   (.stepSimulation world time-step)
   world
+)
+
+(defn byte-buffer [size]
+  (.order (. ByteBuffer allocateDirect size) (. ByteOrder nativeOrder))
+)
+
+(defn float-byte-buffer [fs]
+  (let [
+      v (vec fs)
+      c (count v)
+      b (byte-buffer (* 4 c))
+    ]
+    (doseq [i (range c)]
+      (.putFloat b (* 4 i) (float (v i)))
+    )
+    b
+  )
+)
+
+(defn int-byte-buffer [is]
+  (let [
+      v (vec is)
+      c (count v)
+      b (byte-buffer (* 4 c))
+    ]
+    (doseq [i (range c)]
+      (.putInt b (* 4 i) (int (v i)))
+    )
+    b
+  )
+)
+
+(defn geom-shape [verts]
+  (let [
+      v (vec verts)
+      c (/ (count v) 3)
+      i (vec (range c))
+      t (/ (count i) 3)
+      vbuf (float-byte-buffer v)
+      ibuf (int-byte-buffer i)
+      arr (TriangleIndexVertexArray. t ibuf 12 c vbuf 12)
+    ]
+    (BvhTriangleMeshShape. arr true)
+  )
 )

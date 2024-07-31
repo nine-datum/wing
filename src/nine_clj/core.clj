@@ -2,6 +2,7 @@
   (:gen-class)
   (:require
     [nine-clj.graph :as graph]
+    [nine-clj.geom :as geom]
     [nine-clj.math :as math]
     [nine-clj.text :as text]
     [nine-clj.phys :as phys]
@@ -102,7 +103,11 @@
       image (graph/load-image gl storage "res/images/example.png")
       image-shader (graph/load-shader gl storage "res/shaders/image_vertex.glsl" "res/shaders/image_fragment.glsl")
       phys-world (phys/dynamics-world)
-      body (do (phys/plane phys-world [0 1 0] 0) (phys/box phys-world [0 10 0] [0 0 0] [1 1 1] 1))
+      level-geom (geom/read-geom storage "res/models/Scenes/Mountains.dae")
+      level-geom (geom/scale-geom (level-geom :vertex) [10 10 10])
+      level-shape (phys/geom-shape level-geom)
+      level-body (phys/add-rigid-body phys-world level-shape [0 0 0] [0 0 0] 0)
+      body (phys/capsule phys-world [0 10 0] [0 0 0] 0.25 1 1)
       body (phys/set-rotation-enabled body false)
     ]
     {
@@ -137,7 +142,7 @@
       phys-world (phys/update-world phys-world (get-delta-time))
       [mov-x mov-y mov-z] (mapv (partial * 6) movement)
       [vel-x vel-y vel-z] (phys/get-velocity body)
-      vel-y (if ((dev :keyboard) " " :up) (inc vel-y) vel-y)
+      vel-y (if ((dev :keyboard) "v" :down) 10 vel-y)
       [look-x look-y look-z] look
       campos (phys/get-position body)
     ]
@@ -145,8 +150,12 @@
 
     (graph/projection (math/perspective (width) (height) (math/radians 60) 0.01 100))
     (graph/camera (math/orbital-camera (apply math/vec3f campos) (apply math/vec3f camrot) 5))
-    (graph/model scene)
     
+    (graph/push-matrix)
+    (graph/apply-matrix (math/scale 10 10 10))
+    (graph/model scene)
+    (graph/pop-matrix)
+
     (graph/push-matrix)
     (graph/apply-matrix (math/rotation 0 (math/clock look-x look-z) 0))
     (graph/apply-matrix (math/mat4f (phys/get-matrix body)))
