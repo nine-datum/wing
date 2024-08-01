@@ -55,7 +55,7 @@
 )
 
 (defn transform [pos rot scale]
-  (. Matrix4f transform pos rot scale)
+  (. Matrix4f transform (apply vec3f pos) (apply vec3f rot) (apply vec3f scale))
 )
 
 (defn translation [x y z]

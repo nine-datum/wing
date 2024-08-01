@@ -146,7 +146,7 @@
       (.play player
         (proxy [Drawing] []
           (draw []
-            (.load trans (math/transform (math/vec3f x y 0) (math/vec3f 0 0 0) (math/vec3f w h 1)))
+            (.load trans (math/transform [x y 0] [0 0 0] [w h 1]))
             (cond
               (-> img :disposed deref true?) (throw (RuntimeException. "Texture cannot be used, it was disposed"))
               :else (-> img :drawing .draw)
@@ -266,6 +266,7 @@
   (let [
       db ((comp read-string slurp) anim-file)
       bone-names ((comp set map) first (db :bones))
+      resources (db :resources)
       len (db :length)
       flip (math/mat4f [-1 0 0 0    0 0 1 0   0 1 0 0    0 0 0 1])
       flip-mat (fn [m]
@@ -275,10 +276,16 @@
       anims (mapv
         (fn [[n v]]
           [n
-            (let [[ks vs] (apply mapv vector v)]
+            (let [
+                [ks vs] (apply mapv vector v)
+                vs (map #(mapv resources %) vs)
+                mats (for [[c0 c1 c2 c3] vs]
+                  (concat c0 [0] c1 [0] c2 [0] c3 [1])
+                )
+              ]
               (KeyFrameAnimation.
                 (. Buffer of (mapv float ks))
-                (. Buffer of (mapv flip-mat vs))
+                (. Buffer of (mapv flip-mat mats))
               )
             )
           ]
