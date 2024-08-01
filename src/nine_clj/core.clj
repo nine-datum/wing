@@ -107,7 +107,7 @@
       level-geom (geom/scale-geom (level-geom :vertex) [10 10 10])
       level-shape (phys/geom-shape level-geom)
       level-body (phys/add-rigid-body phys-world level-shape [0 0 0] [0 0 0] 0)
-      body (phys/capsule phys-world [0 10 0] [0 0 0] 0.25 1 1)
+      body (phys/capsule phys-world [0 10 0] [0 0 0] 0.25 1.5 1)
       body (phys/set-rotation-enabled body false)
     ]
     {
@@ -160,7 +160,7 @@
     (graph/apply-matrix (math/rotation 0 (math/clock look-x look-z) 0))
     (graph/apply-matrix (math/mat4f (phys/get-matrix body)))
     (graph/apply-matrix (math/translation 0 -1 0))
-    (dat/render-preset preset "walk" (get-time))
+    (dat/render-preset preset (if (zero? (+ (abs mov-x) (abs mov-z))) "idle" "walk") (get-time))
     (graph/pop-matrix)
     
     (graph/image image image-shader -1 -0.5 0.5 0.5)
