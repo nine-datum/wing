@@ -120,15 +120,15 @@
 
 (defn update-player-state [dev state]
   (let [
-      { :keys [camrot look] } state
+      { :keys [campos look body] } state
       { :keys [keyboard mouse] } dev
-      [camx camy camz] camrot
-      [mousex mousey] (mapv (partial * 0.01) (mouse :delta))
-      camrot [(- camx mousey) (+ camy mousex) camz]
-      [camx camy camz] camrot
-      hpi (/ Math/PI 2)
-      camx (->> camx (max (- hpi)) (min hpi))
-      camrot [ camx camy camz ]
+      playerpos (phys/get-position body)
+      camsub (mapv - campos playerpos)
+      camsub (update camsub 1 (constantly 1))
+      camsub (if (zero? (mat/length camsub)) [0 1 -1] (mat/normalise camsub))
+      [cx cy cz] (mapv - camsub)
+      camrot [0 (math/clock cx cz) 0]
+      campos (mapv + playerpos (mapv (partial * 5) camsub))
       [wasd-x wasd-y] (input/wasd keyboard)
       cammat (apply math/rotation camrot)
       cam-fwd (math/get-column-3 cammat 2)
@@ -138,7 +138,12 @@
       [mov-x mov-y mov-z] (mapv + cam-fwd cam-right)
       movement ((comp (partial mapv math/escape-nan) mat/normalise) [mov-x 0 mov-z])
       look (if (zero? (mat/length movement)) look movement)
-      state (assoc state :camrot camrot :movement movement :look look)
+      state (assoc state
+        :campos campos
+        :camrot camrot
+        :movement movement
+        :look look
+      )
     ]
     state
   )

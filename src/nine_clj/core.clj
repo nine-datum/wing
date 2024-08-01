@@ -117,6 +117,7 @@
       :image image
       :image-shader image-shader
       :body body
+      :campos [0 0 -1]
       :camrot [0 0 0]
       :look [0 0 1]
     }
@@ -124,6 +125,7 @@
 )
 
 (defn test-loop [dev state]
+  (phys/update-world (state :phys-world) (get-delta-time))
   (let [
       state (dat/update-player-state dev state)
       {:keys [
@@ -139,17 +141,15 @@
           movement
         ]
       } state
-      phys-world (phys/update-world phys-world (get-delta-time))
       [mov-x mov-y mov-z] (mapv (partial * 6) movement)
       [vel-x vel-y vel-z] (phys/get-velocity body)
       vel-y (if ((dev :keyboard) "v" :down) 10 vel-y)
       [look-x look-y look-z] look
-      campos (phys/get-position body)
     ]
     (phys/set-velocity body [mov-x vel-y mov-z])
 
     (graph/projection (math/perspective (width) (height) (math/radians 60) 0.01 100))
-    (graph/camera (math/orbital-camera (apply math/vec3f campos) (apply math/vec3f camrot) 5))
+    (graph/camera (math/first-person-camera campos camrot))
     
     (graph/push-matrix)
     (graph/apply-matrix (math/scale 10 10 10))

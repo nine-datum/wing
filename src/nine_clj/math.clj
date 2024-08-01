@@ -79,3 +79,15 @@
     (.mul (. Matrix4f translation (.negative pos)))
   )
 )
+
+(defn first-person-camera [pos rot]
+  (. Matrix4f firstPersonCamera (apply vec3f pos) (apply vec3f rot))
+)
+
+(defn lerp [a b t]
+  (+ a (* t (- b a)))
+)
+
+(defn lerpv [a b t]
+  (mapv lerp a b (repeat t))
+)
