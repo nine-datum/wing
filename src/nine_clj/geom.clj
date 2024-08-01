@@ -22,7 +22,7 @@
   (let [
       node (. ColladaNode fromFile (.open storage file))
       g (ColladaBasicGeometryParser.)
-      res (atom {})
+      res (atom (list))
     ]
     (.read g node
       (proxy [BuffersReader] []
@@ -34,7 +34,7 @@
               rv (buffer-to-vec v float)
               ri (buffer-to-vec i int)
             ]
-            (reset! res { :vertex rv :index ri })
+            (swap! res (partial cons { :vertex rv :index ri }))
           )
         )
       )

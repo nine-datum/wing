@@ -99,15 +99,16 @@
       graphics (graph/load-graphics gl storage diffuse-shader skin-shader)
       
       preset (dat/load-preset gl storage diffuse-shader skin-shader :ninja)
-      scene (graph/load-model graphics "res/models/Scenes/Mountains.dae")
+      scene (graph/load-model graphics "res/datum/scene/arena.dae")
       image (graph/load-image gl storage "res/images/example.png")
       image-shader (graph/load-shader gl storage "res/shaders/image_vertex.glsl" "res/shaders/image_fragment.glsl")
       phys-world (phys/dynamics-world)
-      level-geom (geom/read-geom storage "res/models/Scenes/Mountains.dae")
-      level-geom (geom/scale-geom (level-geom :vertex) [10 10 10])
-      level-shape (phys/geom-shape level-geom)
-      level-body (phys/add-rigid-body phys-world level-shape [0 0 0] [0 0 0] 0)
-      body (phys/capsule phys-world [0 10 0] [0 0 0] 0.25 1.5 1)
+      level-geom (geom/read-geom storage "res/datum/scene/arena.dae")
+      level-geom (mapv :vertex level-geom)
+      level-geom (mapv geom/scale-geom level-geom (repeat [50 50 50]))
+      level-shape (mapv phys/geom-shape level-geom)
+      level-body (mapv #(phys/add-rigid-body phys-world % [0 0 0] [0 0 0] 0) level-shape)
+      body (phys/capsule phys-world [0 100 0] [0 0 0] 0.25 1.5 1)
       body (phys/set-rotation-enabled body false)
     ]
     {
@@ -152,7 +153,7 @@
     (graph/camera (math/first-person-camera campos camrot))
     
     (graph/push-matrix)
-    (graph/apply-matrix (math/scale 10 10 10))
+    (graph/apply-matrix (math/scale 50 50 50))
     (graph/model scene)
     (graph/pop-matrix)
 
