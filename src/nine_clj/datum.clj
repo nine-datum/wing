@@ -35,7 +35,7 @@
 
 (defn load-anim [storage model-name anim-name]
   (let [
-      af (format "res/datum/anims/%s/%s.clj" model-name anim-name)
+      af (format "res/datum/anims/%s/%s.anim" model-name anim-name)
       mf (format "res/datum/%s.dae" model-name)
     ]
     (vector
