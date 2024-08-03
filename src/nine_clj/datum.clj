@@ -53,7 +53,7 @@
   }
 )
 
-(def presets
+(def char-presets
   {
     :archer (preset "archer" "Cube_001-mesh"
       "attack"
@@ -72,7 +72,7 @@
       "dead"
     )
     :mage (preset "mage" "Cube_002-mesh"
-      "attackspeell"
+      "attackspell"
       "spherespell"
       "teleportspell"
       "idle"
@@ -100,7 +100,7 @@
           offset-geom
           anims
         ]
-      } (presets key)
+      } (char-presets key)
       model (load-model gl storage diffuse-shader skin-shader model-name offset-geom)
       anims (
         (comp
@@ -120,7 +120,7 @@
 
 (defn update-player-state [dev state]
   (let [
-      { :keys [campos look body] } state
+      { :keys [campos look body presets] } state
       { :keys [keyboard mouse] } dev
       playerpos (phys/get-position body)
       camsub (mapv - campos playerpos)
@@ -138,11 +138,18 @@
       [mov-x mov-y mov-z] (mapv + cam-fwd cam-right)
       movement ((comp (partial mapv math/escape-nan) mat/normalise) [mov-x 0 mov-z])
       look (if (zero? (mat/length movement)) look movement)
+
+      presets (cond
+        (keyboard "c" :up) (rest presets)
+        :else presets
+      )
+
       state (assoc state
         :campos campos
         :camrot camrot
         :movement movement
         :look look
+        :presets presets
       )
     ]
     state

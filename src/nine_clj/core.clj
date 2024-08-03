@@ -67,12 +67,12 @@
   (proxy [WindowLoopAction] []
     (call [w h]
       (update-status proc-refresh-status)
-      ((dev :mouse) :update)
-      ((dev :keyboard) :update)
       (graph/reset-matrix-stack)
       (reset! window-width w)
       (reset! window-height h)
       (swap! state (partial loop dev))
+      ((dev :mouse) :update)
+      ((dev :keyboard) :update)
     )
   )
 )
@@ -98,7 +98,11 @@
       diffuse-shader (graph/load-shader gl storage "res/shaders/diffuse_vertex.glsl" "res/shaders/diffuse_fragment.glsl")
       graphics (graph/load-graphics gl storage diffuse-shader skin-shader)
       
-      preset (dat/load-preset gl storage diffuse-shader skin-shader :ninja)
+      presets ((comp cycle mapv)
+        (partial dat/load-preset gl storage diffuse-shader skin-shader)
+        [ :ninja :mage :archer :fighter ]
+      )
+      
       scene (graph/load-model graphics "res/datum/scene/arena.dae")
       image (graph/load-image gl storage "res/images/example.png")
       image-shader (graph/load-shader gl storage "res/shaders/image_vertex.glsl" "res/shaders/image_fragment.glsl")
@@ -112,7 +116,7 @@
     ]
     {
       :phys-world phys-world
-      :preset preset
+      :presets presets
       :scene scene
       :image image
       :image-shader image-shader
@@ -129,7 +133,7 @@
       state (dat/update-player-state dev state)
       {:keys [
           phys-world
-          preset
+          presets
           scene
           body
           campos
@@ -142,7 +146,8 @@
       } state
       [mov-x mov-y mov-z] (mapv (partial * 6) movement)
       [vel-x vel-y vel-z] (phys/get-velocity body)
-      vel-y (if ((dev :keyboard) "v" :down) 10 vel-y)
+      kb (dev :keyboard)
+      vel-y (if (kb "v" :down) 10 vel-y)
       [look-x look-y look-z] look
     ]
     (graph/world-light [0 -1 0])
@@ -158,7 +163,7 @@
     (graph/apply-matrix (math/rotation 0 (math/clock look-x look-z) 0))
     (graph/apply-matrix (math/mat4f (phys/get-matrix body)))
     (graph/apply-matrix (math/translation 0 -1 0))
-    (dat/render-preset preset (if (zero? (+ (abs mov-x) (abs mov-z))) "idle" "walk") (get-time))
+    (dat/render-preset (first presets) (if (zero? (+ (abs mov-x) (abs mov-z))) "idle" "walk") (get-time))
     (graph/pop-matrix)
     
     (graph/image image image-shader -1 -0.5 0.5 0.5)
