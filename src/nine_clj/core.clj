@@ -105,10 +105,9 @@
       phys-world (phys/dynamics-world)
       level-geom (geom/read-geom storage "res/datum/scene/arena.dae")
       level-geom (mapv :vertex level-geom)
-      level-geom (mapv geom/scale-geom level-geom (repeat [50 50 50]))
       level-shape (mapv phys/geom-shape level-geom)
       level-body (mapv #(phys/add-rigid-body phys-world % [0 0 0] [0 0 0] 0) level-shape)
-      body (phys/capsule phys-world [0 100 0] [0 0 0] 0.25 1.5 1)
+      body (phys/capsule phys-world [0 4 0] [0 0 0] 0.25 1.5 1)
       body (phys/set-rotation-enabled body false)
     ]
     {
@@ -119,7 +118,6 @@
       :image-shader image-shader
       :body body
       :campos [0 0 -1]
-      :camrot [0 0 0]
       :look [0 0 1]
     }
   )
@@ -147,15 +145,14 @@
       vel-y (if ((dev :keyboard) "v" :down) 10 vel-y)
       [look-x look-y look-z] look
     ]
+    (graph/world-light [0 -1 0])
+
     (phys/set-velocity body [mov-x vel-y mov-z])
 
     (graph/projection (math/perspective (width) (height) (math/radians 60) 0.01 100))
     (graph/camera (math/first-person-camera campos camrot))
     
-    (graph/push-matrix)
-    (graph/apply-matrix (math/scale 50 50 50))
     (graph/model scene)
-    (graph/pop-matrix)
 
     (graph/push-matrix)
     (graph/apply-matrix (math/rotation 0 (math/clock look-x look-z) 0))

@@ -16,6 +16,14 @@
 
 (defn mat-identity [] (. Matrix4f identity))
 
+(defn vec-identity [] [
+    1 0 0 0
+    0 1 0 0
+    0 0 1 0
+    0 0 0 1
+  ]
+)
+
 (defn floats-from-mat4f [m] ((comp vec map) #(.at m %) (range 16)))
 (defn floats-from-vec2f [v] [(.x v) (.y v)])
 (defn floats-from-vec3f [v] [(.x v) (.y v) (.z v)])
@@ -66,8 +74,20 @@
   (. Matrix4f rotation (vec3f x y z))
 )
 
+(defn get-vec-column-3 [mat n]
+  (subvec (vec mat) (* n 4) (+ 3 (* n 4)))
+)
+
 (defn get-column-3 [mat n]
-  (mapv #(.at mat (+ % (* n 4))) (range 3))
+  (let [
+      p (* n 4)
+    ]
+    [  
+      (.at mat p)
+      (.at mat (+ 1 p))
+      (.at mat (+ 2 p))
+    ]
+  )
 )
 
 (defn orbital-camera [pos rot dist]
@@ -90,4 +110,14 @@
 
 (defn lerpv [a b t]
   (mapv lerp a b (repeat t))
+)
+
+(defn look-rot[dir]
+  (let[
+      [x y z] dir
+      rx (Math/asin (+ y))
+      ry (clock x z)
+    ]
+    [rx ry 0]
+  )
 )

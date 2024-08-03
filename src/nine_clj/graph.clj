@@ -67,7 +67,7 @@
 (defn get-camera [] @camera-matrix)
 
 (defn world-light [l]
-  (reset! world-light-vec l)
+  (reset! world-light-vec (apply math/vec3f l))
 )
 
 (defn get-world-light [] @world-light-vec)
