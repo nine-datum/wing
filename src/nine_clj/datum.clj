@@ -132,7 +132,7 @@
   }
 )
 
-(defn load-presets [gl storage diffuse-shader skin-shader] (time
+(defn load-presets [gl storage diffuse-shader skin-shader]
   (let [
       fs
       (mapv
@@ -152,7 +152,7 @@
       fs
     )
   )
-))
+)
 
 (defn update-player-state [dev state]
   (let [
