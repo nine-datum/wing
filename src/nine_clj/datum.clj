@@ -107,9 +107,16 @@
           (partial apply hash-map)
           (partial apply concat)
           (partial map vector anims)
-          (partial map (partial load-anim storage model-name))
+          (partial map deref)
         )
-        anims
+        (mapv
+          (comp
+            future-call
+            partial
+          )
+          (repeat (partial load-anim storage model-name))
+          anims
+        )
       )
     ] {
       :loader loader
@@ -125,7 +132,7 @@
   }
 )
 
-(defn load-presets [gl storage diffuse-shader skin-shader]
+(defn load-presets [gl storage diffuse-shader skin-shader] (time
   (let [
       fs
       (mapv
@@ -145,7 +152,7 @@
       fs
     )
   )
-)
+))
 
 (defn update-player-state [dev state]
   (let [
