@@ -2,6 +2,8 @@
   [:require
     [nine-clj.math :as math]
     [nine-clj.text :as text]
+    [clojure.edn :as edn]
+    [clojure.java.io :as io]
   ]
   [:import
     [nine.lwjgl
@@ -264,7 +266,7 @@
 
 (defn load-anim-clj [storage bone-type anim-file model-file]
   (let [
-      db ((comp read-string slurp) anim-file)
+      db ((comp edn/read #(java.io.PushbackReader. %) io/reader) anim-file)
       bone-names ((comp set map) first (db :bones))
       resources (db :resources)
       len (db :length)

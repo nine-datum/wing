@@ -98,10 +98,7 @@
       diffuse-shader (graph/load-shader gl storage "res/shaders/diffuse_vertex.glsl" "res/shaders/diffuse_fragment.glsl")
       graphics (graph/load-graphics gl storage diffuse-shader skin-shader)
       
-      presets ((comp cycle mapv)
-        (partial dat/load-preset gl storage diffuse-shader skin-shader)
-        [ :ninja :mage :archer :fighter ]
-      )
+      presets (cycle (dat/load-presets gl storage diffuse-shader skin-shader))
       
       scene (graph/load-model graphics "res/datum/scene/arena.dae")
       image (graph/load-image gl storage "res/images/example.png")

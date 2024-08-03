@@ -92,7 +92,7 @@
   }
 )
 
-(defn load-preset [gl storage diffuse-shader skin-shader key]
+(defn read-preset [storage key]
   (let
     [
       { :keys [
@@ -101,7 +101,7 @@
           anims
         ]
       } (char-presets key)
-      model (load-model gl storage diffuse-shader skin-shader model-name offset-geom)
+      loader (fn [gl diffuse-shader skin-shader] (load-model gl storage diffuse-shader skin-shader model-name offset-geom))
       anims (
         (comp
           (partial apply hash-map)
@@ -112,9 +112,38 @@
         anims
       )
     ] {
-      :model model
+      :loader loader
       :anims anims
     }
+  )
+)
+
+(defn load-preset [gl diffuse-shader skin-shader preset]
+  {
+    :model ((preset :loader) gl diffuse-shader skin-shader)
+    :anims (preset :anims)
+  }
+)
+
+(defn load-presets [gl storage diffuse-shader skin-shader]
+  (let [
+      fs
+      (mapv
+        (comp
+          future-call
+          partial
+        )
+        (repeat (partial read-preset storage))
+        (keys char-presets)
+      )
+    ]
+    (mapv
+      (comp
+        (partial load-preset gl diffuse-shader skin-shader)
+        deref
+      )
+      fs
+    )
   )
 )
 
