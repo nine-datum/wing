@@ -29,15 +29,11 @@
 (defn floats-from-vec3f [v] [(.x v) (.y v) (.z v)])
 
 (defn vec2f [x y] (. Vector2f newXY x y))
+
 (defn vec3f [x y z] (. Vector3f newXYZ x y z))
+
 (defn mat4f [fs]
-  (let [
-      ar (make-array Float/TYPE 16)
-      v (vec fs)
-    ]
-    (doseq [i (range 16)] (aset ar i (float (v i))))
-    (. Matrix4f fromArray ar)
-  )
+  (. Matrix4f fromIterable (mapv float fs))
 )
 
 (defn radians [d]
