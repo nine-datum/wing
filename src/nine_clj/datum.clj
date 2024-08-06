@@ -247,7 +247,7 @@
           { :keys [body pos look] } s
           { :keys [movement] } in
         ]
-        (phys/move-char body movement)
+        (phys/move-char body (mapv (partial * 6) movement))
         ()
       )
     )
@@ -269,7 +269,11 @@
   }
 )
 
-(defn update-player-state [dev state]
+(defn update-game-state [dev state]
+  (update-char (state :player) { :movement (state :movement) })
+)
+
+(defn next-game-state [dev state]
   (let [
       { :keys [campos player] } state
       { :keys [keyboard mouse] } dev
@@ -290,7 +294,7 @@
       movement (math/normalize [mov-x 0 mov-z])
 
       in { :movement movement }
-      player (do (update-char player in) (next-char player in))
+      player (next-char player in)
 
       state (assoc state
         :campos campos

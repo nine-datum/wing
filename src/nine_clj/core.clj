@@ -118,14 +118,14 @@
       :image image
       :image-shader image-shader
       :campos [0 0 -1]
+      :movement [0 0 0]
     }
   )
 )
 
 (defn test-loop [dev state]
-  (phys/update-world (state :phys-world) (get-delta-time))
   (let [
-      state (dat/update-player-state dev state)
+      state (dat/next-game-state dev state)
       {:keys [
           player
           scene
@@ -136,6 +136,9 @@
         ]
       } state
     ]
+    (phys/update-world (state :phys-world) (get-delta-time))
+    (dat/update-game-state dev state)
+
     (graph/world-light [0 -1 0])
 
     (graph/projection (math/perspective (width) (height) (math/radians 60) 0.01 100))
