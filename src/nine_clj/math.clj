@@ -40,13 +40,22 @@
   (. FloatFunc toRadians d)
 )
 
-
 (defn perspective [w h fov near far]
   (. Matrix4f perspective (/ w (float h)) fov near far)
 )
 
-(defn scale [x y z]
-  (. Matrix4f scale (vec3f x y z))
+(defn normalize [v]
+  (cond
+    (empty? (filter (complement zero?) v)) (mapv (constantly 0) v)
+    :else (mat/normalise v)
+  )
+)
+
+(defn normalize-checked [v]
+  (let [n (mat/normalise v)]
+    (doseq [f n] (assert (not (Double/isNaN f))))
+    n
+  )
 )
 
 (defn clock [x y]
@@ -72,6 +81,15 @@
 
 (defn get-vec-column-3 [mat n]
   (subvec (vec mat) (* n 4) (+ 3 (* n 4)))
+)
+
+(defn extract-rotation [m]
+  (vec (concat (
+    (get-vec-column-3 m 0) [0]
+    (get-vec-column-3 m 1) [0]
+    (get-vec-column-3 m 2) [0]
+    [0 0 0 1]
+  )))
 )
 
 (defn get-column-3 [mat n]

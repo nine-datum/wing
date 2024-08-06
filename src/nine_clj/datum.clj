@@ -154,13 +154,128 @@
   )
 )
 
+(defn render-preset [preset anim time]
+  (let [
+      { :keys [model anims] } preset
+      [skin-anim obj-anim] (anims anim)
+      skin-anim (graph/animate skin-anim time)
+      obj-anim (graph/animate obj-anim time)
+    ]
+    (graph/animated-model model skin-anim obj-anim)
+  )
+)
+
+(defn char-call [ch sym & args]
+  (apply (ch sym) (cons ch args))
+)
+
+(defn next-char [ch in] (char-call ch :next in))
+
+(defn update-char [ch in] (char-call ch :update in))
+
+(defn render-char [ch] (char-call ch :render))
+
+(defn new-state [anim timer rtimer next]
+  { 
+    :anim anim
+    :start (timer)
+    :timer timer
+    :rtimer rtimer
+    :next next
+  }
+)
+
+(declare walk-state)
+
+(defn idle-state [timer rtimer]
+  (new-state "idle" timer rtimer (fn [s in]
+      (let [
+          { :keys [movement] } in
+        ]
+        (cond
+          (zero? (mat/length movement)) s
+          :else (walk-state timer rtimer)
+        )
+      )
+    )
+  )
+)
+
+(defn walk-state [timer rtimer]
+  (new-state "walk" timer rtimer (fn [s in]
+      (let [
+          { :keys [movement] } in
+        ]
+        (cond
+          (zero? (mat/length movement)) (idle-state timer rtimer)
+          :else s
+        )
+      )
+    )
+  )
+)
+
+(defn load-char [world preset pos look timer]
+  {
+    :body (-> world
+      (phys/capsule (mapv + [0 3/4 0] pos) [0 0 0] 0.25 3/2 1)
+      (phys/set-rotation-enabled false)
+    )
+    :pos pos
+    :look look
+    :state (idle-state timer timer)
+    :next (fn [s in]
+      (let [
+          { :keys [body pos look state] } s
+          { :keys [movement] } in
+          pos (mapv - (phys/get-position body) [0 3/4 0])
+          look (cond
+            (zero? (mat/length movement)) look
+            :else (math/normalize-checked movement)
+          )
+          state (char-call state :next in)
+        ]
+        (assoc s
+          :pos pos
+          :look look
+          :state state
+        )
+      )
+    )
+    :update (fn [s in]
+      (let [
+          { :keys [body pos look] } s
+          { :keys [movement] } in
+        ]
+        (phys/move-char body movement)
+        ()
+      )
+    )
+    :render (fn [s]
+      (let [
+          { :keys [state look pos] } s
+          { :keys [anim start rtimer] } state
+          [lx ly lz] look
+        ]
+        (when (nil? rtimer) (println "state:" state))
+        (graph/push-matrix)
+        (graph/apply-matrix (math/rotation 0 (math/clock lx lz) 0))
+        (apply graph/translate pos)
+        (render-preset preset anim (- (rtimer) start))
+        (graph/pop-matrix)
+        ()
+      )
+    )
+  }
+)
+
 (defn update-player-state [dev state]
   (let [
-      { :keys [campos look body presets] } state
+      { :keys [campos player] } state
       { :keys [keyboard mouse] } dev
-      playerpos (phys/get-position body)
+      playerpos (player :pos)
       camsub (mapv - campos playerpos)
-      camsub (update camsub 1 (constantly 1))
+      camsub (update camsub 1 (constantly 2))
       camsub (if (zero? (mat/length camsub)) [0 1 -1] (mat/normalise camsub))
       [cx cy cz] (mapv - camsub)
       camrot [0 (math/clock cx cz) 0]
@@ -172,33 +287,18 @@
       cam-fwd (mapv (partial * wasd-y) cam-fwd)
       cam-right (mapv (partial * wasd-x) cam-right)
       [mov-x mov-y mov-z] (mapv + cam-fwd cam-right)
-      movement ((comp (partial mapv math/escape-nan) mat/normalise) [mov-x 0 mov-z])
-      look (if (zero? (mat/length movement)) look movement)
+      movement (math/normalize [mov-x 0 mov-z])
 
-      presets (cond
-        (keyboard "c" :up) (rest presets)
-        :else presets
-      )
+      in { :movement movement }
+      player (do (update-char player in) (next-char player in))
 
       state (assoc state
         :campos campos
         :camrot camrot
         :movement movement
-        :look look
-        :presets presets
+        :player player
       )
     ]
     state
-  )
-)
-
-(defn render-preset [preset anim time]
-  (let [
-      { :keys [model anims] } preset
-      [skin-anim obj-anim] (anims anim)
-      skin-anim (graph/animate skin-anim time)
-      obj-anim (graph/animate obj-anim time)
-    ]
-    (graph/animated-model model skin-anim obj-anim)
   )
 )

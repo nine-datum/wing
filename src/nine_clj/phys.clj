@@ -239,3 +239,12 @@
     (BvhTriangleMeshShape. arr true)
   )
 )
+
+(defn move-char [body vel]
+  (let [
+      [vx vy vz] (get-velocity body)
+      [mx my mz] vel
+    ]
+    (set-velocity body [mx vy mz])
+  )
+)

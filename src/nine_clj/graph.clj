@@ -79,6 +79,10 @@
 (defn apply-matrix [m] (swap-matrix #(.mul m %)))
 (defn reset-matrix-stack [] (reset! matrix-stack (list (math/mat-identity))))
 
+(defn translate [x y z]
+  (apply-matrix (math/translation x y z))
+)
+
 (defn load-shader [gl storage vert frag] (.load (. Shader loader storage gl) vert frag))
 
 (defn load-graphics

@@ -108,18 +108,16 @@
       level-geom (mapv :vertex level-geom)
       level-shape (mapv phys/geom-shape level-geom)
       level-body (mapv #(phys/add-rigid-body phys-world % [0 0 0] [0 0 0] 0) level-shape)
-      body (phys/capsule phys-world [0 4 0] [0 0 0] 0.25 1.5 1)
-      body (phys/set-rotation-enabled body false)
+
+      player (dat/load-char phys-world (first presets) [0 0 0] [0 0 1] get-time)
     ]
     {
       :phys-world phys-world
-      :presets presets
+      :player player
       :scene scene
       :image image
       :image-shader image-shader
-      :body body
       :campos [0 0 -1]
-      :look [0 0 1]
     }
   )
 )
@@ -129,40 +127,24 @@
   (let [
       state (dat/update-player-state dev state)
       {:keys [
-          phys-world
-          presets
+          player
           scene
-          body
           campos
           camrot
           image
           image-shader
-          look
-          movement
         ]
       } state
-      [mov-x mov-y mov-z] (mapv (partial * 6) movement)
-      [vel-x vel-y vel-z] (phys/get-velocity body)
-      kb (dev :keyboard)
-      vel-y (if (kb "v" :down) 10 vel-y)
-      [look-x look-y look-z] look
     ]
     (graph/world-light [0 -1 0])
-
-    (phys/set-velocity body [mov-x vel-y mov-z])
 
     (graph/projection (math/perspective (width) (height) (math/radians 60) 0.01 100))
     (graph/camera (math/first-person-camera campos camrot))
     
     (graph/model scene)
 
-    (graph/push-matrix)
-    (graph/apply-matrix (math/rotation 0 (math/clock look-x look-z) 0))
-    (graph/apply-matrix (math/mat4f (phys/get-matrix body)))
-    (graph/apply-matrix (math/translation 0 -1 0))
-    (dat/render-preset (first presets) (if (zero? (+ (abs mov-x) (abs mov-z))) "idle" "walk") (get-time))
-    (graph/pop-matrix)
-    
+    (dat/render-char player)
+
     (graph/image image image-shader -1 -0.5 0.5 0.5)
 
     state
