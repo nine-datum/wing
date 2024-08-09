@@ -19,7 +19,7 @@
       Condition
     ]
     [nine.math
-      LocalTime
+      FloatFunc
     ]
     [nine.opengl
       WindowStartAction
@@ -49,10 +49,10 @@
 
 (def proc-refresh-status (new-status))
 
-(def time-obj (LocalTime.))
+(def time-obj (proxy [FloatFunc] [] (value [] (. org.lwjgl.glfw.GLFW glfwGetTime))))
 (defn get-time [] (.value time-obj))
 
-(def delta-time-obj (.delta time-obj proc-refresh-status))
+(def delta-time-obj (nine.math.Delta. time-obj proc-refresh-status))
 (defn get-delta-time [] (.value delta-time-obj))
 
 (def window-width (atom 0))
