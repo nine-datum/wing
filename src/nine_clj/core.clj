@@ -136,7 +136,7 @@
         ]
       } state
     ]
-    (phys/update-world (state :phys-world) (get-delta-time))
+    (phys/update-world (state :phys-world) 1/60)
     (dat/update-game-state dev state)
 
     (graph/world-light [0 -1 0])
