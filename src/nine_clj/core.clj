@@ -49,11 +49,7 @@
 
 (def proc-refresh-status (new-status))
 
-(def time-obj (proxy [FloatFunc] [] (value [] (. org.lwjgl.glfw.GLFW glfwGetTime))))
-(defn get-time [] (.value time-obj))
-
-(def delta-time-obj (nine.math.Delta. time-obj proc-refresh-status))
-(defn get-delta-time [] (.value delta-time-obj))
+(defn get-time [] (org.lwjgl.glfw.GLFW/glfwGetTime))
 
 (def window-width (atom 0))
 (def window-height (atom 0))
@@ -121,15 +117,20 @@
       :campos [0 0 -1]
       :camrot [0 0 0]
       :movement [0 0 0]
+      :time (get-time)
     }
   )
 )
 
 (defn test-loop [dev state]
-  (let [dt (get-delta-time)] (when (not (zero? dt)) (->> dt (/ 1) int println)))
-  (phys/update-world (state :phys-world) (get-delta-time))
-  (dat/update-game-state dev state)
   (let [
+      time (get-time)
+      dt (- time (state :time))
+      state (do
+        (phys/update-world (state :phys-world) dt)
+        (dat/update-game-state dev state)
+        (assoc state :time time)
+      )
       state (dat/next-game-state dev state)
       {:keys [
           player
