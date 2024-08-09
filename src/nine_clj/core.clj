@@ -84,6 +84,7 @@
         ((dev :mouse) :update)
         ((dev :keyboard) :update)
         (reset! state (setup dev))
+        (org.lwjgl.glfw.GLFW/glfwSwapInterval 0)
         (windowLoop id dev loop)
       )
     )
@@ -118,12 +119,16 @@
       :image image
       :image-shader image-shader
       :campos [0 0 -1]
+      :camrot [0 0 0]
       :movement [0 0 0]
     }
   )
 )
 
 (defn test-loop [dev state]
+  (let [dt (get-delta-time)] (when (not (zero? dt)) (->> dt (/ 1) int println)))
+  (phys/update-world (state :phys-world) (get-delta-time))
+  (dat/update-game-state dev state)
   (let [
       state (dat/next-game-state dev state)
       {:keys [
@@ -136,8 +141,6 @@
         ]
       } state
     ]
-    (phys/update-world (state :phys-world) 1/60)
-    (dat/update-game-state dev state)
 
     (graph/world-light [0 -1 0])
 

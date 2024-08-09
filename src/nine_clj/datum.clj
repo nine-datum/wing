@@ -275,19 +275,14 @@
 
 (defn next-game-state [dev state]
   (let [
-      { :keys [campos player] } state
+      { :keys [camrot campos player] } state
       { :keys [keyboard mouse] } dev
-      playerpos (player :pos)
-      camsub (mapv - campos playerpos)
-      camsub (update camsub 1 (constantly 2))
-      camsub (if (zero? (mat/length camsub)) [0 1 -1] (mat/normalise camsub))
-      [cx cy cz] (mapv - camsub)
-      camrot [0 (math/clock cx cz) 0]
-      campos (mapv + playerpos (mapv (partial * 5) camsub))
-      [wasd-x wasd-y] (input/wasd keyboard)
+      
       cammat (apply math/rotation camrot)
       cam-fwd (math/get-column-3 cammat 2)
       cam-right (math/get-column-3 cammat 0)
+      
+      [wasd-x wasd-y] (input/wasd keyboard)
       cam-fwd (mapv (partial * wasd-y) cam-fwd)
       cam-right (mapv (partial * wasd-x) cam-right)
       [mov-x mov-y mov-z] (mapv + cam-fwd cam-right)
@@ -295,6 +290,14 @@
 
       in { :movement movement }
       player (next-char player in)
+
+      playerpos (player :pos)
+      camsub (mapv - campos playerpos)
+      camsub (update camsub 1 (constantly 2))
+      camsub (if (zero? (mat/length camsub)) [0 1 -1] (mat/normalise camsub))
+      [cx cy cz] (mapv - camsub)
+      camrot [0 (math/clock cx cz) 0]
+      campos (mapv + playerpos (mapv (partial * 5) camsub))
 
       state (assoc state
         :campos campos
