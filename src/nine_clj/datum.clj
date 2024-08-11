@@ -271,11 +271,27 @@
 
 (defn update-game-state [dev state]
   (update-char (state :player) { :movement (state :movement) })
+  (doseq [n (state :non-players)] (update-char n { :movement [0 0 0] }))
+)
+
+(def cam+ 2)
+(def camdist 5)
+
+(defn player-cam [p]
+  (let [
+    look (p :look)
+    pos (p :pos)
+    [lx ly lz] look
+  ] [
+      (mapv + pos [0 cam+ 0] (mapv * look (repeat (- camdist))))
+      [0 (math/clock lx lz) 0]
+    ]
+  )
 )
 
 (defn next-game-state [dev state]
   (let [
-      { :keys [camrot campos player] } state
+      { :keys [camrot campos player non-players] } state
       { :keys [keyboard mouse] } dev
       
       cammat (apply math/rotation camrot)
@@ -293,17 +309,30 @@
 
       playerpos (player :pos)
       camsub (mapv - campos playerpos)
-      camsub (update camsub 1 (constantly 2))
+      camsub (update camsub 1 (constantly cam+))
       camsub (if (zero? (mat/length camsub)) [0 1 -1] (mat/normalise camsub))
       [cx cy cz] (mapv - camsub)
       camrot [0 (math/clock cx cz) 0]
-      campos (mapv + playerpos (mapv (partial * 5) camsub))
+      campos (mapv + playerpos (mapv * camsub (repeat camdist)))
+
+      non-players (mapv next-char non-players (repeat { :movement [0 0 0] }))
+
+      [player non-players campos camrot]
+      (cond (keyboard "c" :up)
+        (let [
+          p (first non-players)
+          n (conj ((comp vec rest) non-players) player)
+          [cpos crot] (player-cam p)
+        ] [p n cpos crot])
+        :else [player non-players campos camrot]
+      )
 
       state (assoc state
         :campos campos
         :camrot camrot
         :movement movement
         :player player
+        :non-players non-players
       )
     ]
     state

@@ -1,4 +1,4 @@
-(defproject org.clojars.taqmuraz/nine-clj "0.1.2"
+(defproject org.clojars.taqmuraz/nine-clj "0.1.3"
   :description "Clojure OpenGL 3D graphics library"
   :url "http://github.com/Taqmuraz/nine-clj"
   :license {:name "MIT License"

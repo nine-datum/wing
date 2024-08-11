@@ -95,7 +95,7 @@
       diffuse-shader (graph/load-shader gl storage "res/shaders/diffuse_vertex.glsl" "res/shaders/diffuse_fragment.glsl")
       graphics (graph/load-graphics gl storage diffuse-shader skin-shader)
       
-      presets (cycle (dat/load-presets gl storage diffuse-shader skin-shader))
+      presets (dat/load-presets gl storage diffuse-shader skin-shader)
       
       scene (graph/load-model graphics "res/datum/scene/arena.dae")
       image (graph/load-image gl storage "res/images/example.png")
@@ -106,15 +106,25 @@
       level-shape (mapv phys/geom-shape level-geom)
       level-body (mapv #(phys/add-rigid-body phys-world % [0 0 0] [0 0 0] 0) level-shape)
 
-      player (dat/load-char phys-world (first presets) [0 0 0] [0 0 1] get-time)
+      players (mapv
+        (fn [preset i]
+          (let [dir (apply math/x0y (math/clock-xy (* i (/ Math/PI 2))))]
+            (dat/load-char phys-world preset (mapv * dir (repeat -10)) dir get-time)
+          )
+        )
+        presets (range (count presets))
+      )
+      player (first players)
+      non-players (rest players)
     ]
     {
       :phys-world phys-world
       :player player
+      :non-players non-players
       :scene scene
       :image image
       :image-shader image-shader
-      :campos [0 0 -1]
+      :campos (mapv * (player :pos) (repeat 1.1))
       :camrot [0 0 0]
       :movement [0 0 0]
       :time (get-time)
@@ -134,6 +144,7 @@
       state (dat/next-game-state dev state)
       {:keys [
           player
+          non-players
           scene
           campos
           camrot
@@ -151,6 +162,7 @@
     (graph/model scene)
 
     (dat/render-char player)
+    (doseq [n non-players] (dat/render-char n))
 
     (graph/image image image-shader -1 -0.5 0.5 0.5)
 

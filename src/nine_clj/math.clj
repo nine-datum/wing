@@ -67,6 +67,12 @@
   )
 )
 
+(defn clock-xy [a]
+  [(- (Math/sin a)) (Math/cos a)]
+)
+
+(defn x0y [x y] [x 0 y])
+
 (defn transform [pos rot scale]
   (. Matrix4f transform (apply vec3f pos) (apply vec3f rot) (apply vec3f scale))
 )
@@ -115,7 +121,10 @@
 )
 
 (defn first-person-camera [pos rot]
-  (. Matrix4f firstPersonCamera (apply vec3f pos) (apply vec3f rot))
+  (. Matrix4f firstPersonCamera
+    (apply vec3f pos)
+    (apply vec3f rot)
+  )
 )
 
 (defn lerp [a b t]
