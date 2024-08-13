@@ -76,7 +76,7 @@
 (defn windowStart [setup loop]
   (proxy [WindowStartAction] []
     (start [id]
-      (let [dev { :keyboard (input/keyboard id) :mouse (input/mouse id proc-refresh-status) }]
+      (let [dev { :gl (graph/new-gl) :keyboard (input/keyboard id) :mouse (input/mouse id proc-refresh-status) }]
         ((dev :mouse) :update)
         ((dev :keyboard) :update)
         (reset! state (setup dev))
@@ -90,7 +90,7 @@
 (defn test-setup [dev]
   (let
     [
-      gl (graph/new-gl)
+      gl (dev :gl)
       skin-shader (graph/load-shader gl storage "res/shaders/diffuse_skin_vertex.glsl" "res/shaders/diffuse_fragment.glsl")
       diffuse-shader (graph/load-shader gl storage "res/shaders/diffuse_vertex.glsl" "res/shaders/diffuse_fragment.glsl")
       graphics (graph/load-graphics gl storage diffuse-shader skin-shader)
