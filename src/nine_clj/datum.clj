@@ -209,7 +209,33 @@
 
 (declare idle-state)
 (declare walk-state)
-(declare ninja-attack-state)
+(declare attack-state)
+
+(def base-state {
+    :idle idle-state
+    :walk walk-state
+  }
+)
+
+(def states-map {
+    :archer (assoc base-state
+      :attack (partial attack-state ["attack"])
+    )
+    :fighter (assoc base-state
+      :attack (partial attack-state ["attack" "attack_2"])
+    )
+    :mage (assoc base-state
+      :attack (partial attack-state ["attackspell"])
+    )
+    :ninja (assoc base-state
+      :attack (partial attack-state ["attack" "attack_2" "attack_3"])
+    )
+  }
+)
+
+(defn map-state [ch sym timer rtimer]
+  ((-> :name ch states-map sym) timer rtimer)
+)
 
 (defn idle-state [timer rtimer]
   (new-state "idle" timer rtimer (fn [s ch in]
@@ -217,9 +243,9 @@
           { :keys [movement action] } in
         ]
         (cond
-          (= action :attack) (ninja-attack-state timer rtimer)
+          (= action :attack) (map-state ch :attack timer rtimer)
           (zero? (mat/length movement)) s
-          :else (walk-state timer rtimer)
+          :else (map-state ch :walk timer rtimer)
         )
       )
     )
@@ -233,8 +259,8 @@
           { :keys [movement action] } in
         ]
         (cond
-          (= action :attack) (ninja-attack-state timer rtimer)
-          (zero? (mat/length movement)) (idle-state timer rtimer)
+          (= action :attack) (map-state ch :attack timer rtimer)
+          (zero? (mat/length movement)) (map-state ch :idle timer rtimer)
           :else s
         )
       )
@@ -250,14 +276,14 @@
   )
 )
 
-(defn ninja-attack-state [timer rtimer]
+(defn attack-state [attack-anims timer rtimer]
   (let [
-      anim (["attack" "attack_2" "attack_3"] (rand-int 3))
+      anim (attack-anims (rand-int (count attack-anims)))
     ]
     (new-state anim timer rtimer
       (fn [s ch in]
         (cond
-          (< (char-anim-length ch anim) (state-age s)) (idle-state timer rtimer)
+          (< (char-anim-length ch anim) (state-age s)) (map-state ch :idle timer rtimer)
           :else s
         )
       )
@@ -268,6 +294,7 @@
 
 (defn load-char [world preset pos look timer]
   {
+    :name (preset :name)
     :anims (preset :anims)
     :body (-> world
       (phys/capsule (mapv + [0 3/4 0] pos) [0 0 0] 0.25 3/2 1)
