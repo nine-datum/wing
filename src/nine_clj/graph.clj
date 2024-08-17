@@ -305,7 +305,10 @@
       sparser (ColladaBasicSkeletonParser. (condition-func bone-type))
       anim (. AnimatedSkeleton fromCollada node aparser sparser)
     ]
-    (. AnimatedSkeleton cached (instance-always anim) bone-names 30 len)
+    {
+      :anim (. AnimatedSkeleton cached (instance-always anim) bone-names 30 len)
+      :length len
+    }
   )
 )
 

@@ -119,6 +119,7 @@
         )
       )
     ] {
+      :name key
       :loader loader
       :anims anims
     }
@@ -127,6 +128,7 @@
 
 (defn load-preset [gl diffuse-shader skin-shader preset]
   {
+    :name (preset :name)
     :model ((preset :loader) gl diffuse-shader skin-shader)
     :anims (preset :anims)
   }
@@ -157,7 +159,7 @@
 (defn render-preset [preset anim time]
   (let [
       { :keys [model anims] } preset
-      [skin-anim obj-anim] (anims anim)
+      [skin-anim obj-anim] (mapv :anim (anims anim))
       skin-anim (graph/animate skin-anim time)
       obj-anim (graph/animate obj-anim time)
     ]
@@ -175,48 +177,98 @@
 
 (defn render-char [ch] (char-call ch :render))
 
-(defn new-state [anim timer rtimer next]
-  { 
-    :anim anim
-    :start (timer)
-    :timer timer
-    :rtimer rtimer
-    :next next
-  }
+(defn new-state
+  ([anim timer rtimer next] (new-state anim timer rtimer next (constantly ())))
+  ([anim timer rtimer next update]
+    {
+      :anim anim
+      :start (timer)
+      :timer timer
+      :rtimer rtimer
+      :next next
+      :update update
+    }
+  )
 )
 
+(defn state-age [s]
+  (- ((s :timer)) (s :start))
+)
+
+(defn char-anim [ch name]
+  ((ch :anims) name)
+)
+
+(defn char-anim-length [s name]
+  ((first (char-anim s name)) :length)
+)
+
+(defn move-char [ch mvec]
+  (phys/move-char (ch :body) mvec)
+)
+
+(declare idle-state)
 (declare walk-state)
+(declare ninja-attack-state)
 
 (defn idle-state [timer rtimer]
-  (new-state "idle" timer rtimer (fn [s in]
+  (new-state "idle" timer rtimer (fn [s ch in]
       (let [
-          { :keys [movement] } in
+          { :keys [movement action] } in
         ]
         (cond
+          (= action :attack) (ninja-attack-state timer rtimer)
           (zero? (mat/length movement)) s
           :else (walk-state timer rtimer)
         )
       )
     )
+    (fn [s ch in] (move-char ch [0 0 0]))
   )
 )
 
 (defn walk-state [timer rtimer]
-  (new-state "walk" timer rtimer (fn [s in]
+  (new-state "walk" timer rtimer (fn [s ch in]
       (let [
-          { :keys [movement] } in
+          { :keys [movement action] } in
         ]
         (cond
+          (= action :attack) (ninja-attack-state timer rtimer)
           (zero? (mat/length movement)) (idle-state timer rtimer)
           :else s
         )
       )
+    )
+    (fn [s ch in]
+      (let [
+          { :keys [movement] } in
+        ]
+        (move-char ch (mapv (partial * 6) movement))
+        ()
+      )
+    )
+  )
+)
+
+(defn ninja-attack-state [timer rtimer]
+  (let [
+      anim (["attack" "attack_2" "attack_3"] (rand-int 3))
+    ]
+    (new-state anim timer rtimer
+      (fn [s ch in]
+        (cond
+          (< (char-anim-length ch anim) (state-age s)) (idle-state timer rtimer)
+          :else s
+        )
+      )
+      (fn [s ch in] (move-char ch [0 0 0]))
     )
   )
 )
 
 (defn load-char [world preset pos look timer]
   {
+    :anims (preset :anims)
     :body (-> world
       (phys/capsule (mapv + [0 3/4 0] pos) [0 0 0] 0.25 3/2 1)
       (phys/set-rotation-enabled false)
@@ -233,7 +285,7 @@
             (zero? (mat/length movement)) look
             :else (math/normalize-checked movement)
           )
-          state (char-call state :next in)
+          state (char-call state :next s in)
         ]
         (assoc s
           :pos pos
@@ -243,13 +295,7 @@
       )
     )
     :update (fn [s in]
-      (let [
-          { :keys [body pos look] } s
-          { :keys [movement] } in
-        ]
-        (phys/move-char body (mapv (partial * 6) movement))
-        ()
-      )
+      (char-call (s :state) :update s in)
     )
     :render (fn [s]
       (let [
@@ -270,7 +316,7 @@
 )
 
 (defn update-game-state [dev state]
-  (update-char (state :player) { :movement (state :movement) })
+  (update-char (state :player) { :movement (state :movement) :action (state :action) })
   (doseq [n (state :non-players)] (update-char n { :movement [0 0 0] }))
 )
 
@@ -304,7 +350,12 @@
       [mov-x mov-y mov-z] (mapv + cam-fwd cam-right)
       movement (math/normalize [mov-x 0 mov-z])
 
-      in { :movement movement }
+      action (cond
+        (keyboard "f" :down) :attack
+        :else :none
+      )
+
+      in { :movement movement :action action }
       player (next-char player in)
 
       playerpos (player :pos)
@@ -315,7 +366,7 @@
       camrot [0 (math/clock cx cz) 0]
       campos (mapv + playerpos (mapv * camsub (repeat camdist)))
 
-      non-players (mapv next-char non-players (repeat { :movement [0 0 0] }))
+      non-players (mapv next-char non-players (repeat { :movement [0 0 0] :action :none }))
 
       [player non-players campos camrot]
       (cond (keyboard "c" :up)
@@ -328,6 +379,7 @@
       )
 
       state (assoc state
+        :action action
         :campos campos
         :camrot camrot
         :movement movement
