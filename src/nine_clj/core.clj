@@ -14,12 +14,7 @@
       LWJGL_Window
     ]
     [nine.function
-      RefreshStatus
       UpdateRefreshStatus
-      Condition
-    ]
-    [nine.math
-      FloatFunc
     ]
     [nine.opengl
       WindowStartAction
@@ -33,11 +28,6 @@
     ]
     [nine.geometry.procedural
       Geometry
-    ]
-    [nine.geometry.collada
-      ColladaBasicAnimationParser
-      ColladaBasicSkinParser
-      ColladaBasicMaterialParser
     ]
   )
 )

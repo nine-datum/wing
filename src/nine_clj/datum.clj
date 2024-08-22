@@ -207,9 +207,6 @@
   (phys/move-char (ch :body) mvec)
 )
 
-(declare idle-state)
-(declare walk-state)
-(declare attack-state)
 (declare map-state)
 
 (defn idle-state [timer rtimer]
