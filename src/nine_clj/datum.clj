@@ -210,32 +210,7 @@
 (declare idle-state)
 (declare walk-state)
 (declare attack-state)
-
-(def base-state {
-    :idle idle-state
-    :walk walk-state
-  }
-)
-
-(def states-map {
-    :archer (assoc base-state
-      :attack (partial attack-state ["attack"])
-    )
-    :fighter (assoc base-state
-      :attack (partial attack-state ["attack" "attack_2"])
-    )
-    :mage (assoc base-state
-      :attack (partial attack-state ["attackspell"])
-    )
-    :ninja (assoc base-state
-      :attack (partial attack-state ["attack" "attack_2" "attack_3"])
-    )
-  }
-)
-
-(defn map-state [ch sym timer rtimer]
-  ((-> :name ch states-map sym) timer rtimer)
-)
+(declare map-state)
 
 (defn idle-state [timer rtimer]
   (new-state "idle" timer rtimer (fn [s ch in]
@@ -290,6 +265,32 @@
       (fn [s ch in] (move-char ch [0 0 0]))
     )
   )
+)
+
+(def base-state {
+    :idle idle-state
+    :walk walk-state
+  }
+)
+
+(def states-map {
+    :archer (assoc base-state
+      :attack (partial attack-state ["attack"])
+    )
+    :fighter (assoc base-state
+      :attack (partial attack-state ["attack" "attack_2"])
+    )
+    :mage (assoc base-state
+      :attack (partial attack-state ["attackspell"])
+    )
+    :ninja (assoc base-state
+      :attack (partial attack-state ["attack" "attack_2" "attack_3"])
+    )
+  }
+)
+
+(defn map-state [ch sym timer rtimer]
+  ((-> :name ch states-map sym) timer rtimer)
 )
 
 (defn load-char [world preset pos look timer]
