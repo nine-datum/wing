@@ -83,6 +83,10 @@
   (apply-matrix (math/translation x y z))
 )
 
+(defn rotate [x y z]
+  (apply-matrix (math/rotation x y z))
+)
+
 (defn load-shader [gl storage vert frag] (.load (. Shader loader storage gl) vert frag))
 
 (defn load-graphics
