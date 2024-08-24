@@ -228,17 +228,29 @@
   (phys/move-char (ch :body) mvec)
 )
 
+(defn add-item [ch item]
+  (update ch :items (partial cons item))
+)
+
+(defn next-char-idle [ch in]
+  (let[
+      body (ch :body)
+      pos (mapv - (phys/get-position body) [0 3/4 0])
+    ]
+    (assoc ch :pos pos)
+  )
+)
+
 (defn next-char-mov [ch in]
   (let [
       { :keys [body pos look] } ch
       { :keys [movement] } in
-      pos (mapv - (phys/get-position body) [0 3/4 0])
       look (cond
         (math/zero-len? movement) look
         :else (math/normalize-checked movement)
       )
     ]
-    (assoc ch :pos pos :look look)
+    (assoc (next-char-idle ch in) :look look)
   )
 )
 
@@ -291,11 +303,31 @@
       (fn [s ch in]
         (cond
           (< (char-anim-length ch anim) (state-age s)) (map-state ch :idle timer rtimer)
-          :else ch
+          :else (next-char-idle ch in)
         )
       )
       (fn [s ch in] (move-char ch [0 0 0]))
     )
+  )
+)
+
+(defn archer-attack-state [timer rtimer]
+  (let [
+      atk (attack-state ["attack"] timer rtimer)
+      next-fn
+      (fn [s ch in]
+        (cond
+          (s :has-arrow) ((atk :next) s ch in)
+          :else (update
+            (add-item ch (arrow (ch :world) [0 1 0] [0 0 0] (-> ch :item-models first)))
+            :state
+            #(assoc % :has-arrow true)
+          )
+        )
+      )
+      state (assoc atk :next next-fn :has-arrow false)
+    ]
+    state
   )
 )
 
@@ -307,7 +339,7 @@
 
 (def states-map {
     :archer (assoc base-state
-      :attack (partial attack-state ["attack"])
+      :attack archer-attack-state
     )
     :fighter (assoc base-state
       :attack (partial attack-state ["attack" "attack_2"])
@@ -325,8 +357,18 @@
   (assoc ch :state ((-> :name ch states-map sym) timer rtimer))
 )
 
+(defn render-item [item]
+  (graph/push-matrix)
+  (graph/apply-matrix (-> :body item phys/get-matrix math/mat4f))
+  (graph/model (item :model))
+  (graph/pop-matrix)
+)
+
 (defn load-char [world preset pos look timer]
   {
+    :world world
+    :item-models (preset :items)
+    :items ()
     :name (preset :name)
     :anims (preset :anims)
     :body (-> world
@@ -349,16 +391,16 @@
     )
     :render (fn [s]
       (let [
-          { :keys [state look pos] } s
+          { :keys [state look pos items] } s
           { :keys [anim start rtimer] } state
           [lx ly lz] look
         ]
-        (when (nil? rtimer) (println "state:" state))
         (graph/push-matrix)
         (graph/apply-matrix (math/rotation 0 (math/clock lx lz) 0))
         (apply graph/translate pos)
         (render-preset preset anim (- (rtimer) start))
         (graph/pop-matrix)
+        (doseq [item items] (render-item item))
         ()
       )
     )
