@@ -58,6 +58,8 @@
   )
 )
 
+(declare set-matrix)
+
 (defn add-rigid-body [dynamics-world shape pos rot mass]
   (let [
       [px py pz] pos
