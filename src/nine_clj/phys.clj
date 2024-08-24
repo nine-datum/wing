@@ -1,6 +1,7 @@
 (ns nine-clj.phys
   (:require
     [nine-clj.geom :as geom]
+    [nine-clj.math :as math]
   )
   (:import
     (com.bulletphysics.dynamics
@@ -80,6 +81,7 @@
         body (RigidBody. rbci)
       ]
       (.addRigidBody dynamics-world body)
+      (set-matrix body (math/floats-from-mat4f (math/transform pos rot [1 1 1])))
       body
     )
   )
@@ -142,9 +144,9 @@
   (let [
       m (Matrix4f.)
       cs (partition 4 (map float mat))
-      m (doseq [[i [x y z w]] (map vector (range) cs)]
+      m (do (doseq [[i [x y z w]] (map vector (range) cs)]
         (.setColumn m i x y z w)
-      )
+      ) m)
       t (Transform. m)
     ]
     (.setCenterOfMassTransform body t)

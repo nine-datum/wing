@@ -205,9 +205,9 @@
   )
 )
 
-(defn arrow [phys-world pos rot model] 
+(defn arrow [phys-world pos rot model]
   {
-    :body (phys/capsule phys-world pos rot 0.1 0.5 1)
+    :body (phys/capsule phys-world pos (mapv + [(/ Math/PI -2) 0 0] rot) 0.2 1.2 1)
     :model model
   }
 )
@@ -317,11 +317,20 @@
       next-fn
       (fn [s ch in]
         (cond
-          (s :has-arrow) ((atk :next) s ch in)
-          :else (update
-            (add-item ch (arrow (ch :world) [0 1 0] [0 0 0] (-> ch :item-models first)))
-            :state
-            #(assoc % :has-arrow true)
+          (or (s :has-arrow) (-> s state-age (< 1.2))) ((atk :next) s ch in)
+          :else (let [
+              { :keys [look pos] } ch
+              [lx ly lz] look
+              arr-pos (mapv + pos look [0 2 0])
+              arr-rot [0 (math/clock lx lz) 0]
+              arr (arrow (ch :world) arr-pos arr-rot (-> ch :item-models first))
+            ]
+            (phys/set-velocity (arr :body) (mapv * look (repeat 100)))
+            (update
+              (add-item ch arr)
+              :state
+              #(assoc % :has-arrow true)
+            )
           )
         )
       )
@@ -412,8 +421,9 @@
   (doseq [n (state :non-players)] (update-char n { :movement [0 0 0] }))
 )
 
-(def cam+ 2)
-(def camdist 5)
+(def cam+ 4)
+(def camdist 8)
+(def camrotx+ (/ Math/PI 12))
 
 (defn player-cam [p]
   (let [
@@ -422,7 +432,7 @@
     [lx ly lz] look
   ] [
       (mapv + pos [0 cam+ 0] (mapv * look (repeat (- camdist))))
-      [0 (math/clock lx lz) 0]
+      [camrotx+ (math/clock lx lz) 0]
     ]
   )
 )
@@ -455,7 +465,7 @@
       camsub (update camsub 1 (constantly cam+))
       camsub (if (zero? (mat/length camsub)) [0 1 -1] (mat/normalise camsub))
       [cx cy cz] (mapv - camsub)
-      camrot [0 (math/clock cx cz) 0]
+      camrot [(- camrotx+) (math/clock cx cz) 0]
       campos (mapv + playerpos (mapv * camsub (repeat camdist)))
 
       non-players (mapv next-char non-players (repeat { :movement [0 0 0] :action :none }))
