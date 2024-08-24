@@ -29,6 +29,13 @@
   )
 )
 
+(defn load-item-model [gl storage diffuse-shader skin-shader file]
+  (graph/load-model
+    (graph/load-graphics gl storage diffuse-shader skin-shader)
+    file
+  )
+)
+
 (defn load-model [gl storage diffuse-shader skin-shader name offset-geom]
   (load-offset-animated-model gl storage diffuse-shader skin-shader (format "res/datum/%s.dae" name) offset-geom)
 )
@@ -45,24 +52,25 @@
   )
 )
 
-(defn preset [model-name offset-geom-name & anims]
+(defn preset [model-name offset-geom-name items & anims]
   {
     :model-name model-name
     :offset-geom offset-geom-name
     :anims anims
+    :items items
   }
 )
 
 (def char-presets
   {
-    :archer (preset "archer" "Cube_001-mesh"
+    :archer (preset "archer" "Cube_001-mesh" [ "res/datum/arrow.dae" ]
       "attack"
       "idle"
       "walk"
       "death"
       "dead"
     )
-    :fighter (preset "fighter" "Cube_002-mesh"
+    :fighter (preset "fighter" "Cube_002-mesh" []
       "attack"
       "attack_2"
       "block"
@@ -71,7 +79,7 @@
       "death"
       "dead"
     )
-    :mage (preset "mage" "Cube_002-mesh"
+    :mage (preset "mage" "Cube_002-mesh" []
       "attackspell"
       "spherespell"
       "teleportspell"
@@ -80,7 +88,7 @@
       "death"
       "dead"
     )
-    :ninja (preset "ninja" "Cube_003-mesh"
+    :ninja (preset "ninja" "Cube_003-mesh" []
       "attack"
       "attack_2"
       "attack_3"
@@ -99,6 +107,7 @@
           model-name
           offset-geom
           anims
+          items
         ]
       } (char-presets key)
       loader (fn [gl diffuse-shader skin-shader] (load-model gl storage diffuse-shader skin-shader model-name offset-geom))
@@ -118,9 +127,13 @@
           anims
         )
       )
+      items-loader (fn [gl diffuse-shader skin-shader]
+        (mapv (partial load-item-model gl storage diffuse-shader skin-shader) items)
+      )
     ] {
       :name key
       :loader loader
+      :items-loader items-loader
       :anims anims
     }
   )
@@ -130,6 +143,7 @@
   {
     :name (preset :name)
     :model ((preset :loader) gl diffuse-shader skin-shader)
+    :items ((preset :items-loader) gl diffuse-shader skin-shader)
     :anims (preset :anims)
   }
 )
@@ -191,6 +205,13 @@
   )
 )
 
+(defn arrow [phys-world pos rot model] 
+  {
+    :body (phys/capsule phys-world pos rot 0.1 0.5 1)
+    :model model
+  }
+)
+
 (defn state-age [s]
   (- ((s :timer)) (s :start))
 )
@@ -207,6 +228,20 @@
   (phys/move-char (ch :body) mvec)
 )
 
+(defn next-char-mov [ch in]
+  (let [
+      { :keys [body pos look] } ch
+      { :keys [movement] } in
+      pos (mapv - (phys/get-position body) [0 3/4 0])
+      look (cond
+        (math/zero-len? movement) look
+        :else (math/normalize-checked movement)
+      )
+    ]
+    (assoc ch :pos pos :look look)
+  )
+)
+
 (declare map-state)
 
 (defn idle-state [timer rtimer]
@@ -216,7 +251,7 @@
         ]
         (cond
           (= action :attack) (map-state ch :attack timer rtimer)
-          (zero? (mat/length movement)) s
+          (math/zero-len? movement) (next-char-mov ch in)
           :else (map-state ch :walk timer rtimer)
         )
       )
@@ -232,8 +267,8 @@
         ]
         (cond
           (= action :attack) (map-state ch :attack timer rtimer)
-          (zero? (mat/length movement)) (map-state ch :idle timer rtimer)
-          :else s
+          (math/zero-len? movement) (map-state ch :idle timer rtimer)
+          :else (next-char-mov ch in)
         )
       )
     )
@@ -256,7 +291,7 @@
       (fn [s ch in]
         (cond
           (< (char-anim-length ch anim) (state-age s)) (map-state ch :idle timer rtimer)
-          :else s
+          :else ch
         )
       )
       (fn [s ch in] (move-char ch [0 0 0]))
@@ -287,7 +322,7 @@
 )
 
 (defn map-state [ch sym timer rtimer]
-  ((-> :name ch states-map sym) timer rtimer)
+  (assoc ch :state ((-> :name ch states-map sym) timer rtimer))
 )
 
 (defn load-char [world preset pos look timer]
@@ -303,20 +338,10 @@
     :state (idle-state timer timer)
     :next (fn [s in]
       (let [
-          { :keys [body pos look state] } s
-          { :keys [movement] } in
-          pos (mapv - (phys/get-position body) [0 3/4 0])
-          look (cond
-            (zero? (mat/length movement)) look
-            :else (math/normalize-checked movement)
-          )
-          state (char-call state :next s in)
+          state (s :state)
+          next (state :next)
         ]
-        (assoc s
-          :pos pos
-          :look look
-          :state state
-        )
+        (next state s in)
       )
     )
     :update (fn [s in]

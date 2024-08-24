@@ -144,3 +144,5 @@
     [rx ry 0]
   )
 )
+
+(defn zero-len? [v] (zero? (mat/length v)))
