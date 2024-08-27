@@ -256,7 +256,7 @@
   (update ch :items (partial cons item))
 )
 
-(defn next-char-idle [ch in]
+(defn next-char-idle [ch]
   (let[
       body (ch :body)
       pos (mapv - (phys/get-position body) [0 3/4 0])
@@ -274,7 +274,7 @@
         :else (math/normalize-checked movement)
       )
     ]
-    (assoc (next-char-idle ch in) :look look)
+    (assoc (next-char-idle ch) :look look)
   )
 )
 
@@ -328,7 +328,7 @@
       (fn [s ch in eff]
         (cond
           (< (char-anim-length ch anim) (state-age s)) (map-state ch :idle timer rtimer)
-          :else (next-char-idle ch in)
+          :else (next-char-idle ch)
         )
       )
       (fn [s ch in] (move-char ch [0 0 0]))
@@ -369,13 +369,13 @@
   (new-state "death" timer rtimer (fn [s ch in eff]
     (cond
       (>= (state-age s) (- (char-anim-length ch "death") 0.1)) (map-state ch :dead timer rtimer)
-      :else (next-char-mov ch { :movement [0 0 0] })
+      :else (next-char-idle ch)
     )
   )
   (fn [s ch in] (move-char ch [0 0 0])))
 )
 (defn dead-state [timer rtimer]
-  (new-state "dead" timer rtimer (fn [s ch in eff] ch))
+  (new-state "dead" timer rtimer (fn [s ch in eff] (next-char-idle ch)))
 )
 
 (defn wrap-mortal [factory]
