@@ -368,7 +368,7 @@
 (defn death-state [timer rtimer]
   (new-state "death" timer rtimer (fn [s ch in eff]
     (cond
-      (> (state-age s) 0.6) (map-state ch :dead timer rtimer)
+      (>= (state-age s) (- (char-anim-length ch "death") 0.1)) (map-state ch :dead timer rtimer)
       :else (next-char-mov ch { :movement [0 0 0] })
     )
   )
