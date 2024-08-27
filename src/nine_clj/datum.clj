@@ -207,10 +207,32 @@
   )
 )
 
+(defn damage-effect [body damage]
+  [
+    (fn [ch] (-> ch :body (= body)))
+    (fn [ch] (update ch :health #(- % damage)))
+  ]
+)
+
 (defn arrow [phys-world pos rot model]
   {
     :body (phys/capsule phys-world pos (mapv + [(/ Math/PI -2) 0 0] rot) 0.2 1.2 1)
-    :model model
+    :render (fn [item]
+      (graph/push-matrix)
+      (graph/apply-matrix (-> :body item phys/get-matrix math/mat4f))
+      (graph/model model)
+      (graph/pop-matrix)
+    )
+    :effect (fn [item ch phys]
+      (let [
+          c (get (phys :contacts) (item :body) ())
+        ]
+        (cond
+          (or (= c ()) (= c (ch :body))) []
+          :else [ (damage-effect c 100) ]
+        )
+      )
+    )
   }
 )
 
@@ -342,24 +364,54 @@
   )
 )
 
+(defn death-state [timer rtimer]
+  (new-state "death" timer rtimer (fn [s ch in eff]
+    (cond
+      (> (state-age s) 0.66) (map-state ch :dead timer rtimer)
+      :else (next-char-mov ch { :movement [0 0 0] })
+    )
+  )
+  (fn [s ch in] (move-char ch [0 0 0])))
+)
+(defn dead-state [timer rtimer]
+  (new-state "death" (constantly 0.666) (constantly 0.666) (fn [s ch in eff] ch))
+)
+
+(defn wrap-mortal [factory]
+  (fn [timer rtimer]
+    (let [state (factory timer rtimer)]
+      (assoc state :next
+        (fn [s ch in eff]
+          (cond
+            (<= (ch :health) 0) (map-state ch :death timer rtimer)
+            :else ((state :next) s ch in eff)
+          )
+        )
+      )
+    )
+  )
+)
+
 (def base-state {
-    :idle idle-state
-    :walk walk-state
+    :idle (wrap-mortal idle-state)
+    :walk (wrap-mortal walk-state)
+    :death death-state
+    :dead dead-state
   }
 )
 
 (def states-map {
     :archer (assoc base-state
-      :attack archer-attack-state
+      :attack (wrap-mortal archer-attack-state)
     )
     :fighter (assoc base-state
-      :attack (partial attack-state ["attack" "attack_2"])
+      :attack (wrap-mortal (partial attack-state ["attack" "attack_2"]))
     )
     :mage (assoc base-state
-      :attack (partial attack-state ["attackspell"])
+      :attack (wrap-mortal (partial attack-state ["attackspell"]))
     )
     :ninja (assoc base-state
-      :attack (partial attack-state ["attack" "attack_2" "attack_3"])
+      :attack (wrap-mortal (partial attack-state ["attack" "attack_2" "attack_3"]))
     )
   }
 )
@@ -369,14 +421,12 @@
 )
 
 (defn render-item [item]
-  (graph/push-matrix)
-  (graph/apply-matrix (-> :body item phys/get-matrix math/mat4f))
-  (graph/model (item :model))
-  (graph/pop-matrix)
+  (char-call item :render)
 )
 
 (defn load-char [world preset pos look timer]
   {
+    :health 100
     :world world
     :item-models (preset :items)
     :items ()
@@ -391,8 +441,10 @@
     :state (idle-state timer timer)
     :next (fn [ch in eff]
       (let [
-          state (ch :state)
+          { :keys [state body] } ch
           next (state :next)
+          effs (filter (comp #(% ch) first) eff)
+          ch (reduce #((second %2) %1) ch effs)
         ]
         (next state ch in eff)
       )
@@ -416,7 +468,10 @@
       )
     )
     :effect (fn [ch in phys]
-      (-> ch :state (char-call :effect ch in phys))
+      (concat
+        (-> ch :state (char-call :effect ch in phys))
+        (->> ch :items ((comp (partial apply concat) map) #(char-call % :effect ch phys)))
+      )
     )
   }
 )
@@ -444,7 +499,7 @@
 
 (defn next-game-state [dev state]
   (let [
-      { :keys [camrot campos player non-players] } state
+      { :keys [camrot campos player non-players phys-world] } state
       { :keys [keyboard mouse] } dev
       
       cammat (apply math/rotation camrot)
@@ -462,9 +517,10 @@
         :else :none
       )
 
-      phys {}
+      contacts (phys/get-all-contacts phys-world)
+      phys { :contacts contacts }
       in { :movement movement :action action }
-      effects (mapv #(char-call % :effect in phys) (cons player non-players))
+      effects ((comp (partial apply concat) map) #(char-call % :effect in phys) (cons player non-players))
       player (next-char player in effects)
 
       playerpos (player :pos)

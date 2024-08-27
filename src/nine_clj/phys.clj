@@ -252,3 +252,15 @@
     (set-velocity body [mx vy mz])
   )
 )
+
+(defn get-all-contacts [world]
+  (let [
+      d (.getDispatcher world)
+      n (.getNumManifolds d)
+      ms (map #(.getManifoldByIndexInternal d %) (range n))
+      cs (mapv #(vector (.getBody0 %) (.getBody1 %)) ms)
+      cs (apply concat cs)
+    ]
+    (apply hash-map (concat cs (reverse cs)))
+  )
+)
