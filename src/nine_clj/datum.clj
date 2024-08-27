@@ -279,6 +279,7 @@
 )
 
 (declare map-state)
+(declare class-state)
 
 (defn idle-state [timer rtimer]
   (new-state "idle" timer rtimer (fn [s ch in eff]
@@ -367,14 +368,14 @@
 (defn death-state [timer rtimer]
   (new-state "death" timer rtimer (fn [s ch in eff]
     (cond
-      (> (state-age s) 0.66) (map-state ch :dead timer rtimer)
+      (> (state-age s) 0.6) (map-state ch :dead timer rtimer)
       :else (next-char-mov ch { :movement [0 0 0] })
     )
   )
   (fn [s ch in] (move-char ch [0 0 0])))
 )
 (defn dead-state [timer rtimer]
-  (new-state "death" (constantly 0.666) (constantly 0.666) (fn [s ch in eff] ch))
+  (new-state "dead" timer rtimer (fn [s ch in eff] ch))
 )
 
 (defn wrap-mortal [factory]
@@ -416,8 +417,12 @@
   }
 )
 
+(defn class-state [name sym timer rtimer]
+  ((-> states-map name sym) timer rtimer)
+)
+
 (defn map-state [ch sym timer rtimer]
-  (assoc ch :state ((-> :name ch states-map sym) timer rtimer))
+  (assoc ch :state (class-state (ch :name) sym timer rtimer))
 )
 
 (defn render-item [item]
@@ -438,7 +443,7 @@
     )
     :pos pos
     :look look
-    :state (idle-state timer timer)
+    :state (class-state (preset :name) :idle timer timer)
     :next (fn [ch in eff]
       (let [
           { :keys [state body] } ch
@@ -522,6 +527,7 @@
       in { :movement movement :action action }
       effects ((comp (partial apply concat) map) #(char-call % :effect in phys) (cons player non-players))
       player (next-char player in effects)
+      non-players (mapv next-char non-players (repeat { :movement [0 0 0] :action :none }) (repeat effects))
 
       playerpos (player :pos)
       camsub (mapv - campos playerpos)
@@ -531,7 +537,6 @@
       camrot [(- camrotx+) (math/clock cx cz) 0]
       campos (mapv + playerpos (mapv * camsub (repeat camdist)))
 
-      non-players (mapv next-char non-players (repeat { :movement [0 0 0] :action :none }) (repeat effects))
 
       [player non-players campos camrot]
       (cond (keyboard "c" :up)

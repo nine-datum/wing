@@ -276,6 +276,7 @@
       bone-names ((comp set map) first (db :bones))
       resources (db :resources)
       len (db :length)
+      len (if (zero? len) 1 len)
       flip (math/mat4f [-1 0 0 0    0 0 1 0   0 1 0 0    0 0 0 1])
       flip-mat (fn [m]
         (.mul (.mul flip (math/mat4f m)) flip)
