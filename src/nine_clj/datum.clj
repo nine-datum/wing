@@ -185,7 +185,7 @@
   (apply (ch sym) (cons ch args))
 )
 
-(defn next-char [ch in] (char-call ch :next in))
+(defn next-char [ch in eff] (char-call ch :next in eff))
 
 (defn update-char [ch in] (char-call ch :update in))
 
@@ -193,7 +193,8 @@
 
 (defn new-state
   ([anim timer rtimer next] (new-state anim timer rtimer next (constantly ())))
-  ([anim timer rtimer next update]
+  ([anim timer rtimer next update] (new-state anim timer rtimer next update (constantly [])))
+  ([anim timer rtimer next update effect]
     {
       :anim anim
       :start (timer)
@@ -201,6 +202,7 @@
       :rtimer rtimer
       :next next
       :update update
+      :effect effect
     }
   )
 )
@@ -257,7 +259,7 @@
 (declare map-state)
 
 (defn idle-state [timer rtimer]
-  (new-state "idle" timer rtimer (fn [s ch in]
+  (new-state "idle" timer rtimer (fn [s ch in eff]
       (let [
           { :keys [movement action] } in
         ]
@@ -273,7 +275,7 @@
 )
 
 (defn walk-state [timer rtimer]
-  (new-state "walk" timer rtimer (fn [s ch in]
+  (new-state "walk" timer rtimer (fn [s ch in eff]
       (let [
           { :keys [movement action] } in
         ]
@@ -300,7 +302,7 @@
       anim (attack-anims (rand-int (count attack-anims)))
     ]
     (new-state anim timer rtimer
-      (fn [s ch in]
+      (fn [s ch in eff]
         (cond
           (< (char-anim-length ch anim) (state-age s)) (map-state ch :idle timer rtimer)
           :else (next-char-idle ch in)
@@ -315,9 +317,9 @@
   (let [
       atk (attack-state ["attack"] timer rtimer)
       next-fn
-      (fn [s ch in]
+      (fn [s ch in eff]
         (cond
-          (or (s :has-arrow) (-> s state-age (< 1.2))) ((atk :next) s ch in)
+          (or (s :has-arrow) (-> s state-age (< 1.2))) ((atk :next) s ch in eff)
           :else (let [
               { :keys [look pos] } ch
               [lx ly lz] look
@@ -387,20 +389,20 @@
     :pos pos
     :look look
     :state (idle-state timer timer)
-    :next (fn [s in]
+    :next (fn [ch in eff]
       (let [
-          state (s :state)
+          state (ch :state)
           next (state :next)
         ]
-        (next state s in)
+        (next state ch in eff)
       )
     )
-    :update (fn [s in]
-      (char-call (s :state) :update s in)
+    :update (fn [ch in]
+      (char-call (ch :state) :update ch in)
     )
-    :render (fn [s]
+    :render (fn [ch]
       (let [
-          { :keys [state look pos items] } s
+          { :keys [state look pos items] } ch
           { :keys [anim start rtimer] } state
           [lx ly lz] look
         ]
@@ -412,6 +414,9 @@
         (doseq [item items] (render-item item))
         ()
       )
+    )
+    :effect (fn [ch in phys]
+      (-> ch :state (char-call :effect ch in phys))
     )
   }
 )
@@ -457,8 +462,10 @@
         :else :none
       )
 
+      phys {}
       in { :movement movement :action action }
-      player (next-char player in)
+      effects (mapv #(char-call % :effect in phys) (cons player non-players))
+      player (next-char player in effects)
 
       playerpos (player :pos)
       camsub (mapv - campos playerpos)
@@ -468,7 +475,7 @@
       camrot [(- camrotx+) (math/clock cx cz) 0]
       campos (mapv + playerpos (mapv * camsub (repeat camdist)))
 
-      non-players (mapv next-char non-players (repeat { :movement [0 0 0] :action :none }))
+      non-players (mapv next-char non-players (repeat { :movement [0 0 0] :action :none }) (repeat effects))
 
       [player non-players campos camrot]
       (cond (keyboard "c" :up)
