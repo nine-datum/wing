@@ -16,6 +16,7 @@
       AxisSweep3
     )
     (com.bulletphysics.collision.dispatch
+      CollisionWorld$ClosestConvexResultCallback
       CollisionDispatcher
     )
     (com.bulletphysics.collision.dispatch
@@ -86,6 +87,16 @@
       (set-matrix body (math/floats-from-mat4f (math/transform pos rot [1 1 1])))
       body
     )
+  )
+)
+
+(defn transform-position [t pos]
+  (let [
+      m (.getMatrix t (Matrix4f.))
+      [x y z] (mapv float pos)
+      m (do (.setColumn m 3 x y z 1) m)
+    ]
+    (Transform. m)
   )
 )
 
@@ -161,12 +172,10 @@
   body
 )
 
-(defn set-position [body [x y z]]
+(defn set-position [body pos]
   (let [
       t (.getCenterOfMassTransform body (Transform.))
-      m (.getMatrix t (Matrix4f.))
-      m (do (.setColumn 3 x y z 1) m)
-      t (Transform. m)
+      t (transform-position t pos)
     ]
     (.setCenterOfMassTransform body t)
   )
@@ -262,5 +271,29 @@
       cs (apply concat cs)
     ]
     (apply hash-map (concat cs (reverse cs)))
+  )
+)
+
+(defn sphere-check [world center radius]
+  (let [
+      ss (SphereShape. radius)
+      tf (fn [t c]
+        (.setIdentity t)
+        (transform-position t c)
+      )
+      from (tf (Transform.) center)
+      to (tf (Transform.) (mapv + center [0 0.1 0]))
+      res (atom ())
+      [cx cy cz] center
+      c (Vector3f. 0 0 0)
+      callback (proxy [CollisionWorld$ClosestConvexResultCallback] [c c]
+        (addSingleResult [r n]
+          (swap! res conj (.hitCollisionObject r))
+          1.0
+        )
+      )
+    ]
+    (.convexSweepTest world ss from to callback)
+    @res
   )
 )

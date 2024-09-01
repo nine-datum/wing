@@ -365,6 +365,24 @@
   )
 )
 
+(defn melee-attack-state [anims timer rtimer]
+  (let [
+      atk (attack-state anims timer rtimer)
+      eff-fn (fn [s ch in phys]
+        (let [
+            { :keys [pos look body] } ch
+            ctr (mapv + pos look [0 1 0])
+            cs (phys/sphere-check (ch :world) ctr 0.5)
+            cs (disj (set cs) body)
+          ]
+          (mapv damage-effect cs (repeat 100))
+        )
+      )
+    ]
+    (assoc atk :effect eff-fn :has-shot false)
+  )
+)
+
 (defn death-state [timer rtimer]
   (new-state "death" timer rtimer (fn [s ch in eff]
     (cond
@@ -406,13 +424,13 @@
       :attack (wrap-mortal archer-attack-state)
     )
     :fighter (assoc base-state
-      :attack (wrap-mortal (partial attack-state ["attack" "attack_2"]))
+      :attack (wrap-mortal (partial melee-attack-state ["attack" "attack_2"]))
     )
     :mage (assoc base-state
       :attack (wrap-mortal (partial attack-state ["attackspell"]))
     )
     :ninja (assoc base-state
-      :attack (wrap-mortal (partial attack-state ["attack" "attack_2" "attack_3"]))
+      :attack (wrap-mortal (partial melee-attack-state ["attack" "attack_2" "attack_3"]))
     )
   }
 )
