@@ -68,7 +68,7 @@
         ((dev :mouse) :update)
         ((dev :keyboard) :update)
         (reset! state (setup dev))
-        (org.lwjgl.glfw.GLFW/glfwSwapInterval 0)
+        ;(org.lwjgl.glfw.GLFW/glfwSwapInterval 0) ; fps locker
         (windowLoop id dev loop)
       )
     )
@@ -144,7 +144,7 @@
 
     (graph/world-light [0 -1 0])
 
-    (graph/projection (math/perspective (width) (height) (math/radians 60) 0.01 100))
+    (graph/projection (math/perspective (width) (height) (math/radians 60) 0.01 1000))
     (graph/camera (math/first-person-camera campos camrot))
     
     (graph/model scene)

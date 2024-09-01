@@ -506,7 +506,7 @@
 
 (def cam+ 4)
 (def camdist 8)
-(def camrotx+ (/ Math/PI 12))
+(def camrotx+ (/ Math/PI -12))
 
 (defn player-cam [p]
   (let [
@@ -549,11 +549,12 @@
 
       playerpos (player :pos)
       camsub (mapv - campos playerpos)
-      camsub (update camsub 1 (constantly cam+))
-      camsub (if (zero? (mat/length camsub)) [0 1 -1] (mat/normalise camsub))
+      camsub (update camsub 1 (constantly 0))
+      camsub (if (zero? (mat/length camsub)) [0 0 -1] (mat/normalise camsub))
+
       [cx cy cz] (mapv - camsub)
-      camrot [(- camrotx+) (math/clock cx cz) 0]
-      campos (mapv + playerpos (mapv * camsub (repeat camdist)))
+      camrot [camrotx+ (math/clock cx cz) 0]
+      campos (mapv + playerpos (mapv + [0 cam+ 0] (mapv * camsub (repeat camdist))))
 
 
       [player non-players campos camrot]
