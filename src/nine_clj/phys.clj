@@ -274,26 +274,25 @@
   )
 )
 
-(defn sphere-check [world center radius]
+(defn sphere-check [world from to radius]
   (let [
       ss (SphereShape. radius)
       tf (fn [t c]
         (.setIdentity t)
         (transform-position t c)
       )
-      from (tf (Transform.) center)
-      to (tf (Transform.) (mapv + center [0 0.1 0]))
+      tfrom (tf (Transform.) from)
+      tto (tf (Transform.) to)
       res (atom ())
-      [cx cy cz] center
-      c (Vector3f. 0 0 0)
-      callback (proxy [CollisionWorld$ClosestConvexResultCallback] [c c]
+      vf (fn [x y z] (Vector3f. x y z))
+      callback (proxy [CollisionWorld$ClosestConvexResultCallback] [(apply vf from) (apply vf to)]
         (addSingleResult [r n]
           (swap! res conj (.hitCollisionObject r))
           1.0
         )
       )
     ]
-    (.convexSweepTest world ss from to callback)
+    (.convexSweepTest world ss tfrom tto callback)
     @res
   )
 )

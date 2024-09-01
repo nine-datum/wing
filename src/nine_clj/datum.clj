@@ -372,7 +372,7 @@
         (let [
             { :keys [pos look body] } ch
             ctr (mapv + pos look [0 1 0])
-            cs (phys/sphere-check (ch :world) ctr 0.5)
+            cs (phys/sphere-check (ch :world) ctr (mapv + ctr look) 0.5)
             cs (disj (set cs) body)
           ]
           (mapv damage-effect cs (repeat 100))
