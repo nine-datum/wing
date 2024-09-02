@@ -75,7 +75,7 @@
   )
 )
 
-(defn test-setup [dev]
+(defn test-setup [dev] (time
   (let
     [
       { :keys [gl storage] } dev
@@ -118,7 +118,7 @@
       :time (get-time)
     }
   )
-)
+))
 
 (defn test-loop [dev state]
   (let [

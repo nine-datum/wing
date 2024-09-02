@@ -114,18 +114,10 @@
       anims (
         (comp
           (partial apply hash-map)
-          (partial apply concat)
-          (partial map vector anims)
-          (partial map deref)
+          (partial mapcat vector anims)
+          (partial pmap (partial load-anim storage model-name))
         )
-        (mapv
-          (comp
-            future-call
-            partial
-          )
-          (repeat (partial load-anim storage model-name))
-          anims
-        )
+        anims
       )
       items-loader (fn [gl diffuse-shader skin-shader]
         (mapv (partial load-item-model gl storage diffuse-shader skin-shader) items)
@@ -149,23 +141,11 @@
 )
 
 (defn load-presets [gl storage diffuse-shader skin-shader]
-  (let [
-      fs
-      (mapv
-        (comp
-          future-call
-          partial
-        )
-        (repeat (partial read-preset storage))
-        (keys char-presets)
-      )
-    ]
-    (mapv
-      (comp
-        (partial load-preset gl diffuse-shader skin-shader)
-        deref
-      )
-      fs
+  (mapv
+    (partial load-preset gl diffuse-shader skin-shader)
+    ((comp vec pmap)
+      (partial read-preset storage)
+      (keys char-presets)
     )
   )
 )
@@ -493,7 +473,7 @@
     :effect (fn [ch in phys]
       (concat
         (-> ch :state (char-call :effect ch in phys))
-        (->> ch :items ((comp (partial apply concat) map) #(char-call % :effect ch phys)))
+        (->> ch :items (mapcat #(char-call % :effect ch phys)))
       )
     )
   }
@@ -543,7 +523,7 @@
       contacts (phys/get-all-contacts phys-world)
       phys { :contacts contacts }
       in { :movement movement :action action }
-      effects ((comp (partial apply concat) map) #(char-call % :effect in phys) (cons player non-players))
+      effects (mapcat #(char-call % :effect in phys) (cons player non-players))
       player (next-char player in effects)
       non-players (mapv next-char non-players (repeat { :movement [0 0 0] :action :none }) (repeat effects))
 
