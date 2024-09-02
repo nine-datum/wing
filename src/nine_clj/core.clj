@@ -68,7 +68,7 @@
         ((dev :mouse) :update)
         ((dev :keyboard) :update)
         (reset! state (setup dev))
-        ;(org.lwjgl.glfw.GLFW/glfwSwapInterval 0) ; fps locker
+        ;(org.lwjgl.glfw.GLFW/glfwSwapInterval 0) ; fps unlocker
         (windowLoop id dev loop)
       )
     )
