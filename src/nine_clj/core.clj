@@ -96,11 +96,14 @@
 
       players (mapv
         (fn [preset i]
-          (let [dir (apply math/x0y (math/clock-xy (* i (/ Math/PI 2))))]
-            (dat/load-char phys-world preset (mapv * dir (repeat -10)) dir get-time)
+          (let [
+              dir (apply math/x0y (math/clock-xy (* i (/ Math/PI 2))))
+              m (* -1.5 (+ 5 (int (/ i 4))))
+            ]
+            (dat/load-char phys-world preset (mapv * dir (repeat m)) dir get-time)
           )
         )
-        presets (range (count presets))
+        (cycle presets) (range 4)
       )
       player (first players)
       non-players (rest players)

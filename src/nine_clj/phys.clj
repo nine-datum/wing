@@ -205,7 +205,7 @@
 )
 
 (defn update-world [world time-step]
-  (.stepSimulation world time-step)
+  (.stepSimulation world time-step time-step)
   world
 )
 

@@ -351,7 +351,7 @@
       eff-fn (fn [s ch in phys]
         (let [
             { :keys [pos look body] } ch
-            ctr (mapv + pos look [0 1 0])
+            ctr (mapv + pos [0 1 0])
             cs (phys/sphere-check (ch :world) ctr (mapv + ctr look) 0.5)
             cs (disj (set cs) body)
           ]
