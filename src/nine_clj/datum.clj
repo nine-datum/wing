@@ -205,6 +205,21 @@
   ]
 )
 
+(defn spawn-item-effect [item]
+  [
+    identity
+    (fn [state]
+      (assoc state :items
+        (->
+          state
+          (get :items ())
+          (conj item)
+        )
+      )
+    )
+  ]
+)
+
 (defn multi-effect [effects] 
   [
     (fn [ch] (reduce #((first %2) %1) ch effects))
@@ -212,7 +227,7 @@
   ]
 )
 
-(defn arrow [phys-world pos rot model]
+(defn arrow [phys-world owner pos rot model]
   {
     :body (phys/capsule phys-world pos (mapv + [(/ Math/PI -2) 0 0] rot) 0.2 1.2 1)
     :render (fn [item]
@@ -221,12 +236,14 @@
       (graph/model model)
       (graph/pop-matrix)
     )
-    :effect (fn [item ch phys]
+    :update (constantly ())
+    :next (fn [item in] item)
+    :effect (fn [item in phys]
       (let [
           c (get (phys :contacts) (item :body) ())
         ]
         (cond
-          (or (= c ()) (= c (ch :body))) []
+          (or (= c ()) (= c owner)) []
           :else [ (damage-effect c 100) ]
         )
       )
@@ -248,10 +265,6 @@
 
 (defn move-char [ch mvec]
   (phys/move-char (ch :body) mvec)
-)
-
-(defn add-item [ch item]
-  (update ch :items (partial cons item))
 )
 
 (defn next-char-idle [ch]
@@ -337,27 +350,24 @@
 (defn archer-attack-state [timer rtimer]
   (let [
       atk (attack-state ["attack"] timer rtimer)
-      next-fn
-      (fn [s ch in]
+      effect-fn
+      (fn [s ch in phys]
         (cond
-          (or (s :has-arrow) (-> s state-age (< 1.2))) ((atk :next) s ch in)
+          (or (-> s :has-arrow deref true?) (-> s state-age (< 1.2))) []
           :else (let [
-              { :keys [look pos] } ch
+              { :keys [look pos body world] } ch
               [lx ly lz] look
               arr-pos (mapv + pos look [0 2 0])
               arr-rot [0 (math/clock lx lz) 0]
-              arr (arrow (ch :world) arr-pos arr-rot (-> ch :item-models first))
+              arr (arrow world body arr-pos arr-rot (-> ch :items first))
             ]
             (phys/set-velocity (arr :body) (mapv * look (repeat 100)))
-            (update
-              (add-item ch arr)
-              :state
-              #(assoc % :has-arrow true)
-            )
+            (reset! (s :has-arrow) true)
+            [(spawn-item-effect arr)]
           )
         )
       )
-      state (assoc atk :next next-fn :has-arrow false)
+      state (assoc atk :effect effect-fn :has-arrow (atom false))
     ]
     state
   )
@@ -449,8 +459,7 @@
   {
     :health 100
     :world world
-    :item-models (preset :items)
-    :items ()
+    :items (preset :items)
     :name (preset :name)
     :anims (preset :anims)
     :body (-> world
@@ -473,7 +482,7 @@
     )
     :render (fn [ch]
       (let [
-          { :keys [state look pos items] } ch
+          { :keys [state look pos] } ch
           { :keys [anim start rtimer] } state
           [lx ly lz] look
         ]
@@ -482,15 +491,11 @@
         (apply graph/translate pos)
         (render-preset preset anim (- (rtimer) start))
         (graph/pop-matrix)
-        (doseq [item items] (render-item item))
         ()
       )
     )
     :effect (fn [ch in phys]
-      (concat
-        (-> ch :state (char-call :effect ch in phys))
-        (->> ch :items (mapcat #(char-call % :effect ch phys)))
-      )
+      (-> ch :state (char-call :effect ch in phys))
     )
   }
 )
@@ -543,7 +548,7 @@
       [effect list-effect] (multi-effect effects)
       player (next-char player in)
       non-players (mapv next-char non-players (repeat { :movement [0 0 0] :action :none }))
-      all-players ((comp list-effect (partial mapv effect) cons) player non-players)
+      all-players ((comp (partial mapv effect) cons) player non-players)
       [player non-players] [(first all-players) (rest all-players)]
 
       playerpos (player :pos)
@@ -566,14 +571,14 @@
         :else [player non-players campos camrot]
       )
 
-      state (assoc state
+      state (effect (assoc state
         :action action
         :campos campos
         :camrot camrot
         :movement movement
         :player player
         :non-players non-players
-      )
+      ))
     ]
     state
   )
