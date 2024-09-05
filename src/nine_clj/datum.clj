@@ -165,11 +165,19 @@
   (apply (ch sym) (cons ch args))
 )
 
-(defn next-char [ch in eff] (char-call ch :next in eff))
+(defn next-char [ch in] (char-call ch :next in))
 
 (defn update-char [ch in] (char-call ch :update in))
 
 (defn render-char [ch] (char-call ch :render))
+
+; state scheme
+; {
+;   :update (self in -> ())
+;   :effect (self in physics -> [effects])
+;   :next (self in effect -> next-state)
+;   :render (self -> ())
+; }
 
 (defn new-state
   ([anim timer rtimer next] (new-state anim timer rtimer next (constantly ())))
@@ -189,8 +197,18 @@
 
 (defn damage-effect [body damage]
   [
-    (fn [ch] (-> ch :body (= body)))
-    (fn [ch] (update ch :health #(- % damage)))
+    (fn [ch] (cond
+      (-> ch :body (= body)) (update ch :health #(- % damage))
+      :else ch
+    ))
+    identity
+  ]
+)
+
+(defn multi-effect [effects] 
+  [
+    (fn [ch] (reduce #((first %2) %1) ch effects))
+    (fn [chs] (reduce #((second %2) %1) chs effects))
   ]
 )
 
@@ -262,7 +280,7 @@
 (declare class-state)
 
 (defn idle-state [timer rtimer]
-  (new-state "idle" timer rtimer (fn [s ch in eff]
+  (new-state "idle" timer rtimer (fn [s ch in]
       (let [
           { :keys [movement action] } in
         ]
@@ -278,7 +296,7 @@
 )
 
 (defn walk-state [timer rtimer]
-  (new-state "walk" timer rtimer (fn [s ch in eff]
+  (new-state "walk" timer rtimer (fn [s ch in]
       (let [
           { :keys [movement action] } in
         ]
@@ -305,7 +323,7 @@
       anim (attack-anims (rand-int (count attack-anims)))
     ]
     (new-state anim timer rtimer
-      (fn [s ch in eff]
+      (fn [s ch in]
         (cond
           (< (char-anim-length ch anim) (state-age s)) (map-state ch :idle timer rtimer)
           :else (next-char-idle ch)
@@ -320,9 +338,9 @@
   (let [
       atk (attack-state ["attack"] timer rtimer)
       next-fn
-      (fn [s ch in eff]
+      (fn [s ch in]
         (cond
-          (or (s :has-arrow) (-> s state-age (< 1.2))) ((atk :next) s ch in eff)
+          (or (s :has-arrow) (-> s state-age (< 1.2))) ((atk :next) s ch in)
           :else (let [
               { :keys [look pos] } ch
               [lx ly lz] look
@@ -364,7 +382,7 @@
 )
 
 (defn death-state [timer rtimer]
-  (new-state "death" timer rtimer (fn [s ch in eff]
+  (new-state "death" timer rtimer (fn [s ch in]
     (cond
       (>= (state-age s) (- (char-anim-length ch "death") 0.1)) (map-state ch :dead timer rtimer)
       :else (next-char-idle ch)
@@ -373,17 +391,17 @@
   (fn [s ch in] (move-char ch [0 0 0])))
 )
 (defn dead-state [timer rtimer]
-  (new-state "dead" timer rtimer (fn [s ch in eff] (next-char-idle ch)))
+  (new-state "dead" timer rtimer (fn [s ch in] (next-char-idle ch)))
 )
 
 (defn wrap-mortal [factory]
   (fn [timer rtimer]
     (let [state (factory timer rtimer)]
       (assoc state :next
-        (fn [s ch in eff]
+        (fn [s ch in]
           (cond
             (<= (ch :health) 0) (map-state ch :death timer rtimer)
-            :else ((state :next) s ch in eff)
+            :else ((state :next) s ch in)
           )
         )
       )
@@ -442,14 +460,12 @@
     :pos pos
     :look look
     :state (class-state (preset :name) :idle timer timer)
-    :next (fn [ch in eff]
+    :next (fn [ch in]
       (let [
-          { :keys [state body] } ch
+          state (ch :state)
           next (state :next)
-          effs (filter (comp #(% ch) first) eff)
-          ch (reduce #((second %2) %1) ch effs)
         ]
-        (next state ch in eff)
+        (next state ch in)
       )
     )
     :update (fn [ch in]
@@ -524,8 +540,11 @@
       phys { :contacts contacts }
       in { :movement movement :action action }
       effects (mapcat #(char-call % :effect in phys) (cons player non-players))
-      player (next-char player in effects)
-      non-players (mapv next-char non-players (repeat { :movement [0 0 0] :action :none }) (repeat effects))
+      [effect list-effect] (multi-effect effects)
+      player (next-char player in)
+      non-players (mapv next-char non-players (repeat { :movement [0 0 0] :action :none }))
+      all-players ((comp list-effect (partial mapv effect) cons) player non-players)
+      [player non-players] [(first all-players) (rest all-players)]
 
       playerpos (player :pos)
       camsub (mapv - campos playerpos)
