@@ -212,7 +212,7 @@
 (defn spawn-item-effect [item]
   [
     identity
-    (partial cons item)
+    (fn [s] (update s :items (partial cons item)))
   ]
 )
 
@@ -232,8 +232,7 @@
       (graph/model model)
       (graph/pop-matrix)
     )
-    :update (constantly ())
-    :next (fn [item in] item)
+    :next identity
     :effect (fn [item in phys]
       (let [
           c (get (phys :contacts) (item :body) ())
@@ -519,7 +518,7 @@
 
 (defn next-game-state [dev state]
   (let [
-      { :keys [camrot campos player non-players phys-world] } state
+      { :keys [camrot campos player non-players items phys-world] } state
       { :keys [keyboard mouse] } dev
       
       cammat (apply math/rotation camrot)
@@ -540,12 +539,13 @@
       contacts (phys/get-all-contacts phys-world)
       phys { :contacts contacts }
       in { :movement movement :action action }
-      effects (mapcat #(char-call % :effect in phys) (cons player non-players))
-      [effect list-effect] (multi-effect effects)
+      effects (apply concat (char-list-call (concat [player] non-players items) :effect in phys))
+      [effect global-effect] (multi-effect effects)
       player (next-char player in)
       player (effect player)
       non-players (char-list-call non-players :next { :movement [0 0 0] :action :none })
-      non-players (list-effect (mapv effect non-players))
+      non-players (mapv effect non-players)
+      items (char-list-call items :next)
 
       playerpos (player :pos)
       camsub (mapv - campos playerpos)
@@ -567,14 +567,15 @@
         :else [player non-players campos camrot]
       )
 
-      state (assoc state
+      state (global-effect (assoc state
         :action action
         :campos campos
         :camrot camrot
         :movement movement
         :player player
+        :items items
         :non-players non-players
-      )
+      ))
     ]
     state
   )

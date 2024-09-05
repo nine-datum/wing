@@ -112,6 +112,7 @@
       :phys-world phys-world
       :player player
       :non-players non-players
+      :items ()
       :scene scene
       :image image
       :image-shader image-shader
@@ -136,6 +137,7 @@
       {:keys [
           player
           non-players
+          items
           scene
           campos
           camrot
@@ -152,8 +154,7 @@
     
     (graph/model scene)
 
-    (dat/render-char player)
-    (doseq [n non-players] (dat/render-char n))
+    (doseq [n (concat [player] non-players items)] (dat/render-char n))
 
     (graph/image image image-shader -1 -0.5 0.5 0.5)
 
