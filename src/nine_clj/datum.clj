@@ -165,6 +165,10 @@
   (apply (ch sym) (cons ch args))
 )
 
+(defn char-list-call [chs sym & args]
+  (apply mapv char-call chs (repeat sym) (map repeat args))
+)
+
 (defn next-char [ch in] (char-call ch :next in))
 
 (defn update-char [ch in] (char-call ch :update in))
@@ -208,15 +212,7 @@
 (defn spawn-item-effect [item]
   [
     identity
-    (fn [state]
-      (assoc state :items
-        (->
-          state
-          (get :items ())
-          (conj item)
-        )
-      )
-    )
+    (partial cons item)
   ]
 )
 
@@ -547,9 +543,9 @@
       effects (mapcat #(char-call % :effect in phys) (cons player non-players))
       [effect list-effect] (multi-effect effects)
       player (next-char player in)
-      non-players (mapv next-char non-players (repeat { :movement [0 0 0] :action :none }))
-      all-players ((comp (partial mapv effect) cons) player non-players)
-      [player non-players] [(first all-players) (rest all-players)]
+      player (effect player)
+      non-players (char-list-call non-players :next { :movement [0 0 0] :action :none })
+      non-players (list-effect (mapv effect non-players))
 
       playerpos (player :pos)
       camsub (mapv - campos playerpos)
@@ -571,14 +567,14 @@
         :else [player non-players campos camrot]
       )
 
-      state (effect (assoc state
+      state (assoc state
         :action action
         :campos campos
         :camrot camrot
         :movement movement
         :player player
         :non-players non-players
-      ))
+      )
     ]
     state
   )
