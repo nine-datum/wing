@@ -79,7 +79,7 @@
       "death"
       "dead"
     )
-    :mage (preset "mage" "Cube_002-mesh" []
+    :mage (preset "mage" "Cube_002-mesh" ["res/datum/fireball.dae"]
       "attackspell"
       "spherespell"
       "teleportspell"
@@ -223,15 +223,33 @@
   ]
 )
 
+(defn remove-item-effect [item]
+  [
+    identity
+    (fn [state]
+      (->> state
+        :items
+        (filter (comp (partial not= (item :body)) :body))
+        list*
+        (assoc state :items)
+      )
+    )
+  ]
+)
+
+(defn render-item [size item]
+  (graph/push-matrix)
+  (apply graph/scale size)
+  (graph/apply-matrix (-> :body item phys/get-matrix math/mat4f))
+  (graph/model (item :model))
+  (graph/pop-matrix)
+)
+
 (defn arrow [phys-world owner pos rot model]
   {
+    :model model
     :body (phys/capsule phys-world pos (mapv + [(/ Math/PI -2) 0 0] rot) 0.2 1.2 1)
-    :render (fn [item]
-      (graph/push-matrix)
-      (graph/apply-matrix (-> :body item phys/get-matrix math/mat4f))
-      (graph/model model)
-      (graph/pop-matrix)
-    )
+    :render (partial render-item [1/4 1/4 1/4])
     :next identity
     :effect (fn [item in phys]
       (let [
@@ -241,6 +259,27 @@
           (or (= c ()) (= c owner)) []
           :else [ (damage-effect c 100) ]
         )
+      )
+    )
+  }
+)
+
+(defn fireball [phys-world owner pos rot model]
+  {
+    :model model
+    :body (doto
+      (phys/sphere phys-world pos rot 0.5 1)
+      (phys/set-gravity [0 0 0])
+    )
+    :next identity
+    :render (partial render-item [1/2 1/2 1/2])
+    :effect (fn [item in phys]
+      (cond
+        (not=
+          (item :body)
+          (get (phys :contacts) (item :body) (item :body))
+        ) [(remove-item-effect item)]
+        :else []
       )
     )
   }
@@ -342,21 +381,21 @@
   )
 )
 
-(defn archer-attack-state [timer rtimer]
+(defn projectile-attack-state [attack-anim projectile-spawn spawn-time spawn-force timer rtimer]
   (let [
-      atk (attack-state ["attack"] timer rtimer)
+      atk (attack-state [attack-anim] timer rtimer)
       effect-fn
       (fn [s ch in phys]
         (cond
-          (or (-> s :has-arrow deref true?) (-> s state-age (< 1.2))) []
+          (or (-> s :has-arrow deref true?) (-> s state-age (< spawn-time))) []
           :else (let [
               { :keys [look pos body world] } ch
               [lx ly lz] look
-              arr-pos (mapv + pos look [0 2 0])
+              arr-pos (mapv + pos (mapv * look (repeat 2)) [0 2 0])
               arr-rot [0 (math/clock lx lz) 0]
-              arr (arrow world body arr-pos arr-rot (-> ch :items first))
+              arr (projectile-spawn world body arr-pos arr-rot (-> ch :items first))
             ]
-            (phys/set-velocity (arr :body) (mapv * look (repeat 100)))
+            (phys/set-velocity (arr :body) (mapv * look (repeat spawn-force)))
             (reset! (s :has-arrow) true)
             [(spawn-item-effect arr)]
           )
@@ -424,13 +463,13 @@
 
 (def states-map {
     :archer (assoc base-state
-      :attack (wrap-mortal archer-attack-state)
+      :attack (wrap-mortal (partial projectile-attack-state "attack" arrow 1.2 100))
     )
     :fighter (assoc base-state
       :attack (wrap-mortal (partial melee-attack-state ["attack" "attack_2"]))
     )
     :mage (assoc base-state
-      :attack (wrap-mortal (partial attack-state ["attackspell"]))
+      :attack (wrap-mortal (partial projectile-attack-state "attackspell" fireball 1 10))
     )
     :ninja (assoc base-state
       :attack (wrap-mortal (partial melee-attack-state ["attack" "attack_2" "attack_3"]))
@@ -444,10 +483,6 @@
 
 (defn map-state [ch sym timer rtimer]
   (assoc ch :state (class-state (ch :name) sym timer rtimer))
-)
-
-(defn render-item [item]
-  (char-call item :render)
 )
 
 (defn load-char [world preset pos look timer]

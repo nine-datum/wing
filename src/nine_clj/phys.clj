@@ -125,6 +125,11 @@
   )
 )
 
+(defn set-gravity [body [gx gy gz]]
+  (.setGravity body (Vector3f. gx gy gz))
+  body
+)
+
 (defn set-velocity [body [vx vy vz]]
   (.activate body)
   (.setLinearVelocity body (Vector3f. vx vy vz))

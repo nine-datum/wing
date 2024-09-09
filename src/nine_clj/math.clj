@@ -77,6 +77,10 @@
   (. Matrix4f transform (apply vec3f pos) (apply vec3f rot) (apply vec3f scale))
 )
 
+(defn scale [x y z]
+  (. Matrix4f scale (vec3f x y z))
+)
+
 (defn translation [x y z]
   (. Matrix4f translation (vec3f x y z))
 )
