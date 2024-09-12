@@ -274,12 +274,12 @@
     :next identity
     :render (partial render-item [1/2 1/2 1/2])
     :effect (fn [item in phys]
-      (cond
-        (not=
-          (item :body)
-          (get (phys :contacts) (item :body) (item :body))
-        ) [(remove-item-effect item)]
-        :else []
+      (let [c (get (phys :contacts) (item :body) ())]
+        (cond
+          (= c owner) []
+          (= c ()) []
+          :else [(remove-item-effect item) (damage-effect c 100)]
+        )
       )
     )
   }
@@ -493,7 +493,7 @@
     :name (preset :name)
     :anims (preset :anims)
     :body (-> world
-      (phys/capsule (mapv + [0 3/4 0] pos) [0 0 0] 0.25 3/2 1)
+      (phys/capsule (mapv + [0 1 0] pos) [0 0 0] 0.25 3/2 1)
       (phys/set-rotation-enabled false)
     )
     :pos pos

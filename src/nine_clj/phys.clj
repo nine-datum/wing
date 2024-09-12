@@ -272,6 +272,7 @@
       d (.getDispatcher world)
       n (.getNumManifolds d)
       ms (map #(.getManifoldByIndexInternal d %) (range n))
+      ms (filter #(not= 0 (.getNumContacts %1)) ms)
       cs (mapv #(vector (.getBody0 %) (.getBody1 %)) ms)
       cs (apply concat cs)
     ]
