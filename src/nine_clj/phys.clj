@@ -2,6 +2,7 @@
   (:require
     [nine-clj.geom :as geom]
     [nine-clj.math :as math]
+    [clojure.core.matrix :as mat]
   )
   (:import
     (com.bulletphysics.dynamics
@@ -17,6 +18,7 @@
     )
     (com.bulletphysics.collision.dispatch
       CollisionWorld$ClosestConvexResultCallback
+      CollisionWorld$ClosestRayResultCallback
       CollisionDispatcher
     )
     (com.bulletphysics.collision.dispatch
@@ -88,6 +90,10 @@
       body
     )
   )
+)
+
+(defn extract-vec3 [v]
+  [(.x v) (.y v) (.z v)]
 )
 
 (defn transform-position [t pos]
@@ -300,5 +306,30 @@
     ]
     (.convexSweepTest world ss tfrom tto callback)
     @res
+  )
+)
+
+(defn ray-check [world origin dir dist]
+  (let [
+      [fx fy fz] origin
+      [tx ty tz] (mapv + origin (mapv (partial * dist) dir))
+      from (Vector3f. fx fy fz)
+      to (Vector3f. tx ty tz)
+      callback (CollisionWorld$ClosestRayResultCallback. from to)
+    ]
+    (.rayTest world from to callback)
+    (let [
+        has-hit (.hasHit callback)
+        normal (math/normalize (extract-vec3 (.hitNormalWorld callback)))
+        point (extract-vec3 (.hitPointWorld callback))
+        dist (mat/length (mapv - point origin))
+      ]
+      {
+        :has-hit has-hit
+        :normal normal
+        :point point
+        :dist dist
+      }
+    )
   )
 )

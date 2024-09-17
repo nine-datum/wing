@@ -537,7 +537,7 @@
 
 (def cam+ 4)
 (def camdist 8)
-(def camrotx+ (/ Math/PI -12))
+(def camrotx+ (/ Math/PI 12))
 
 (defn player-cam [p]
   (let [
@@ -586,6 +586,14 @@
       camsub (mapv - campos playerpos)
       camsub (update camsub 1 (constantly 0))
       camsub (if (zero? (mat/length camsub)) [0 0 -1] (mat/normalise camsub))
+
+      ray-origin (mapv + [0 cam+ 0] playerpos)
+      { :keys [has-hit dist normal] } (phys/ray-check phys-world ray-origin camsub camdist)
+      [camsub camdist]
+      (if has-hit
+        [camsub dist]
+        [camsub camdist]
+      )
 
       [cx cy cz] (mapv - camsub)
       camrot [camrotx+ (math/clock cx cz) 0]
