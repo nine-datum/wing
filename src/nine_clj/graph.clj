@@ -222,6 +222,21 @@
   )
 )
 
+(defn material-provider-combine [a a-keys b]
+  (let [
+      a-keys (set a-keys)
+    ]
+    (proxy [MaterialProvider] []
+      (material [name]
+        (cond
+          (contains? a-keys name) (.material a name)
+          :else (.material b name)
+        )
+      )
+    )
+  )
+)
+
 (defn load-model [graphics file]
   {
     :model (.model graphics file)

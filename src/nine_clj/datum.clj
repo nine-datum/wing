@@ -67,7 +67,7 @@
   {
     :archer (preset "archer" "Cube_001-mesh" [ "res/datum/arrow.dae" ]
       {}
-      [ "Odezhda-material" ]
+      [ "Odezhda_tsvet-material" ]
       "attack"
       "idle"
       "walk"
@@ -139,11 +139,12 @@
   )
 )
 
-(defn load-preset-materials [gl preset main-color]
+(defn load-preset-materials [gl preset base-materials main-color]
   (let [
       { :keys [materials paint-materials] } preset
       paint-map (apply hash-map (interleave paint-materials (repeat main-color)))
       mat (graph/material-provider-colors gl (merge materials paint-map))
+      mat (graph/material-provider-combine mat paint-materials base-materials)
     ]
     mat
   )
@@ -511,7 +512,7 @@
     :items (preset :items)
     :name (preset :name)
     :anims (preset :anims)
-    :materials ((preset :materials-loader) color)
+    :materials ((preset :materials-loader) (-> preset :model :materials) color)
     :body (-> world
       (phys/capsule (mapv + [0 1 0] pos) [0 0 0] 0.25 3/2 1)
       (phys/set-rotation-enabled false)
