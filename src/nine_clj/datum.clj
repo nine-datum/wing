@@ -74,7 +74,9 @@
       "death"
       "dead"
     )
-    :fighter (preset "fighter" "Cube_002-mesh" [] {} []
+    :fighter (preset "fighter" "Cube_002-mesh" []
+      {}
+      [ "Metall_color-material" ]
       "attack"
       "attack_2"
       "block"
@@ -83,7 +85,9 @@
       "death"
       "dead"
     )
-    :mage (preset "mage" "Cube_002-mesh" ["res/datum/fireball.dae"] {} []
+    :mage (preset "mage" "Cube_002-mesh" ["res/datum/fireball.dae"]
+      {}
+      [ "Odezhda_tsvet_001-material" ]
       "attackspell"
       "spherespell"
       "teleportspell"
@@ -92,7 +96,9 @@
       "death"
       "dead"
     )
-    :ninja (preset "ninja" "Cube_003-mesh" [] {} []
+    :ninja (preset "ninja" "Cube_003-mesh" []
+      {}
+      [ "Odezhda_tsvet-material" ]
       "attack"
       "attack_2"
       "attack_3"
