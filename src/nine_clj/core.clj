@@ -100,7 +100,7 @@
               dir (apply math/x0y (math/clock-xy (* (inc i) (/ Math/PI 2))))
               m (* -1.5 (+ 5 (int (/ i 4))))
             ]
-            (dat/load-char phys-world preset (mapv * dir (repeat m)) dir get-time)
+            (dat/load-char phys-world preset (mapv * dir (repeat m)) dir [1 0 0 1] get-time)
           )
         )
         (cycle presets) (range 4)

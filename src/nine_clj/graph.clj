@@ -7,9 +7,13 @@
     [nine.lwjgl
       LWJGL_OpenGL
     ]
+    [nine.drawing
+      Color
+    ]
     [nine.opengl
       Shader
       Drawing
+      Texture
     ]
     [nine.function
       Condition
@@ -29,6 +33,8 @@
       Animation
       Animator
       KeyFrameAnimation
+      Material
+      MaterialProvider
     ]
     [nine.geometry.collada
       NoAnimationParser
@@ -202,6 +208,18 @@
 
 (defn load-materials [graphics file]
   (.materials graphics file)
+)
+
+(defn material-provider-colors [gl map]
+  (proxy [MaterialProvider][]
+    (material [name]
+      (let [
+          [cr cg cb ca] (get map name [1 0 1 1])
+        ]
+        (. Material textureAndColor (. Texture blank gl) (. Color floats cr cg cb ca))
+      )
+    )
+  )
 )
 
 (defn load-model [graphics file]

@@ -52,25 +52,29 @@
   )
 )
 
-(defn preset [model-name offset-geom-name items & anims]
+(defn preset [model-name offset-geom-name items materials paint-materials & anims]
   {
     :model-name model-name
     :offset-geom offset-geom-name
     :anims anims
     :items items
+    :materials materials
+    :paint-materials paint-materials
   }
 )
 
 (def char-presets
   {
     :archer (preset "archer" "Cube_001-mesh" [ "res/datum/arrow.dae" ]
+      {}
+      [ "Odezhda-material" ]
       "attack"
       "idle"
       "walk"
       "death"
       "dead"
     )
-    :fighter (preset "fighter" "Cube_002-mesh" []
+    :fighter (preset "fighter" "Cube_002-mesh" [] {} []
       "attack"
       "attack_2"
       "block"
@@ -79,7 +83,7 @@
       "death"
       "dead"
     )
-    :mage (preset "mage" "Cube_002-mesh" ["res/datum/fireball.dae"]
+    :mage (preset "mage" "Cube_002-mesh" ["res/datum/fireball.dae"] {} []
       "attackspell"
       "spherespell"
       "teleportspell"
@@ -88,7 +92,7 @@
       "death"
       "dead"
     )
-    :ninja (preset "ninja" "Cube_003-mesh" []
+    :ninja (preset "ninja" "Cube_003-mesh" [] {} []
       "attack"
       "attack_2"
       "attack_3"
@@ -108,6 +112,8 @@
           offset-geom
           anims
           items
+          materials
+          paint-materials
         ]
       } (char-presets key)
       loader (fn [gl diffuse-shader skin-shader] (load-model gl storage diffuse-shader skin-shader model-name offset-geom))
@@ -127,7 +133,19 @@
       :loader loader
       :items-loader items-loader
       :anims anims
+      :materials materials
+      :paint-materials paint-materials
     }
+  )
+)
+
+(defn load-preset-materials [gl preset main-color]
+  (let [
+      { :keys [materials paint-materials] } preset
+      paint-map (apply hash-map (interleave paint-materials (repeat main-color)))
+      mat (graph/material-provider-colors gl (merge materials paint-map))
+    ]
+    mat
   )
 )
 
@@ -136,6 +154,7 @@
     :name (preset :name)
     :model ((preset :loader) gl diffuse-shader skin-shader)
     :items ((preset :items-loader) gl diffuse-shader skin-shader)
+    :materials-loader (partial load-preset-materials gl preset)
     :anims (preset :anims)
   }
 )
@@ -150,14 +169,14 @@
   )
 )
 
-(defn render-preset [preset anim time]
+(defn render-preset [preset materials anim time]
   (let [
       { :keys [model anims] } preset
       [skin-anim obj-anim] (mapv :anim (anims anim))
       skin-anim (graph/animate skin-anim time)
       obj-anim (graph/animate obj-anim time)
     ]
-    (graph/animated-model model skin-anim obj-anim)
+    (graph/animated-model model skin-anim obj-anim materials)
   )
 )
 
@@ -485,13 +504,14 @@
   (assoc ch :state (class-state (ch :name) sym timer rtimer))
 )
 
-(defn load-char [world preset pos look timer]
+(defn load-char [world preset pos look color timer]
   {
     :health 100
     :world world
     :items (preset :items)
     :name (preset :name)
     :anims (preset :anims)
+    :materials ((preset :materials-loader) color)
     :body (-> world
       (phys/capsule (mapv + [0 1 0] pos) [0 0 0] 0.25 3/2 1)
       (phys/set-rotation-enabled false)
@@ -512,14 +532,14 @@
     )
     :render (fn [ch]
       (let [
-          { :keys [state look pos] } ch
+          { :keys [state look pos materials] } ch
           { :keys [anim start rtimer] } state
           [lx ly lz] look
         ]
         (graph/push-matrix)
         (graph/apply-matrix (math/rotation 0 (math/clock lx lz) 0))
         (apply graph/translate pos)
-        (render-preset preset anim (- (rtimer) start))
+        (render-preset preset materials anim (- (rtimer) start))
         (graph/pop-matrix)
         ()
       )
