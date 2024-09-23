@@ -94,16 +94,14 @@
       level-shape (mapv phys/geom-shape level-geom)
       level-body (mapv #(phys/add-rigid-body phys-world % [0 0 0] [0 0 0] 0) level-shape)
 
-      players (mapv
-        (fn [preset i]
-          (let [
-              dir (apply math/x0y (math/clock-xy (* (inc i) (/ Math/PI 2))))
-              m (* -1.5 (+ 5 (int (/ i 4))))
-            ]
-            (dat/load-char phys-world preset (mapv * dir (repeat m)) dir [1 0 0 1] get-time)
-          )
-        )
-        (cycle presets) (range 4)
+      make-char (fn [preset pos dir color] (dat/load-char phys-world preset pos dir color get-time))
+      step (fn [n] (* (quot (inc n) 2) (Math/pow -1 (rem n 2))))
+      step (comp (partial * 2) step)
+      make-red (fn [preset n] (make-char preset [-5 0 (step n)] [1 0 0] [1 0 0 1]))
+      make-green (fn [preset n] (make-char preset [5 0 (step n)] [-1 0 0] [0 1 0 1]))
+      players (concat
+        (map make-red presets (range))
+        (map make-green presets (range))
       )
       player (first players)
       non-players (rest players)
