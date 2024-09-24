@@ -505,13 +505,19 @@
 )
 
 (defn death-state [timer rtimer]
-  (new-state "death" timer rtimer (fn [s ch in]
-    (cond
-      (>= (state-age s) (- (char-anim-length ch "death") 0.1)) (map-state ch :dead timer rtimer)
-      :else (next-char-idle ch)
+  (assoc (new-state "death" timer rtimer (fn [s ch in]
+      (cond
+        (>= (state-age s) (- (char-anim-length ch "death") 0.1)) (map-state ch :dead timer rtimer)
+        :else (next-char-idle ch)
+      )
     )
-  )
-  (fn [s ch in] (move-char ch [0 0 0])))
+    (fn [s ch in] (when
+        (-> s :disposed deref false?)
+        (.removeRigidBody (ch :world) (ch :body))
+        (-> s :disposed (reset! true))
+      )
+    )
+  ) :disposed (atom false))
 )
 (defn dead-state [timer rtimer]
   (new-state "dead" timer rtimer (fn [s ch in] (next-char-idle ch)))
