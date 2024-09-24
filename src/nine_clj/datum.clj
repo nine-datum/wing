@@ -225,11 +225,24 @@
   )
 )
 
-(defn damage-effect [body hit damage]
+(defn once-hit-check []
+  (let [
+      hits (atom (hash-set))
+    ]
+    (fn [b]
+      (let [ c (contains? @hits b) ]
+        (swap! hits #(conj % b))
+        (false? c)
+      )
+    )
+  )
+)
+
+(defn damage-effect [body hit-check damage]
   [
     (fn [ch] (cond
-      (and (false? @hit) (-> ch :body (= body)))
-        (do (reset! hit true) (update ch :health #(- % damage)))
+      (and (-> ch :body hit-check) (-> ch :body (= body)))
+        (update ch :health #(- % damage))
       :else ch
     ))
     identity
@@ -340,16 +353,53 @@
 
 (defn next-char-mov [ch in]
   (let [
-      { :keys [body pos look] } ch
-      { :keys [movement] } in
+      look (ch :look)
+      in-look (in :look)
       look (cond
-        (math/zero-len? movement) look
-        :else (math/normalize-checked movement)
+        (math/zero-len? in-look) look
+        :else (math/normalize-checked in-look)
       )
     ]
     (assoc (next-char-idle ch) :look look)
   )
 )
+
+
+(defn move-in [m]
+  { :movement m :action :none :look m }
+)
+
+(defn look-in [l]
+  { :movement [0 0 0] :action :none :look l }
+)
+
+(defn move-action-in [m a]
+  { :movement m :action a :look m }
+)
+
+(defn look-action-in [l a]
+ { :movement [0 0 0] :action a :look l }
+)
+
+(defn ai-in [ch chs]
+  (let [
+      { :keys [ side pos ] } ch
+      alive (filter (comp (partial < 0) :health) chs)
+      enemies (filter (comp (partial not= side) :side) alive)
+      grouped (mapv vector (map (comp (partial mapv -) (partial mapv - pos) :pos) enemies) enemies)
+      sorted (sort-by (comp mat/length first) grouped)
+      [tdir t] (cond (empty? sorted) [[] {}] :else (first sorted))
+      [mx my mz] (math/normalize tdir)
+    ]
+    (cond
+      (empty? sorted) (move-in [0 0 0])
+      (->> tdir mat/length (> 2)) (look-action-in tdir :attack)
+      :else (move-in [mx 0 mz])
+    )
+  )
+)
+
+(defn ai-next [chs ch] (char-call ch :next (ai-in ch chs)))
 
 (declare map-state)
 (declare class-state)
@@ -401,7 +451,7 @@
       (fn [s ch in]
         (cond
           (< (char-anim-length ch anim) (state-age s)) (map-state ch :idle timer rtimer)
-          :else (next-char-idle ch)
+          :else (next-char-mov ch in)
         )
       )
       (fn [s ch in] (move-char ch [0 0 0]))
@@ -439,22 +489,18 @@
   (let [
       atk (attack-state anims timer rtimer)
       eff-fn (fn [s ch in phys]
-        (cond
-          (-> s :has-shot deref) []
-          :else
-          (let [
-              { :keys [pos look body] } ch
-              { :keys [has-shot] } s
-              ctr (mapv + pos [0 1 0])
-              cs (phys/sphere-check (ch :world) ctr (mapv + ctr look) 0.5)
-              cs (disj (set cs) body)
-            ]
-            (mapv damage-effect cs (repeat has-shot) (repeat 20))
-          )
+        (let [
+            { :keys [pos look body] } ch
+            { :keys [hit-check] } s
+            ctr (mapv + pos [0 1 0])
+            cs (phys/sphere-check (ch :world) ctr (mapv + ctr (mapv (partial * 2) look)) 0.5)
+            cs (disj (set cs) body)
+          ]
+          (mapv damage-effect cs (repeat hit-check) (repeat 20))
         )
       )
     ]
-    (assoc atk :effect eff-fn :has-shot (atom false))
+    (assoc atk :effect eff-fn :hit-check (once-hit-check))
   )
 )
 
@@ -567,33 +613,13 @@
 
 (defn update-game-state [dev state]
   (let [
-      { :keys [player non-players] } state
+      { :keys [player non-players movement action] } state
       all (cons player non-players)
     ]
-    (update-char player { :movement (state :movement) :action (state :action) })
+    (update-char player (move-action-in movement action))
     (doseq [n non-players] (update-char n (ai-in n all)))
   )
 )
-
-(defn ai-in [ch chs]
-  (let [
-      { :keys [ side pos ] } ch
-      alive (filter (comp (partial < 0) :health) chs)
-      enemies (filter (comp (partial not= side) :side) alive)
-      grouped (mapv vector (map (comp (partial mapv -) (partial mapv - pos) :pos) enemies) enemies)
-      sorted (sort-by (comp mat/length first) grouped)
-      [tdir t] (cond (empty? sorted) [[] {}] :else (first sorted))
-      [mx my mz] (math/normalize tdir)
-    ]
-    (cond
-      (empty? sorted) { :movement [0 0 0] :action :none }
-      (->> tdir mat/length (> 2)) { :movement [0 0 0] :action :attack }
-      :else { :movement [mx 0 mz] :action :none }
-    )
-  )
-)
-
-(defn ai-next [chs ch] (char-call ch :next (ai-in ch chs)))
 
 (def cam+ 4)
 (def camdist 8)
@@ -633,7 +659,7 @@
 
       contacts (phys/get-all-contacts phys-world)
       phys { :contacts contacts }
-      in { :movement movement :action action }
+      in (move-action-in movement action)
       effects (apply concat (char-list-call (concat [player] non-players items) :effect in phys))
       [effect global-effect] (multi-effect effects)
       player (next-char player in)

@@ -101,7 +101,7 @@
       make-green (fn [preset n] (make-char preset [5 0 (step n)] [-1 0 0] [0 1 0 1] :green))
       players (concat
         (map make-red (repeat (second presets)) (range 4))
-        (map make-green (repeat (second presets)) (range 4))
+        (map make-green (repeat (last presets)) (range 4))
       )
       player (first players)
       non-players (rest players)
@@ -116,7 +116,6 @@
       :image-shader image-shader
       :campos (mapv * (player :pos) (repeat 1.1))
       :camrot [0 0 0]
-      :movement [0 0 0]
       :time (get-time)
     }
   )
