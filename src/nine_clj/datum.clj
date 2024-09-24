@@ -225,10 +225,11 @@
   )
 )
 
-(defn damage-effect [body damage]
+(defn damage-effect [body hit damage]
   [
     (fn [ch] (cond
-      (-> ch :body (= body)) (update ch :health #(- % damage))
+      (and (false? @hit) (-> ch :body (= body)))
+        (do (reset! hit true) (update ch :health #(- % damage)))
       :else ch
     ))
     identity
@@ -277,13 +278,14 @@
     :body (phys/capsule phys-world pos (mapv + [(/ Math/PI -2) 0 0] rot) 0.2 1.2 1)
     :render (partial render-item [1/4 1/4 1/4])
     :next identity
+    :has-hit (atom false)
     :effect (fn [item in phys]
       (let [
           c (get (phys :contacts) (item :body) ())
         ]
         (cond
           (or (= c ()) (= c owner)) []
-          :else [ (damage-effect c 100) ]
+          :else [ (damage-effect c (item :has-hit) 100) ]
         )
       )
     )
@@ -437,17 +439,22 @@
   (let [
       atk (attack-state anims timer rtimer)
       eff-fn (fn [s ch in phys]
-        (let [
-            { :keys [pos look body] } ch
-            ctr (mapv + pos [0 1 0])
-            cs (phys/sphere-check (ch :world) ctr (mapv + ctr look) 0.5)
-            cs (disj (set cs) body)
-          ]
-          (mapv damage-effect cs (repeat 100))
+        (cond
+          (-> s :has-shot deref) []
+          :else
+          (let [
+              { :keys [pos look body] } ch
+              { :keys [has-shot] } s
+              ctr (mapv + pos [0 1 0])
+              cs (phys/sphere-check (ch :world) ctr (mapv + ctr look) 0.5)
+              cs (disj (set cs) body)
+            ]
+            (mapv damage-effect cs (repeat has-shot) (repeat 20))
+          )
         )
       )
     ]
-    (assoc atk :effect eff-fn :has-shot false)
+    (assoc atk :effect eff-fn :has-shot (atom false))
   )
 )
 
@@ -511,8 +518,9 @@
   (assoc ch :state (class-state (ch :name) sym timer rtimer))
 )
 
-(defn load-char [world preset pos look color timer]
+(defn load-char [world preset pos look color side timer]
   {
+    :side side
     :health 100
     :world world
     :items (preset :items)
@@ -558,9 +566,34 @@
 )
 
 (defn update-game-state [dev state]
-  (update-char (state :player) { :movement (state :movement) :action (state :action) })
-  (doseq [n (state :non-players)] (update-char n { :movement [0 0 0] }))
+  (let [
+      { :keys [player non-players] } state
+      all (cons player non-players)
+    ]
+    (update-char player { :movement (state :movement) :action (state :action) })
+    (doseq [n non-players] (update-char n (ai-in n all)))
+  )
 )
+
+(defn ai-in [ch chs]
+  (let [
+      { :keys [ side pos ] } ch
+      alive (filter (comp (partial < 0) :health) chs)
+      enemies (filter (comp (partial not= side) :side) alive)
+      grouped (mapv vector (map (comp (partial mapv -) (partial mapv - pos) :pos) enemies) enemies)
+      sorted (sort-by (comp mat/length first) grouped)
+      [tdir t] (cond (empty? sorted) [[] {}] :else (first sorted))
+      [mx my mz] (math/normalize tdir)
+    ]
+    (cond
+      (empty? sorted) { :movement [0 0 0] :action :none }
+      (->> tdir mat/length (> 2)) { :movement [0 0 0] :action :attack }
+      :else { :movement [mx 0 mz] :action :none }
+    )
+  )
+)
+
+(defn ai-next [chs ch] (char-call ch :next (ai-in ch chs)))
 
 (def cam+ 4)
 (def camdist 8)
@@ -605,7 +638,7 @@
       [effect global-effect] (multi-effect effects)
       player (next-char player in)
       player (effect player)
-      non-players (char-list-call non-players :next { :movement [0 0 0] :action :none })
+      non-players (mapv (partial ai-next (cons player non-players)) non-players)
       non-players (mapv effect non-players)
       items (char-list-call items :next)
 
