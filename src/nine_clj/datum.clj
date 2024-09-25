@@ -330,6 +330,8 @@
   (- ((s :timer)) (s :start))
 )
 
+(defn is-alive [ch] (-> ch :health (> 0)))
+
 (defn char-anim [ch name]
   ((ch :anims) name)
 )
@@ -381,25 +383,47 @@
  { :movement [0 0 0] :action a :look l }
 )
 
-(defn ai-in [ch chs]
+(defn ai-target [ch chs] ()
   (let [
       { :keys [ side pos ] } ch
-      alive (filter (comp (partial < 0) :health) chs)
+      alive (filter is-alive chs)
       enemies (filter (comp (partial not= side) :side) alive)
       grouped (mapv vector (map (comp (partial mapv -) (partial mapv - pos) :pos) enemies) enemies)
       sorted (sort-by (comp mat/length first) grouped)
       [tdir t] (cond (empty? sorted) [[] {}] :else (first sorted))
+    ]
+    (if (empty? sorted) () (t :body))
+  )
+)
+
+(defn ai-in [ch chs]
+  (let [
+      { :keys [ pos target ] } ch
+      tdir (cond
+        (= target ()) [0 0 0]
+        :else (mapv - (phys/get-position target) pos)
+      )
       [mx my mz] (math/normalize tdir)
     ]
     (cond
-      (empty? sorted) (move-in [0 0 0])
+      (= target ()) (move-in [0 0 0])
       (->> tdir mat/length (> 2)) (look-action-in tdir :attack)
       :else (move-in [mx 0 mz])
     )
   )
 )
 
-(defn ai-next [chs ch] (char-call ch :next (ai-in ch chs)))
+(defn ai-next [chs body-to-char ch]
+  (let [ next (char-call ch :next (ai-in ch chs)) ]
+    (cond
+      (-> ch :target (= ()))
+        (assoc next :target (ai-target ch chs))
+      (-> ch :target body-to-char is-alive false?)
+        (assoc next :target ())
+      :else next
+    )
+  )
+)
 
 (declare map-state)
 (declare class-state)
@@ -572,6 +596,7 @@
 
 (defn load-char [world preset pos look color side timer]
   {
+    :target ()
     :side side
     :health 100
     :world world
@@ -670,7 +695,9 @@
       [effect global-effect] (multi-effect effects)
       player (next-char player in)
       player (effect player)
-      non-players (mapv (partial ai-next (cons player non-players)) non-players)
+      all-players (cons player non-players)
+      body-to-char (zipmap (map :body all-players) all-players)
+      non-players (mapv (partial ai-next all-players body-to-char) non-players)
       non-players (mapv effect non-players)
       items (char-list-call items :next)
 

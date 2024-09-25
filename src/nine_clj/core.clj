@@ -100,8 +100,8 @@
       make-red (fn [preset n] (make-char preset [(- 0 5 (quot n 10)) 0 (step (mod n 10))] [1 0 0] [1 0 0 1] :red))
       make-green (fn [preset n] (make-char preset [(+ 5 (quot n 10)) 0 (step (mod n 10))] [-1 0 0] [0 1 0 1] :green))
       players (concat
-        (map make-green (repeat (second presets)) (range 50))
-        (map make-red (repeat (last presets)) (range 50))
+        (map make-green (repeat (second presets)) (range 20))
+        (map make-red (repeat (last presets)) (range 20))
       )
       player (first players)
       non-players (rest players)
