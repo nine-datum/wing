@@ -216,7 +216,7 @@
       (let [
           [cr cg cb ca] (get map name [1 0 1 1])
         ]
-        (. Material textureAndColor (. Texture blank gl) (. Color floats cr cg cb ca))
+        (. Material textureAndColor (.blankTexture gl) (. Color floats cr cg cb ca))
       )
     )
   )
