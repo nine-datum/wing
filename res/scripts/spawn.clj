@@ -1,6 +1,8 @@
 (do
-  (use '[nine-clj.datum :as dat])
-  (use '[nine-clj.core :as core])
+  (require
+    '[nine-clj.datum :as dat]
+    '[nine-clj.core :as core]
+  )
   (fn [phys-world presets]
     (let [
         make-char (fn [preset pos dir color side] (dat/load-char phys-world preset pos dir color side core/get-time))
