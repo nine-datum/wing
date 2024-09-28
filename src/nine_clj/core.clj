@@ -165,5 +165,5 @@
 )
 
 (defn -main [& args]
-  (window 800 600 test-setup test-loop {})
+  (window 1200 800 test-setup test-loop {})
 )
