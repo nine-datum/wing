@@ -29,6 +29,9 @@
     [nine.geometry.procedural
       Geometry
     ]
+    [org.lwjgl.glfw
+      GLFW
+    ]
   )
 )
 
@@ -50,11 +53,15 @@
 (defn windowLoop [id dev loop]
   (proxy [WindowLoopAction] []
     (call [w h]
-      (update-status proc-refresh-status)
-      (graph/reset-matrix-stack)
-      (reset! window-width w)
-      (reset! window-height h)
-      (swap! state (partial loop dev))
+      (cond (= (. GLFW GLFW_TRUE) (. GLFW glfwGetWindowAttrib id GLFW/GLFW_FOCUSED))
+        (do
+          (update-status proc-refresh-status)
+          (graph/reset-matrix-stack)
+          (reset! window-width w)
+          (reset! window-height h)
+          (swap! state (partial loop dev))
+        )
+      )
       ((dev :mouse) :update)
       ((dev :keyboard) :update)
     )
