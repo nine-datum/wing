@@ -8,6 +8,7 @@
     [nine-clj.phys :as phys]
     [nine-clj.input :as input]
     [nine-clj.datum :as dat]
+    [nine-clj.prof :as prof]
   )
   (:import
     [nine.lwjgl
@@ -121,15 +122,16 @@
 )
 
 (defn test-loop [dev state]
-  (let [
+  (prof/reset)
+  (prof/profile :main-loop (let [
       time (get-time)
       dt (- time (state :time))
       state (do
-        (phys/update-world (state :phys-world) dt)
-        (dat/update-game-state dev state)
+        (prof/profile :jbullet-update (phys/update-world (state :phys-world) dt))
+        (prof/profile :game-update (dat/update-game-state dev state))
         (assoc state :time time)
       )
-      state (dat/next-game-state dev state)
+      state (prof/profile :game-next (dat/next-game-state dev state))
       {:keys [
           player
           non-players
@@ -143,19 +145,21 @@
       } state
     ]
 
-    (graph/world-light [0 -1 0])
+    (prof/profile :rendering (do
+      (graph/world-light [0 -1 0])
 
-    (graph/projection (math/perspective (width) (height) (math/radians 60) 0.01 1000))
-    (graph/camera (math/first-person-camera campos camrot))
-    
-    (graph/model scene)
+      (graph/projection (math/perspective (width) (height) (math/radians 60) 0.01 1000))
+      (graph/camera (math/first-person-camera campos camrot))
 
-    (doseq [n (concat [player] non-players items)] (dat/render-char n))
+      (graph/model scene)
 
-    (graph/image image image-shader -1 -0.5 0.5 0.5)
+      (doseq [n (concat [player] non-players items)] (dat/render-char n))
+
+      (graph/image image image-shader -1 -0.5 0.5 0.5)
+    ))
 
     state
-  )
+  ))
 )
 
 (defn window [w h setup loop params]
@@ -165,5 +169,5 @@
 )
 
 (defn -main [& args]
-  (window 1200 800 test-setup test-loop {})
+  (window 600 600 test-setup test-loop {})
 )
