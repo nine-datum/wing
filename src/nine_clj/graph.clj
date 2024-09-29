@@ -365,8 +365,8 @@
 (defn animated-model
   ([md anim obj-anim] (animated-model md anim obj-anim (md :materials)))
   ([md anim obj-anim mats] (prof/profile :animated-model
-    (.draw
-      (.animate (md :model)
+    (prof/profile :animated-model-draw-native-call (.draw
+      (prof/profile :animate-native-call (.animate (md :model)
         (.mul
           (get-projection)
           (get-camera)
@@ -376,8 +376,8 @@
         anim
         obj-anim
         mats
-      )
-    )
+      ))
+    ))
   ))
 )
 
