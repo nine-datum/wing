@@ -53,10 +53,11 @@
       proc (fn [v] (-> v (/ main-loop) (* 100) int))
       ;sum (proc (apply + (vals ms)))
       ;ms (assoc ms :other (- 100 sum))
-      ms (reduce-kv (fn [n k v] (assoc n k (str k " took " (proc v) "%"))) {} ms)
-      ms (assoc ms :fps (str "fps = " (->> main-loop (/ one) int)))
+      mseq (sort-by (comp - second) (seq ms))
+      mseq (map #(update % 1 (fn [v] (str (% 0) " took " (proc v) "%"))) mseq)
+      mseq (cons [:fps (str "fps = " (->> main-loop (/ one) int))] mseq)
     ]
-    (doseq [[[k v] i] (map vector (seq ms) (range))]
+    (doseq [[[k v] i] (map vector mseq (range))]
       (paint-text g v 10 (* 25 (inc i)) [1 0 0])
     )
   )

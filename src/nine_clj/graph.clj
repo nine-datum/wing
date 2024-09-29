@@ -15,6 +15,7 @@
       Shader
       Drawing
       Texture
+      Profiler
     ]
     [nine.function
       Condition
@@ -52,6 +53,12 @@
       BufferMapping
     ]
   ]
+)
+
+(def nine-profiler
+  (proxy [Profiler][]
+    (profile [name func] (prof/profile name (.call func)))
+  )
 )
 
 (defn new-gl [] (LWJGL_OpenGL.))
@@ -226,14 +233,16 @@
 (defn material-provider-combine [a a-keys b]
   (let [
       a-keys (set a-keys)
-    ]
-    (proxy [MaterialProvider] []
-      (material [name]
+      mat-fn (fn [name]
         (cond
           (contains? a-keys name) (.material a name)
           :else (.material b name)
         )
       )
+      mat-fn (memoize mat-fn)
+    ]
+    (proxy [MaterialProvider] []
+      (material [name] (mat-fn name))
     )
   )
 )
@@ -364,9 +373,9 @@
 
 (defn animated-model
   ([md anim obj-anim] (animated-model md anim obj-anim (md :materials)))
-  ([md anim obj-anim mats] (prof/profile :animated-model
-    (let [a
-      (prof/profile :animate-native-call (.animate (md :model)
+  ([md anim obj-anim mats]
+    (.draw
+      (.animate (md :model)
         (.mul
           (get-projection)
           (get-camera)
@@ -376,17 +385,16 @@
         anim
         obj-anim
         mats
-      ))]
-      (prof/profile :animated-model-draw-native-call (.draw a))
+      )
     )
-  ))
+  )
 )
 
-(defn animate [anim t] (prof/profile :graph/animate (.animate anim t)))
+(defn animate [anim t] (.animate anim t))
 
 (defn model
   ([md] (model md (md :materials)))
-  ([md mats] (prof/profile :graph/model
+  ([md mats]
     (.draw
       (.transform (md :model)
         (.mul
@@ -398,5 +406,5 @@
         mats
       )
     )
-  ))
+  )
 )
