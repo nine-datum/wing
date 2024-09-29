@@ -47,14 +47,17 @@
 (defn paint-time [g w h]
   (let [
       ms @last-map
-      main-loop (get ms :main-loop 1)
+      one 1000000000.0
+      main-loop (get ms :main-loop one)
       ms (dissoc ms :main-loop)
       proc (fn [v] (-> v (/ main-loop) (* 100) int))
       ;sum (proc (apply + (vals ms)))
       ;ms (assoc ms :other (- 100 sum))
+      ms (reduce-kv (fn [n k v] (assoc n k (str k " took " (proc v) "%"))) {} ms)
+      ms (assoc ms :fps (str "fps = " (->> main-loop (/ one) int)))
     ]
     (doseq [[[k v] i] (map vector (seq ms) (range))]
-      (paint-text g (str k " took " (proc v) "%") 10 (* 25 (inc i)) [1 0 0])
+      (paint-text g v 10 (* 25 (inc i)) [1 0 0])
     )
   )
 )
