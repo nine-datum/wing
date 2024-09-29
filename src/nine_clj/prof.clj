@@ -1,6 +1,5 @@
 (ns nine-clj.prof
   (:import
-    [nine.math Time]
     [javax.swing
       JFrame
       JPanel
@@ -14,9 +13,7 @@
   )
 )
 
-(def time-obj (Time.))
-
-(defn current-time [] (.value time-obj))
+(defn current-time [] (. System nanoTime))
 
 (def time-map (atom {}))
 (def last-map (atom {}))
