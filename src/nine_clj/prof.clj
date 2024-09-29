@@ -29,10 +29,12 @@
 
 (defn reset [] (reset! last-map @time-map) (reset! time-map {}))
 
+(defn cover-nil [x] (if (nil? x) 0 x))
+
 (defmacro profile [name expr]
   `(do
     (let [[res# time#] (measure ~expr)]
-      (swap! time-map #(assoc % ~name time#))
+      (swap! time-map #(update % ~name (comp (partial + time#) cover-nil)))
       res#
     )
   )
@@ -51,11 +53,11 @@
       main-loop (get ms :main-loop 1)
       ms (dissoc ms :main-loop)
       proc (fn [v] (-> v (/ main-loop) (* 100) int))
-      sum (proc (apply + (vals ms)))
-      ms (assoc ms :other (- 100 sum))
+      ;sum (proc (apply + (vals ms)))
+      ;ms (assoc ms :other (- 100 sum))
     ]
     (doseq [[[k v] i] (map vector (seq ms) (range))]
-      (paint-text g (str k " took " (proc v) "%") 10 (* 50 (inc i)) [1 0 0])
+      (paint-text g (str k " took " (proc v) "%") 10 (* 25 (inc i)) [1 0 0])
     )
   )
 )

@@ -2,6 +2,7 @@
   [:require
     [nine-clj.math :as math]
     [nine-clj.text :as text]
+    [nine-clj.prof :as prof]
   ]
   [:import
     [nine.lwjgl
@@ -363,7 +364,7 @@
 
 (defn animated-model
   ([md anim obj-anim] (animated-model md anim obj-anim (md :materials)))
-  ([md anim obj-anim mats]
+  ([md anim obj-anim mats] (prof/profile :animated-model
     (.draw
       (.animate (md :model)
         (.mul
@@ -377,14 +378,14 @@
         mats
       )
     )
-  )
+  ))
 )
 
-(defn animate [anim t] (.animate anim t))
+(defn animate [anim t] (prof/profile :graph/animate (.animate anim t)))
 
 (defn model
   ([md] (model md (md :materials)))
-  ([md mats]
+  ([md mats] (prof/profile :graph/model
     (.draw
       (.transform (md :model)
         (.mul
@@ -396,5 +397,5 @@
         mats
       )
     )
-  )
+  ))
 )

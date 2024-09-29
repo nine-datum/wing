@@ -6,6 +6,7 @@
     [nine-clj.text :as text]
     [nine-clj.phys :as phys]
     [nine-clj.input :as input]
+    [nine-clj.prof :as prof]
     [clojure.core.matrix :as mat]
   ]
   [:import
