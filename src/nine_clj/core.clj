@@ -126,8 +126,9 @@
   (prof/profile :main-loop (let [
       time (get-time)
       dt (- time (state :time))
+      pdt (min dt 1/10)
       state (do
-        (prof/profile :jbullet-update (phys/update-world (state :phys-world) dt))
+        (prof/profile :jbullet-update (phys/update-world (state :phys-world) pdt))
         (prof/profile :game-update (dat/update-game-state dev state))
         (assoc state :time time)
       )
