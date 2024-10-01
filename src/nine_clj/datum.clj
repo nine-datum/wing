@@ -707,18 +707,9 @@
       camsub (update camsub 1 (constantly 0))
       camsub (if (zero? (mat/length camsub)) [0 0 -1] (mat/normalise camsub))
 
-      ray-origin (mapv + [0 cam+ 0] playerpos)
-      { :keys [has-hit dist normal] } (phys/ray-check phys-world ray-origin camsub camdist)
-      [camsub camdist]
-      (if has-hit
-        [camsub dist]
-        [camsub camdist]
-      )
-
       [cx cy cz] (mapv - camsub)
       camrot [camrotx+ (math/clock cx cz) 0]
       campos (mapv + playerpos (mapv + [0 cam+ 0] (mapv * camsub (repeat camdist))))
-
 
       [player non-players campos camrot]
       (cond (keyboard "c" :up)
@@ -729,6 +720,15 @@
         ] [p n cpos crot])
         :else [player non-players campos camrot]
       )
+
+      campiv (mapv + playerpos [0 2 0])
+      camdir (mapv - campos campiv)
+      ray-origin campiv
+      ray-len (mat/length camdir)
+      { :keys [has-hit dist normal] } (phys/ray-check phys-world ray-origin camdir ray-len)
+      camdist (if has-hit dist ray-len)
+      camdir (mapv (partial * camdist) (math/normalize camdir))
+      campos (mapv + campiv camdir)
 
       state (global-effect (assoc state
         :action action

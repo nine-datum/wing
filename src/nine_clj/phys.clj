@@ -311,6 +311,7 @@
 
 (defn ray-check [world origin dir dist]
   (let [
+      dir (math/normalize dir)
       [fx fy fz] origin
       [tx ty tz] (mapv + origin (mapv (partial * dist) dir))
       from (Vector3f. fx fy fz)
