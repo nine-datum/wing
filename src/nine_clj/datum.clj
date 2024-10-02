@@ -712,7 +712,7 @@
       campos (mapv + playerpos (mapv + [0 cam+ 0] (mapv * camsub (repeat camdist))))
 
       [player non-players]
-      (cond (keyboard "c" :up)
+      (cond (or (-> player is-alive false?) (keyboard "c" :up))
         (let [
             ps (zipmap (range) non-players)
             player-pred (every-pred is-alive #(-> % :side (= (player :side))))
