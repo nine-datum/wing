@@ -714,8 +714,10 @@
       [player non-players campos camrot]
       (cond (keyboard "c" :up)
         (let [
-          p (first non-players)
-          n (conj ((comp vec rest) non-players) player)
+          ps (zipmap (range) non-players)
+          [i p] ((comp first filter) (comp is-alive second) ps)
+          ps (dissoc ps i)
+          n (-> ps vals vec (conj player))
           [cpos crot] (player-cam p)
         ] [p n cpos crot])
         :else [player non-players campos camrot]
