@@ -671,7 +671,7 @@
 
 (defn next-game-state [dev state]
   (let [
-      { :keys [camrot campos player non-players items phys-world] } state
+      { :keys [camrot campos player non-players items phys-world delta-time] } state
       { :keys [keyboard mouse] } dev
       
       cammat (apply math/rotation camrot)
@@ -711,7 +711,7 @@
       camrot [camrotx+ (math/clock cx cz) 0]
       campos (mapv + playerpos (mapv + [0 cam+ 0] (mapv * camsub (repeat camdist))))
 
-      [player non-players campos camrot]
+      [player non-players]
       (cond (keyboard "c" :up)
         (let [
             ps (zipmap (range) non-players)
@@ -719,13 +719,12 @@
             [i p] ((comp first filter) (comp player-pred second) (sort-by first ps))
           ]
           (cond
-            (= p nil) [player non-players campos camrot]
+            (= p nil) [player non-players]
             :else
             (let [
                 ps (->> (dissoc ps i) (sort-by first) (map second) vec)
                 n (conj ps player)
-                [cpos crot] (player-cam p)
-              ] [p n cpos crot]
+              ] [p n]
             )
           )
         )
@@ -743,8 +742,8 @@
 
       state (global-effect (assoc state
         :action action
-        :campos campos
-        :camrot camrot
+        :campos (mat/lerp (state :campos) campos (* 5 delta-time))
+        :camrot (mat/lerp (state :camrot) camrot (* 5 delta-time))
         :movement movement
         :player player
         :items items
