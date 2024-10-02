@@ -716,14 +716,14 @@
         (let [
             ps (zipmap (range) non-players)
             player-pred (every-pred is-alive #(-> % :side (= (player :side))))
-            [i p] ((comp first filter) (comp player-pred second) ps)
+            [i p] ((comp first filter) (comp player-pred second) (sort-by first ps))
           ]
           (cond
             (= p nil) [player non-players campos camrot]
             :else
             (let [
-                ps (dissoc ps i)
-                n (-> ps vals vec (conj player))
+                ps (->> (dissoc ps i) (sort-by first) (map second) vec)
+                n (conj ps player)
                 [cpos crot] (player-cam p)
               ] [p n cpos crot]
             )
