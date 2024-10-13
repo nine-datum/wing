@@ -105,6 +105,7 @@
       players ((-> "res/scripts/spawn.clj" slurp read-string eval) phys-world presets)
       player (first players)
       non-players (rest players)
+      [campos camrot] (dat/player-cam player)
     ]
     {
       :phys-world phys-world
@@ -114,8 +115,8 @@
       :scene scene
       :image image
       :image-shader image-shader
-      :campos (mapv * (player :pos) (repeat 1.1))
-      :camrot [0 0 0]
+      :campos campos
+      :camrot camrot
       :time (get-time)
     }
   )
@@ -130,7 +131,7 @@
       state (do
         (prof/profile :jbullet-update (phys/update-world (state :phys-world) pdt))
         (prof/profile :game-update (dat/update-game-state dev state))
-        (assoc state :time time)
+        (assoc state :time time :delta-time pdt)
       )
       state (prof/profile :game-next (dat/next-game-state dev state))
       {:keys [
