@@ -168,13 +168,13 @@
 )
 
 (defn load-presets [gl storage diffuse-shader skin-shader]
-  (mapv
+  (zipmap (keys char-presets) (mapv
     (partial load-preset gl diffuse-shader skin-shader)
     ((comp vec pmap)
       (partial read-preset storage)
       (keys char-presets)
     )
-  )
+  ))
 )
 
 (defn render-preset [preset materials anim time]
@@ -292,14 +292,14 @@
     :body (phys/capsule phys-world pos (mapv + [(/ Math/PI -2) 0 0] rot) 0.2 1.2 1)
     :render (partial render-item [1/4 1/4 1/4])
     :next identity
-    :has-hit (atom false)
+    :has-hit (once-hit-check)
     :effect (fn [item in phys]
       (let [
           c (get (phys :contacts) (item :body) ())
         ]
         (cond
           (or (= c ()) (= c owner)) []
-          :else [ (damage-effect c (item :has-hit) 100) ]
+          :else [ (damage-effect c (item :hit-check) 100) ]
         )
       )
     )
@@ -320,7 +320,7 @@
         (cond
           (= c owner) []
           (= c ()) []
-          :else [(remove-item-effect item) (damage-effect c 100)]
+          :else [(remove-item-effect item) (damage-effect c (once-hit-check) 100)]
         )
       )
     )
@@ -384,6 +384,18 @@
  { :movement [0 0 0] :action a :look l }
 )
 
+(defn target-dir [ch]
+  (let [
+      { :keys [ pos target ] } ch
+      tdir (cond
+        (= target ()) [0 0 0]
+        :else (mapv - (phys/get-position target) pos)
+      )
+    ]
+    tdir
+  )
+)
+
 (defn ai-target [ch chs] ()
   (let [
       { :keys [ side pos ] } ch
@@ -397,13 +409,10 @@
   )
 )
 
-(defn ai-in [ch chs]
+(defn ai-in-fighter [ch chs]
   (let [
-      { :keys [ pos target ] } ch
-      tdir (cond
-        (= target ()) [0 0 0]
-        :else (mapv - (phys/get-position target) pos)
-      )
+      target (ch :target)
+      tdir (target-dir ch)
       [mx my mz] (math/normalize tdir)
     ]
     (cond
@@ -412,6 +421,43 @@
       :else (move-in [mx 0 mz])
     )
   )
+)
+
+(defn ai-in-mage [ch chs]
+  (let [
+      target (ch :target)
+      tdir (target-dir ch)
+      [mx my mz] (math/normalize tdir)
+    ]
+    (cond
+      (= target ()) (move-in [0 0 0])
+      (-> tdir mat/length (< 20)) (look-action-in tdir :attack)
+      :else (move-in [mx 0 mz])
+    )
+  )
+)
+
+(defn ai-in-archer [ch chs]
+  (let [
+      target (ch :target)
+      tdir (target-dir ch)
+      [mx my mz] (math/normalize tdir)
+    ]
+    (cond
+      (= target ()) (move-in [0 0 0])
+      (-> tdir mat/length (< 20)) (look-action-in tdir :attack)
+      :else (move-in [mx 0 mz])
+    )
+  )
+)
+
+(defn ai-in [ch chs]
+  ((case (ch :name)
+    :fighter ai-in-fighter
+    :ninja ai-in-fighter
+    :mage ai-in-mage
+    :archer ai-in-archer
+  ) ch chs)
 )
 
 (defn ai-next [chs body-to-char ch]
@@ -494,7 +540,7 @@
           :else (let [
               { :keys [look pos body world] } ch
               [lx ly lz] look
-              arr-pos (mapv + pos (mapv * look (repeat 2)) [0 2 0])
+              arr-pos (mapv + pos (mapv * look (repeat 2)) [0 1.5 0])
               arr-rot [0 (math/clock lx lz) 0]
               arr (projectile-spawn world body arr-pos arr-rot (-> ch :items first))
             ]
