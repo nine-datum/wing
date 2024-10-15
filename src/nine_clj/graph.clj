@@ -136,7 +136,7 @@
         (.attribute 3 (. Buffer of (apply buf (repeat 6 [0 0 -1]))))
         (.drawing)
       )
-      res { :geom geom :tex tex :drawing (.apply tex geom) :disposed (atom false) }
+      res { :gl gl :geom geom :tex tex :drawing (.apply tex geom) :disposed (atom false) }
     ]
     res
   )
@@ -186,10 +186,10 @@
 
 (defn load-font [name] (text/font name))
 
-(defn load-text [gl text font]
+(defn load-text [gl font]
   (let
     [
-      img (text/text-image text font)
+      img (text/text-image-cached font)
       tex (load-image-img gl img)
     ]
     tex
@@ -198,16 +198,14 @@
 
 (defn unload-text [text] (unload-image text))
 
-(defn text [tx shader x y w h]
-  (image tx shader x y w h)
-)
-
-(defn live-text [gl shader]
-  (fn [str font x y w h]
-    (let [t (load-text gl str font)]
-      (text t shader x y w h)
-      (unload-text t)
-    )
+(defn text [img shader text x y w h]
+  (let [
+      geom (text/text-geom (img :gl) text)
+      tex (img :tex)
+      drawing (.apply tex geom)
+    ]
+    (image (assoc img :geom geom :drawing drawing) shader x y w h)
+    (.dispose geom)
   )
 )
 

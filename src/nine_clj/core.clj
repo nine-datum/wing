@@ -69,7 +69,7 @@
   )
 )
 
-(defn windowStart [setup loop]
+(defn window-start [setup loop]
   (proxy [WindowStartAction] []
     (start [id]
       (let [dev { :storage (FileStorage.) :gl (graph/new-gl) :keyboard (input/keyboard id) :mouse (input/mouse id proc-refresh-status) }]
@@ -96,6 +96,7 @@
       scene (graph/load-model graphics "res/datum/scene/arena.dae")
       image (graph/load-image gl storage "res/images/example.png")
       image-shader (graph/load-shader gl storage "res/shaders/image_vertex.glsl" "res/shaders/image_fragment.glsl")
+      text (graph/load-text gl (text/default-font 150))
       phys-world (phys/dynamics-world)
       level-geom (geom/read-geom storage "res/datum/scene/arena.dae")
       level-geom (mapv :vertex level-geom)
@@ -114,6 +115,7 @@
       :items ()
       :scene scene
       :image image
+      :text text
       :image-shader image-shader
       :campos campos
       :camrot camrot
@@ -143,6 +145,7 @@
           camrot
           image
           image-shader
+          text
         ]
       } state
     ]
@@ -158,6 +161,7 @@
       (doseq [n (concat [player] non-players items)] (dat/render-char n))
 
       (graph/image image image-shader -1 -0.5 0.5 0.5)
+      (graph/text text image-shader "SOME TEXT" -0.25 0.5 0.5 0.2)
     ))
 
     state
@@ -166,10 +170,10 @@
 
 (defn window [w h setup loop params]
   (.run (LWJGL_Window.) w h
-    (windowStart setup loop)
+    (window-start setup loop)
   )
 )
 
 (defn -main [& args]
-  (window 600 600 test-setup test-loop {})
+  (window 1200 800 test-setup test-loop {})
 )
