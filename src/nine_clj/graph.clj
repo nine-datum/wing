@@ -189,7 +189,7 @@
 (defn load-text [gl font]
   (let
     [
-      img (text/text-image-cached font)
+      img (text/text-image font)
       tex (load-image-img gl img)
     ]
     tex
