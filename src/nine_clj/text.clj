@@ -62,7 +62,6 @@
           y (* fs (quot i 16))
           t (.getTransform g)
         ]
-        (.drawRect g x y fs fs)
         (.translate g x y)
         (.translate g (- px) (- py))
         (.scale g sx sy)
