@@ -286,27 +286,29 @@
   (graph/pop-matrix)
 )
 
-(defn arrow [phys-world owner pos rot model]
+(defn arrow [rtimer phys-world owner pos rot model]
   {
+    :start (rtimer)
     :model model
     :body (phys/capsule phys-world pos (mapv + [(/ Math/PI -2) 0 0] rot) 0.2 1.2 1)
     :render (partial render-item [1/4 1/4 1/4])
     :next identity
-    :has-hit (once-hit-check)
+    :hit-check (once-hit-check)
     :effect (fn [item in phys]
       (let [
           c (get (phys :contacts) (item :body) ())
         ]
         (cond
-          (or (= c ()) (= c owner)) []
-          :else [ (damage-effect c (item :hit-check) 100) ]
+          (->> item :start (- (rtimer)) (< 2)) [ (remove-item-effect item) ]
+          (or (-> phys :body-to-char (contains? c) false?) (= c ()) (= c owner)) []
+          :else [ (remove-item-effect item) (damage-effect c (item :hit-check) 100) ]
         )
       )
     )
   }
 )
 
-(defn fireball [phys-world owner pos rot model]
+(defn fireball [rtimer phys-world owner pos rot model]
   {
     :model model
     :body (doto
@@ -542,7 +544,7 @@
               [lx ly lz] look
               arr-pos (mapv + pos (mapv * look (repeat 2)) [0 1.5 0])
               arr-rot [0 (math/clock lx lz) 0]
-              arr (projectile-spawn world body arr-pos arr-rot (-> ch :items first))
+              arr (projectile-spawn rtimer world body arr-pos arr-rot (-> ch :items first))
             ]
             (phys/set-velocity (arr :body) (mapv * look (repeat spawn-force)))
             (reset! (s :has-arrow) true)
@@ -619,7 +621,7 @@
 
 (def states-map {
     :archer (assoc base-state
-      :attack (wrap-mortal (partial projectile-attack-state "attack" arrow 1.2 100))
+      :attack (wrap-mortal (partial projectile-attack-state "attack" arrow 1.2 40))
     )
     :fighter (assoc base-state
       :attack (wrap-mortal (partial melee-attack-state ["attack" "attack_2"]))
@@ -736,12 +738,12 @@
       )
 
       contacts (phys/get-all-contacts phys-world)
-      phys { :contacts contacts }
+      all-players (cons player non-players)
+      body-to-char (zipmap (map :body all-players) all-players)
+      phys { :contacts contacts :body-to-char body-to-char }
       in (move-action-in movement action)
       effects (apply concat (char-list-call (concat [player] non-players items) :effect in phys))
       [effect global-effect] (multi-effect effects)
-      all-players (cons player non-players)
-      body-to-char (zipmap (map :body all-players) all-players)
       player (next-char player in)
       player (effect player)
       non-players (mapv (partial ai-next all-players body-to-char) non-players)

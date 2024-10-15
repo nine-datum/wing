@@ -11,8 +11,8 @@
         make-red (fn [preset n] (make-char preset [(- 0 25 (* 2 (quot n 15))) 0 (step (mod n 10))] [1 0 0] [1 0 0 1] :red))
         make-green (fn [preset n] (make-char preset [(+ 25 (* 2 (quot n 15))) 0 (step (mod n 10))] [-1 0 0] [0 1 0 1] :green))
         players (concat
-          (map make-green (repeat (presets :mage)) (range 15))
-          (map make-red (repeat (presets :mage)) (range 15))
+          (map make-green (repeat (presets :archer)) (range 15))
+          (map make-red (repeat (presets :archer)) (range 15))
         )
       ]
       players
