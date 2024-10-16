@@ -77,8 +77,8 @@
           n (char-nums i)
           s (chars i)
           [px py pw ph] (image-rects i)
-          sx 0.9
-          sy 0.9
+          sx 1
+          sy 1
           x (* fs (rem i 16))
           y (* fs (quot i 16))
           t (.getTransform g)
@@ -135,7 +135,14 @@
 
 (defn text-geom [gl rects text]
   (let [
+      rects (mapv (comp rects table-index) text)
+      sizes (mapv (comp #(conj % 1) vec (partial drop 2)) rects)
+      sizes (mapv (fn [s c] (if (= c \space) [0.5 1 1] s)) sizes text)
+      offsets (mapv (comp #(conj % 0) vec (partial take 2)) rects)
+      offsets (mapv (fn [[x y z] [sx sy sz]] [x (- 0 y sy) z]) offsets sizes)
+      steps (reduce (fn [sum [px py pz]] (conj sum (->> sum last (mapv + [px 0 0])))) [[0 0 0]] sizes)
       l (.length text)
+      r (* 6 l)
       bvs [
         [0 0 0]
         [1 0 0]
@@ -159,20 +166,17 @@
             s (table-index (nth text i))
             x (/ (rem s 16) 16)
             y (/ (quot s 16) 16)
-            y (- 1 y 1/16)
+            [sx sy] (sizes i)
+            y (- 1 (* sy 1/16) y)
           ]
-          (mapv #(mapv + (map (partial * 1/16) %) [x y]) buv)
+          (mapv #(mapv + (map * % [sx sy] (repeat 1/16)) [x y]) buv)
         )
       )
-      r (* 6 l)
-      rects (mapv (comp rects table-index) text)
-      offsets (mapv (comp #(conj % 0) vec (partial take 2)) rects)
-      sizes (mapv (comp #(conj % 1) vec (partial drop 2)) rects)
       bx (fn [i]
         (mapv #(
             ->> %
-            ;(mapv * (sizes i))
-            (mapv + [i 0 0] (mapv - (offsets i)))
+            (mapv * (sizes i))
+            (mapv + (offsets i) (steps i))
             (mapv * [(/ 1 l) 1 1])
           ) bvs
         )
