@@ -51,7 +51,8 @@
     (.setFont g font)
     (doseq [i (range 256)]
       (let [
-          s (-> i char str)
+          n (if (<= 192 i 256) (-> i (- 192) (+ 1040)) i) ; rendering cyrillic after 192
+          s (-> n char str)
           tl (TextLayout. s font frc)
           b (.getBounds tl)
           px (.getMinX b)
@@ -113,6 +114,7 @@
       uv (fn [i]
         (let [
             s (int (nth text i))
+            s (if (<= 1040 s 1104) (-> s (- 1040) (+ 192)) s) ; masking cyrillic
             x (/ (rem s 16) 16)
             y (/ (quot s 16) 16)
             y (- 1 y 1/16)
