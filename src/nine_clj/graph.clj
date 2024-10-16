@@ -189,18 +189,18 @@
 (defn load-text [gl font]
   (let
     [
-      img (text/text-image font)
+      { :keys [img rects] } (text/text-image font)
       tex (load-image-img gl img)
     ]
-    tex
+    (assoc tex :rects rects)
   )
 )
 
-(defn unload-text [text] (unload-image text))
+(defn unload-text [text] (-> text :img unload-image))
 
 (defn text [img shader text x y w h]
   (let [
-      geom (text/text-geom (img :gl) text)
+      geom (text/text-geom (img :gl) (img :rects) text)
       tex (img :tex)
       drawing (.apply tex geom)
     ]
