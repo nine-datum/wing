@@ -160,7 +160,7 @@
 
       (doseq [n (concat [player] non-players items)] (dat/render-char n))
 
-      (graph/image image image-shader -0.8 0.4 1.6 0.2)
+      (graph/image image image-shader -0.8 -0.8 0.5 0.5)
       (graph/text text image-shader "Здравствуйте, я ваша тетя" -0.8 0.4 1.6 0.2)
     ))
 
