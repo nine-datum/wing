@@ -161,7 +161,8 @@
       (doseq [n (concat [player] non-players items)] (dat/render-char n))
 
       (graph/image image image-shader -0.8 -0.8 0.5 0.5)
-      (graph/text text image-shader "Здравствуйте, я ваша тетя\nА вы кто?" -0.8 0.4 1.6 0.2)
+      ;(graph/image image image-shader -0.8 0.4 1.6 0.2)
+      (graph/text text image-shader ((comp (partial apply str) take) (-> time (* 10) int (mod 50)) "Здравствуйте, я ваша тетя\nА вы кто?\nА я кто?") -0.8 0.4 1.6 0.2)
     ))
 
     state

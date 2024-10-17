@@ -200,7 +200,7 @@
 
 (defn text [img shader text x y w h]
   (let [
-      geom (text/text-geom (img :gl) (img :rects) text)
+      geom (text/text-geom (img :gl) [w h] (img :rects) text)
       tex (img :tex)
       drawing (.apply tex geom)
     ]

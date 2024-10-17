@@ -133,7 +133,7 @@
   )
 )
 
-(defn text-geom [gl rects text]
+(defn text-geom [gl target-size rects text]
   (let [
       rects (mapv (comp rects table-index) text)
       sizes (mapv (comp #(conj % 1) vec (partial drop 2)) rects)
@@ -154,6 +154,11 @@
       )
       l (.length text)
       r (* 6 l)
+      [tsx tsy] target-size
+      th (->> text (filter (partial = \newline)) count inc)
+      tw (/ tsy 4)
+      ty (dec th)
+      tmul (/ th)
       bvs [
         [0 0 0]
         [1 0 0]
@@ -188,7 +193,8 @@
             ->> %
             (mapv * (sizes i))
             (mapv + (offsets i) (steps i))
-            (mapv * [(/ 1 l) 1 1])
+            (mapv + [0 ty 0])
+            (mapv * [(* tmul tw) tmul 1])
           ) bvs
         )
       )
