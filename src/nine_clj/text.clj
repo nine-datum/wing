@@ -140,7 +140,18 @@
       sizes (mapv (fn [s c] (if (= c \space) [0.5 1 1] s)) sizes text)
       offsets (mapv (comp #(conj % 0) vec (partial take 2)) rects)
       offsets (mapv (fn [[x y z] [sx sy sz]] [x (- 0 y sy) z]) offsets sizes)
-      steps (reduce (fn [sum [px py pz]] (conj sum (->> sum last (mapv + [px 0 0])))) [[0 0 0]] sizes)
+      steps (reduce
+        (fn [sum [c [px py pz]]]
+          (conj sum
+            (case c
+              \newline (vector 0 (-> sum last second dec) 0)
+              (->> sum last (mapv + [px 0 0]))
+            )
+          )
+        )
+        [[0 0 0]]
+        (map vector text sizes)
+      )
       l (.length text)
       r (* 6 l)
       bvs [
