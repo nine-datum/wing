@@ -32,7 +32,7 @@
   ([name size style] (Font. name style size))
 )
 
-(defn load-font [file size] (.deriveFont (. Font createFont Font/PLAIN (File. file)) size))
+(defn load-font [file size] (.deriveFont (. Font createFont Font/PLAIN (File. file)) Font/PLAIN (float size)))
 
 (defn default-font [size] (font "Serif" size))
 
@@ -156,7 +156,7 @@
       r (* 6 l)
       [tsx tsy] target-size
       th (->> text (filter (partial = \newline)) count inc)
-      tw (/ tsy 4)
+      tw tsy
       ty (dec th)
       tmul (/ th)
       bvs [

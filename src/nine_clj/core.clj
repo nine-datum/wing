@@ -9,6 +9,7 @@
     [nine-clj.input :as input]
     [nine-clj.datum :as dat]
     [nine-clj.prof :as prof]
+    [nine-clj.gui :as gui]
   )
   (:import
     [nine.lwjgl
@@ -94,9 +95,7 @@
       presets (dat/load-presets gl storage diffuse-shader skin-shader)
       
       scene (graph/load-model graphics "res/datum/scene/arena.dae")
-      image (graph/load-image gl storage "res/images/example.png")
-      image-shader (graph/load-shader gl storage "res/shaders/image_vertex.glsl" "res/shaders/image_fragment.glsl")
-      text (graph/load-text gl (text/default-font 50))
+      gui-asset (gui/gui-asset gl storage)
       phys-world (phys/dynamics-world)
       level-geom (geom/read-geom storage "res/datum/scene/arena.dae")
       level-geom (mapv :vertex level-geom)
@@ -114,9 +113,7 @@
       :non-players non-players
       :items ()
       :scene scene
-      :image image
-      :text text
-      :image-shader image-shader
+      :gui-asset gui-asset
       :campos campos
       :camrot camrot
       :time (get-time)
@@ -143,9 +140,7 @@
           scene
           campos
           camrot
-          image
-          image-shader
-          text
+          gui-asset
         ]
       } state
     ]
@@ -160,9 +155,7 @@
 
       (doseq [n (concat [player] non-players items)] (dat/render-char n))
 
-      (graph/image image image-shader -0.8 -0.8 0.5 0.5)
-      ;(graph/image image image-shader -0.8 0.4 1.6 0.2)
-      (graph/text text image-shader ((comp (partial apply str) take) (-> time (* 10) int (mod 50)) "Здравствуйте, я ваша тетя\nА вы кто?\nА я кто?") -0.8 0.4 1.6 0.2)
+      (gui/button gui-asset "Начать игру" -0.2 0 (-> time Math/sin (* 0.2) (+ 0.4)) 0.2)
     ))
 
     state

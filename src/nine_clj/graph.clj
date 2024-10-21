@@ -186,7 +186,7 @@
 
 (defn load-font [name] (text/font name))
 
-(defn load-text [gl font]
+(defn load-text-asset [gl font]
   (let
     [
       { :keys [img rects] } (text/text-image font)
@@ -196,15 +196,15 @@
   )
 )
 
-(defn unload-text [text] (-> text :img unload-image))
+(defn unload-text-asset [asset] (unload-image asset))
 
-(defn text [img shader text x y w h]
+(defn text [asset shader text x y w h]
   (let [
-      geom (text/text-geom (img :gl) [w h] (img :rects) text)
-      tex (img :tex)
+      geom (text/text-geom (asset :gl) [w h] (asset :rects) text)
+      tex (asset :tex)
       drawing (.apply tex geom)
     ]
-    (image (assoc img :geom geom :drawing drawing) shader x y w h)
+    (image (assoc asset :geom geom :drawing drawing) shader x y w h)
     (.dispose geom)
   )
 )
