@@ -5,7 +5,7 @@
   ]
 )
 
-(defn gui-asset [gl storage]
+(defn gui-asset [gl storage mouse]
   (let [
       image-shader (graph/load-shader gl storage "res/shaders/image_vertex.glsl" "res/shaders/image_fragment.glsl")
       text-shader image-shader
@@ -13,6 +13,7 @@
       button-image (graph/load-image gl storage "res/images/button.png")
     ]
     {
+      :mouse mouse
       :image-shader image-shader
       :text-shader text-shader
       :text-asset text-asset
@@ -22,6 +23,13 @@
 )
 
 (defn button [asset label x y w h]
-  (graph/image (asset :button-image) (asset :image-shader) x y w h)
-  (graph/text (asset :text-asset) (asset :text-shader) label (+ x (/ w 5)) (+ y (/ h 4)) w (* h 3/4))
+  (let [
+      [mx my] ((asset :mouse) :pos)
+      [ex ey] (map + [x y] [w h])
+      hovered (and (<= x mx ex) (<= y my ey))
+    ]
+    (graph/image (asset :button-image) (asset :image-shader) x y w h)
+    (graph/text (asset :text-asset) (asset :text-shader) label (+ x (/ w 5)) (+ y (/ h 4)) w (* h 3/4))
+    hovered
+  )
 )

@@ -87,7 +87,7 @@
 (defn test-setup [dev]
   (let
     [
-      { :keys [gl storage] } dev
+      { :keys [gl storage mouse] } dev
       skin-shader (graph/load-shader gl storage "res/shaders/diffuse_skin_vertex.glsl" "res/shaders/diffuse_fragment.glsl")
       diffuse-shader (graph/load-shader gl storage "res/shaders/diffuse_vertex.glsl" "res/shaders/diffuse_fragment.glsl")
       graphics (graph/load-graphics gl storage diffuse-shader skin-shader)
@@ -95,7 +95,7 @@
       presets (dat/load-presets gl storage diffuse-shader skin-shader)
       
       scene (graph/load-model graphics "res/datum/scene/arena.dae")
-      gui-asset (gui/gui-asset gl storage)
+      gui-asset (gui/gui-asset gl storage mouse)
       phys-world (phys/dynamics-world)
       level-geom (geom/read-geom storage "res/datum/scene/arena.dae")
       level-geom (mapv :vertex level-geom)
@@ -169,5 +169,5 @@
 )
 
 (defn -main [& args]
-  (window 1200 800 test-setup test-loop {})
+  (window 800 600 test-setup test-loop {})
 )

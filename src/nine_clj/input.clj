@@ -27,6 +27,21 @@
   )
 )
 
+(defn viewport-mouse [mouse width-fun height-fun]
+  (fn [key]
+    (case key
+      :pos (->>
+        [(width-fun) (height-fun)]
+        (mapv / (mouse :pos))
+        (mapv + [-0.5 -0.5])
+        (mapv * [2 2])
+      )
+      :delta (mapv / (mouse :delta) [(width-fun) (height-fun)])
+      :update ()
+    )
+  )
+)
+
 (defn keyboard [wid]
   (let [
       k (LWJGL_Keyboard. wid)
