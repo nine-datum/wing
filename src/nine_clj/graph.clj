@@ -161,18 +161,21 @@
   ()
 )
 
-(defn image [img shader x y w h]
+(defn image [img shader x y w h color]
   (let
     [
       player (.player shader)
       uniforms (.uniforms player)
       trans (.uniformMatrix uniforms "transform")
+      col (.uniformColor uniforms "color")
+      [cr cg cb ca] color
     ]
     (.draw
       (.play player
         (proxy [Drawing] []
           (draw []
             (.load trans (math/transform [x y 0] [0 0 0] [w h 1]))
+            (.load col (. Color floats cr cg cb ca))
             (cond
               (-> img :disposed deref true?) (throw (RuntimeException. "Texture cannot be used, it was disposed"))
               :else (-> img :drawing .draw)
@@ -198,13 +201,13 @@
 
 (defn unload-text-asset [asset] (unload-image asset))
 
-(defn text [asset shader text x y w h]
+(defn text [asset shader text x y w h color]
   (let [
       geom (text/text-geom (asset :gl) [w h] (asset :rects) text)
       tex (asset :tex)
       drawing (.apply tex geom)
     ]
-    (image (assoc asset :geom geom :drawing drawing) shader x y w h)
+    (image (assoc asset :geom geom :drawing drawing) shader x y w h color)
     (.dispose geom)
   )
 )

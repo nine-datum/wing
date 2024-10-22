@@ -27,9 +27,11 @@
       [mx my] ((asset :mouse) :pos)
       [ex ey] (map + [x y] [w h])
       hovered (and (<= x mx ex) (<= y my ey))
+      img-color [1 1 1 1]
+      txt-color [1 1 1 1]
     ]
-    (graph/image (asset :button-image) (asset :image-shader) x y w h)
-    (graph/text (asset :text-asset) (asset :text-shader) label (+ x (/ w 5)) (+ y (/ h 4)) w (* h 3/4))
+    (graph/image (asset :button-image) (asset :image-shader) x y w h img-color)
+    (graph/text (asset :text-asset) (asset :text-shader) label (+ x (/ w 5)) (+ y (/ h 4)) w (* h 3/4) txt-color)
     hovered
   )
 )
