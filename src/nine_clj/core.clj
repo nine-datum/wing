@@ -37,6 +37,25 @@
   )
 )
 
+(defn read-script [file]
+  (with-open [r (clojure.java.io/reader file)]
+    (let [
+        p (java.io.PushbackReader. r)
+        ex (loop [ex []]
+          (let [e (read p false nil)]
+            (cond (nil? e) ex :else (recur (conj ex e)))
+          )
+        )
+        res (binding [*ns* (create-ns 'script)]
+          (clojure.core/refer-clojure)
+          (last (mapv eval ex))
+        )
+      ]
+      res
+    )
+  )
+)
+
 (defn new-status [] (UpdateRefreshStatus.))
 (defn update-status [status] (.update status))
 
@@ -52,7 +71,7 @@
 
 (def state (atom {}))
 
-(defn windowLoop [id dev loop]
+(defn windowLoop [id dev]
   (proxy [WindowLoopAction] []
     (call [w h]
       (cond (= (. GLFW GLFW_TRUE) (. GLFW glfwGetWindowAttrib id GLFW/GLFW_FOCUSED))
@@ -61,7 +80,7 @@
           (graph/reset-matrix-stack)
           (reset! window-width w)
           (reset! window-height h)
-          (swap! state (partial loop dev))
+          (swap! state (partial (@state :loop) dev))
         )
       )
       ((dev :mouse) :update)
@@ -70,7 +89,7 @@
   )
 )
 
-(defn window-start [setup loop]
+(defn window-start [setup]
   (proxy [WindowStartAction] []
     (start [id]
       (let [dev { :storage (FileStorage.) :gl (graph/new-gl) :keyboard (input/keyboard id) :mouse (input/mouse id proc-refresh-status) }]
@@ -78,99 +97,18 @@
         ((dev :keyboard) :update)
         (reset! state (setup dev))
         ;(org.lwjgl.glfw.GLFW/glfwSwapInterval 0) ; fps unlocker
-        (windowLoop id dev loop)
+        (windowLoop id dev)
       )
     )
   )
 )
 
-(defn test-setup [dev]
-  (let
-    [
-      { :keys [gl storage mouse] } dev
-      skin-shader (graph/load-shader gl storage "res/shaders/diffuse_skin_vertex.glsl" "res/shaders/diffuse_fragment.glsl")
-      diffuse-shader (graph/load-shader gl storage "res/shaders/diffuse_vertex.glsl" "res/shaders/diffuse_fragment.glsl")
-      graphics (graph/load-graphics gl storage diffuse-shader skin-shader)
-      
-      presets (dat/load-presets gl storage diffuse-shader skin-shader)
-      
-      scene (graph/load-model graphics "res/datum/scene/arena.dae")
-      gui-asset (gui/gui-asset gl storage (input/viewport-mouse mouse width height))
-      phys-world (phys/dynamics-world)
-      level-geom (geom/read-geom storage "res/datum/scene/arena.dae")
-      level-geom (mapv :vertex level-geom)
-      level-shape (mapv phys/geom-shape level-geom)
-      level-body (mapv #(phys/add-rigid-body phys-world % [0 0 0] [0 0 0] 0) level-shape)
-
-      players ((-> "res/scripts/spawn.clj" slurp read-string eval) phys-world presets)
-      player (first players)
-      non-players (rest players)
-      [campos camrot] (dat/player-cam player)
-    ]
-    {
-      :phys-world phys-world
-      :player player
-      :non-players non-players
-      :items ()
-      :scene scene
-      :gui-asset gui-asset
-      :campos campos
-      :camrot camrot
-      :time (get-time)
-    }
-  )
-)
-
-(defn test-loop [dev state]
-  (prof/reset)
-  (prof/profile :main-loop (let [
-      time (get-time)
-      dt (- time (state :time))
-      pdt (min dt 1/10)
-      state (do
-        (prof/profile :jbullet-update (phys/update-world (state :phys-world) pdt))
-        (prof/profile :game-update (dat/update-game-state dev state))
-        (assoc state :time time :delta-time pdt)
-      )
-      state (prof/profile :game-next (dat/next-game-state dev state))
-      {:keys [
-          player
-          non-players
-          items
-          scene
-          campos
-          camrot
-          gui-asset
-        ]
-      } state
-    ]
-
-    (prof/profile :rendering (do
-      (graph/world-light [0 -1 0])
-
-      (graph/projection (math/perspective (width) (height) (math/radians 60) 0.01 1000))
-      (graph/camera (math/first-person-camera campos camrot))
-
-      (graph/model scene)
-
-      (doseq [n (concat [player] non-players items)] (dat/render-char n))
-
-      (mapv (fn [t i] (gui/button gui-asset t -0.2 (-> i (+ 0.4) (* -0.2)) 0.4 0.15))
-        ["Начать игру" "Настройки" "Выйти"]
-        (range)
-      )
-    ))
-
-    state
-  ))
-)
-
-(defn window [w h setup loop params]
+(defn window [w h setup params]
   (.run (LWJGL_Window.) w h
-    (window-start setup loop)
+    (window-start setup)
   )
 )
 
 (defn -main [& args]
-  (window 800 600 test-setup test-loop {})
+  (window 800 600 (read-script "res/scripts/arena_setup.clj") {})
 )
