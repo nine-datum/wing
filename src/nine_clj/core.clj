@@ -95,7 +95,7 @@
       presets (dat/load-presets gl storage diffuse-shader skin-shader)
       
       scene (graph/load-model graphics "res/datum/scene/arena.dae")
-      gui-asset (gui/gui-asset gl storage mouse)
+      gui-asset (gui/gui-asset gl storage (input/viewport-mouse mouse width height))
       phys-world (phys/dynamics-world)
       level-geom (geom/read-geom storage "res/datum/scene/arena.dae")
       level-geom (mapv :vertex level-geom)
@@ -155,7 +155,10 @@
 
       (doseq [n (concat [player] non-players items)] (dat/render-char n))
 
-      (gui/button gui-asset "Начать игру" -0.2 0 (-> time Math/sin (* 0.2) (+ 0.4)) 0.2)
+      (mapv (fn [t i] (gui/button gui-asset t -0.2 (-> i (+ 0.4) (* -0.2)) 0.4 0.15))
+        ["Начать игру" "Настройки" "Выйти"]
+        (range)
+      )
     ))
 
     state

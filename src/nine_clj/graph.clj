@@ -144,13 +144,13 @@
 
 (defn load-image [gl storage file]
   (load-image-tex gl
-    (.texture gl (.open storage file))
+    (.texture gl (.open storage file) false)
   )
 )
 
 (defn load-image-img [gl img]
   (load-image-tex gl
-    (.texture gl img)
+    (.texture gl img false)
   )
 )
 
