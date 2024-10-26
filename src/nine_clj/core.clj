@@ -11,6 +11,8 @@
     [nine-clj.prof :as prof]
     [nine-clj.gui :as gui]
     [nine-clj.scripting :as scripting]
+    [nine-clj.arena]
+    [nine-clj.menu]
   )
   (:import
     [nine.lwjgl
@@ -103,5 +105,5 @@
 )
 
 (defn -main [& args]
-  (window 800 600 nine-clj.arena/arena-setup {})
+  (window 800 600 nine-clj.menu/menu-setup {})
 )

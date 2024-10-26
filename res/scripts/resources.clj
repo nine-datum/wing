@@ -22,6 +22,7 @@
       arena-geom (mapv :vertex arena-geom)
       arena-shape (mapv phys/geom-shape arena-geom)
       gui-asset (gui/gui-asset gl storage (input/viewport-mouse mouse width height))
+      menu-image (graph/load-image gl storage "res/images/menu.png")
     ]
     {
       :skin-shader skin-shader
@@ -31,6 +32,7 @@
       :arena arena
       :arena-shape arena-shape
       :gui-asset gui-asset
+      :menu-image menu-image
     }
   )
 )

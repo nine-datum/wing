@@ -76,11 +76,6 @@
       (graph/model scene)
 
       (doseq [n (concat [player] non-players items)] (dat/render-char n))
-
-      (mapv (fn [t i] (gui/button gui-asset t -0.2 (-> i (+ 0.4) (* -0.2)) 0.4 0.15))
-        ["Начать игру" "Настройки" "Выйти"]
-        (range)
-      )
     ))
 
     state

@@ -22,6 +22,10 @@
   )
 )
 
+(defn image [asset image x y w h color]
+  (graph/image image (asset :image-shader) x y w h color)
+)
+
 (defn button [asset label x y w h]
   (let [
       [mx my] ((asset :mouse) :pos)
