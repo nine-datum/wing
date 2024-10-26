@@ -1,6 +1,7 @@
 (ns nine-clj.menu
   [:require
     [nine-clj.gui :as gui]
+    [nine-clj.arena :as arena]
   ]
 )
 
@@ -11,17 +12,27 @@
     :loop menu-loop
     :gui-asset (res :gui-asset)
     :menu-image (res :menu-image)
+    :buttons [
+      ["Начать игру" (fn [state] (arena/arena-setup dev res))]
+      ["Настройки" identity]
+      ["Выход" (constantly nil)]
+    ]
   }
 )
 (defn menu-loop [dev state]
   (let [
-      { :keys [gui-asset menu-image] } state
+      { :keys [gui-asset menu-image buttons] } state
+      ** (gui/image gui-asset menu-image -1 -1 2 2 [1 1 1 1])
+      bs (mapv (fn [[label func] i]
+          (vector
+            (gui/button gui-asset label -0.2 (-> i (+ 0.4) (* -0.2)) 0.4 0.15)
+            func
+          )
+        )
+        buttons
+        (range)
+      )
     ]
-    (gui/image gui-asset menu-image -1 -1 2 2 [1 1 1 1])
-    (mapv (fn [t i] (gui/button gui-asset t -0.2 (-> i (+ 0.4) (* -0.2)) 0.4 0.15))
-      ["Начать игру" "Настройки" "Выйти"]
-      (range)
-    )
-    state
+    (nth (->> bs (filter (comp true? first)) (map (comp #(% state) last))) 0 state)
   )
 )

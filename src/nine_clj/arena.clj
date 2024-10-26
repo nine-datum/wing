@@ -1,7 +1,6 @@
 (ns nine-clj.arena
   [:require
     [nine-clj.datum :as dat]
-    [nine-clj.core :as core]
     [nine-clj.graph :as graph]
     [nine-clj.geom :as geom]
     [nine-clj.gui :as gui]

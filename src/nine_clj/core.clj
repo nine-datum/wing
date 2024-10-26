@@ -55,10 +55,11 @@
 
 (def state (atom {}))
 
-(defn windowLoop [id dev]
+(defn windowLoop [win id dev]
   (proxy [WindowLoopAction] []
     (call [w h]
-      (cond (= (. GLFW GLFW_TRUE) (. GLFW glfwGetWindowAttrib id GLFW/GLFW_FOCUSED))
+      (cond
+        (= (. GLFW GLFW_TRUE) (. GLFW glfwGetWindowAttrib id GLFW/GLFW_FOCUSED))
         (do
           (update-status proc-refresh-status)
           (graph/reset-matrix-stack)
@@ -69,11 +70,12 @@
       )
       ((dev :mouse) :update)
       ((dev :keyboard) :update)
+      (cond (nil? @state) (.close win))
     )
   )
 )
 
-(defn window-start [setup]
+(defn window-start [win setup]
   (proxy [WindowStartAction] []
     (start [id]
       (let [
@@ -92,15 +94,17 @@
         ((dev :keyboard) :update)
         (reset! state (setup dev res))
         ;(org.lwjgl.glfw.GLFW/glfwSwapInterval 0) ; fps unlocker
-        (windowLoop id dev)
+        (windowLoop win id dev)
       )
     )
   )
 )
 
 (defn window [w h setup params]
-  (.run (LWJGL_Window.) w h
-    (window-start setup)
+  (let [win (LWJGL_Window.)]
+    (.run win w h
+      (window-start win setup)
+    )
   )
 )
 
