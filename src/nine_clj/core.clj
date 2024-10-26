@@ -10,6 +10,7 @@
     [nine-clj.datum :as dat]
     [nine-clj.prof :as prof]
     [nine-clj.gui :as gui]
+    [nine-clj.scripting :as scripting]
   )
   (:import
     [nine.lwjgl
@@ -34,25 +35,6 @@
     [org.lwjgl.glfw
       GLFW
     ]
-  )
-)
-
-(defn read-script [file]
-  (with-open [r (clojure.java.io/reader file)]
-    (let [
-        p (java.io.PushbackReader. r)
-        ex (loop [ex []]
-          (let [e (read p false nil)]
-            (cond (nil? e) ex :else (recur (conj ex e)))
-          )
-        )
-        res (binding [*ns* (-> file java.io.File. .getName symbol create-ns)]
-          (clojure.core/refer-clojure)
-          (last (mapv eval ex))
-        )
-      ]
-      res
-    )
   )
 )
 
@@ -98,12 +80,15 @@
             :gl (graph/new-gl)
             :keyboard (input/keyboard id)
             :mouse (input/mouse id proc-refresh-status)
+            :get-time get-time
+            :width width
+            :height height
           }
-          dev (assoc dev :res ((read-script "res/scripts/resources.clj") dev))
+          res (-> "res/scripts/resources.clj" scripting/read-file (.invoke dev))
         ]
         ((dev :mouse) :update)
         ((dev :keyboard) :update)
-        (reset! state (setup dev))
+        (reset! state (setup dev res))
         ;(org.lwjgl.glfw.GLFW/glfwSwapInterval 0) ; fps unlocker
         (windowLoop id dev)
       )
@@ -118,5 +103,5 @@
 )
 
 (defn -main [& args]
-  (window 800 600 (read-script "res/scripts/arena_setup.clj") {})
+  (window 800 600 nine-clj.arena/arena-setup {})
 )

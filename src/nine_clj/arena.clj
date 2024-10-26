@@ -1,24 +1,28 @@
-(require
-  '[nine-clj.datum :as dat]
-  '[nine-clj.core :as core]
-  '[nine-clj.graph :as graph]
-  '[nine-clj.geom :as geom]
-  '[nine-clj.gui :as gui]
-  '[nine-clj.input :as input]
-  '[nine-clj.phys :as phys]
-  '[nine-clj.prof :as prof]
-  '[nine-clj.math :as math]
+(ns nine-clj.arena
+  [:require
+    [nine-clj.datum :as dat]
+    [nine-clj.core :as core]
+    [nine-clj.graph :as graph]
+    [nine-clj.geom :as geom]
+    [nine-clj.gui :as gui]
+    [nine-clj.input :as input]
+    [nine-clj.phys :as phys]
+    [nine-clj.prof :as prof]
+    [nine-clj.math :as math]
+    [nine-clj.scripting :as scripting]
+  ]
 )
-(use 'nine-clj.core)
 
-(defn arena-setup [dev]
+(declare arena-loop)
+
+(defn arena-setup [dev res]
   (let
     [
-      { :keys [arena arena-shape char-presets gui-asset] } (dev :res)
+      { :keys [arena arena-shape char-presets gui-asset] } res
       phys-world (phys/dynamics-world)
       arena-body (mapv #(phys/add-rigid-body phys-world % [0 0 0] [0 0 0] 0) arena-shape)
 
-      players ((read-script "res/scripts/arena_spawn.clj") phys-world char-presets)
+      players ((scripting/read-file "res/scripts/arena_spawn.clj") phys-world char-presets)
       player (first players)
       non-players (rest players)
       [campos camrot] (dat/player-cam player)
@@ -32,7 +36,8 @@
       :gui-asset gui-asset
       :campos campos
       :camrot camrot
-      :time (get-time)
+      :time (-> dev :get-time list eval)
+      :loop arena-loop
     }
   )
 )
@@ -40,6 +45,7 @@
 (defn arena-loop [dev state]
   (prof/reset)
   (prof/profile :main-loop (let [
+      { :keys [get-time width height] } dev
       time (get-time)
       dt (- time (state :time))
       pdt (min dt 1/10)
@@ -80,4 +86,3 @@
     state
   ))
 )
-(comp #(assoc % :loop arena-loop) arena-setup)
