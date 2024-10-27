@@ -23,7 +23,7 @@
       arena-geom (geom/read-geom storage "res/datum/scene/arena.dae")
       arena-geom (mapv :vertex arena-geom)
       arena-shape (mapv phys/geom-shape arena-geom)
-      gui-asset (gui/gui-asset gl storage (input/viewport-mouse mouse width height))
+      gui-asset (gui/gui-asset (assoc dev :mouse (input/viewport-mouse mouse width height)))
       menu-image (graph/load-image gl storage "res/images/menu.png")
     ]
     {

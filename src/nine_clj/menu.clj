@@ -19,12 +19,16 @@
   }
 )
 (defn menu-loop [dev res state]
+  (doto (dev :gl)
+    (.clearDepth)
+    (.clearColor 0 0 0 0)
+  )
   (let [
       { :keys [gui-asset menu-image buttons] } state
-      ** (gui/image gui-asset menu-image -1 -1 2 2 [1 1 1 1])
+      ** (gui/image gui-asset gui/aspect-fit-layout menu-image -1.5 -1 3 2 [1 1 1 1])
       bs (mapv (fn [[label func] i]
           (vector
-            (gui/button gui-asset label -0.2 (-> i (+ 0.4) (* -0.2)) 0.4 0.15)
+            (gui/button gui-asset gui/aspect-fit-layout label -0.4 (-> i (+ 0.4) (* -0.2)) 0.8 0.15)
             func
           )
         )
