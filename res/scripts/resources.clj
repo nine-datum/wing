@@ -8,6 +8,8 @@
   '[nine-clj.phys :as phys]
   '[nine-clj.prof :as prof]
   '[nine-clj.math :as math]
+  '[nine-clj.arena :as arena]
+  '[nine-clj.menu :as menu]
 )
 (use 'nine-clj.core)
 (fn [dev]
@@ -33,6 +35,8 @@
       :arena-shape arena-shape
       :gui-asset gui-asset
       :menu-image menu-image
+      :arena-setup arena/arena-setup
+      :menu-setup menu/menu-setup
     }
   )
 )

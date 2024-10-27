@@ -1,7 +1,6 @@
 (ns nine-clj.menu
   [:require
     [nine-clj.gui :as gui]
-    [nine-clj.arena :as arena]
   ]
 )
 
@@ -13,7 +12,7 @@
     :gui-asset (res :gui-asset)
     :menu-image (res :menu-image)
     :buttons [
-      ["Начать игру" (fn [dev res state] (arena/arena-setup dev res))]
+      ["Начать игру" (fn [dev res state] ((res :arena-setup) dev res))]
       ["Настройки" (fn [dev res state] state)]
       ["Выход" (constantly nil)]
     ]
