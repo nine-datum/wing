@@ -59,8 +59,8 @@
 
 (defn aspect-fit-layout [asset x y w h]
   (let [
-      sw (-> asset :width list eval)
-      sh (-> asset :height list eval)
+      sw (-> asset :width (apply []))
+      sh (-> asset :height (apply []))
       m (cond (> sw sh) [(/ sh sw) 1] :else [1 (/ sw sh)])
     ]
     (mapv * [x y w h] (cycle m))

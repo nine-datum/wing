@@ -35,7 +35,7 @@
       :gui-asset gui-asset
       :campos campos
       :camrot camrot
-      :time (-> dev :get-time list eval)
+      :time (-> dev :get-time (apply []))
       :loop arena-loop
     }
   )
