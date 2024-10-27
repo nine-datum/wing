@@ -13,13 +13,13 @@
     :gui-asset (res :gui-asset)
     :menu-image (res :menu-image)
     :buttons [
-      ["Начать игру" (fn [state] (arena/arena-setup dev res))]
-      ["Настройки" identity]
+      ["Начать игру" (fn [dev res state] (arena/arena-setup dev res))]
+      ["Настройки" (fn [dev res state] state)]
       ["Выход" (constantly nil)]
     ]
   }
 )
-(defn menu-loop [dev state]
+(defn menu-loop [dev res state]
   (let [
       { :keys [gui-asset menu-image buttons] } state
       ** (gui/image gui-asset menu-image -1 -1 2 2 [1 1 1 1])
@@ -33,6 +33,6 @@
         (range)
       )
     ]
-    (nth (->> bs (filter (comp true? first)) (map (comp #(% state) last))) 0 state)
+    (nth (->> bs (filter (comp true? first)) (map (comp #(% dev res state) last))) 0 state)
   )
 )

@@ -733,7 +733,7 @@
       movement (math/normalize [mov-x 0 mov-z])
 
       action (cond
-        (keyboard "f" :down) :attack
+        (input/key-down keyboard \f) :attack
         :else :none
       )
 
@@ -760,7 +760,7 @@
       campos (mapv + playerpos (mapv + [0 cam+ 0] (mapv * camsub (repeat camdist))))
 
       [player non-players]
-      (cond (or (-> player is-alive false?) (keyboard "c" :up))
+      (cond (or (-> player is-alive false?) (input/key-up keyboard \c))
         (let [
             ps (zipmap (range) non-players)
             player-pred (every-pred is-alive #(-> % :side (= (player :side))))

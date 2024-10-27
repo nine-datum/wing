@@ -41,7 +41,7 @@
   )
 )
 
-(defn arena-loop [dev state]
+(defn arena-loop [dev res state]
   (prof/reset)
   (prof/profile :main-loop (let [
       { :keys [get-time width height] } dev
@@ -67,6 +67,10 @@
     ]
 
     (prof/profile :rendering (do
+      (doto (dev :gl)
+        (.clearDepth)
+        (.clearColor 0.5 0.5 0.7 0)
+      )
       (graph/world-light [0 -1 0])
 
       (graph/projection (math/perspective (width) (height) (math/radians 60) 0.01 1000))
@@ -77,6 +81,6 @@
       (doseq [n (concat [player] non-players items)] (dat/render-char n))
     ))
 
-    state
+    (cond (-> dev :keyboard input/escape-down) (nine-clj.menu/menu-setup dev res) :else state)
   ))
 )

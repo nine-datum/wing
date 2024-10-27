@@ -55,7 +55,7 @@
 
 (def state (atom {}))
 
-(defn windowLoop [win id dev]
+(defn windowLoop [win id dev res]
   (proxy [WindowLoopAction] []
     (call [w h]
       (cond
@@ -65,11 +65,11 @@
           (graph/reset-matrix-stack)
           (reset! window-width w)
           (reset! window-height h)
-          (swap! state (partial (@state :loop) dev))
+          (swap! state (partial (@state :loop) dev res))
         )
       )
       ((dev :mouse) :update)
-      ((dev :keyboard) :update)
+      (-> dev :keyboard input/keyboard-update)
       (cond (nil? @state) (.close win))
     )
   )
@@ -91,10 +91,10 @@
           res (-> "res/scripts/resources.clj" scripting/read-file (.invoke dev))
         ]
         ((dev :mouse) :update)
-        ((dev :keyboard) :update)
+        (-> dev :keyboard input/keyboard-update)
         (reset! state (setup dev res))
         ;(org.lwjgl.glfw.GLFW/glfwSwapInterval 0) ; fps unlocker
-        (windowLoop win id dev)
+        (windowLoop win id dev res)
       )
     )
   )

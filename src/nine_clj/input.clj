@@ -52,27 +52,21 @@
   )
 )
 
+(defn keyboard-update [dev](.update dev))
+
 (defn keyboard [wid]
-  (let [
-      k (LWJGL_Keyboard. wid)
-      m { :down (memfn isDown) :up (memfn isUp) }
-      f (memfn keyOf symbol)
-      f (partial f k)
-    ]
-    (fn 
-      ([s] (case s :update (.update k) :else ()))
-      ([c s]
-        ((comp (partial apply (m s)) vector f first) c)
-      )
-    )
-  )
+  (LWJGL_Keyboard. wid)
 )
+
+(defn key-down [keyboard key] (-> keyboard (.keyOf key) .isDown))
+(defn key-up [keyboard key] (-> keyboard (.keyOf key) .isUp))
+(defn escape-down [keyboard] (-> keyboard .escape .isDown))
 
 (defn wasd [kb]
   (mapv +
-    (if (kb "w" :down) [0 1] [0 0])
-    (if (kb "a" :down) [-1 0] [0 0])
-    (if (kb "s" :down) [0 -1] [0 0])
-    (if (kb "d" :down) [1 0] [0 0])
+    (if (key-down kb \w) [0 1] [0 0])
+    (if (key-down kb \a) [-1 0] [0 0])
+    (if (key-down kb \s) [0 -1] [0 0])
+    (if (key-down kb \d) [1 0] [0 0])
   )
 )
