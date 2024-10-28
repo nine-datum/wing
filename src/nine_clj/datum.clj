@@ -196,11 +196,11 @@
   (apply mapv char-call chs (repeat sym) (map repeat args))
 )
 
-(defn next-char [ch in] (char-call ch :next in))
+(defn next-char [ch in time] (char-call ch :next in time))
 
-(defn update-char [ch in] (char-call ch :update in))
+(defn update-char [ch in time] (char-call ch :update in time))
 
-(defn render-char [ch] (char-call ch :render))
+(defn render-char [ch time] (char-call ch :render time))
 
 ; state scheme
 ; {
@@ -211,14 +211,12 @@
 ; }
 
 (defn new-state
-  ([anim timer rtimer next] (new-state anim timer rtimer next (constantly ())))
-  ([anim timer rtimer next update] (new-state anim timer rtimer next update (constantly [])))
-  ([anim timer rtimer next update effect]
+  ([anim time next] (new-state anim time next (constantly ())))
+  ([anim time next update] (new-state anim time next update (constantly [])))
+  ([anim time next update effect]
     {
       :anim anim
-      :start (timer)
-      :timer timer
-      :rtimer rtimer
+      :start time
       :next next
       :update update
       :effect effect
@@ -278,7 +276,7 @@
   ]
 )
 
-(defn render-item [size item]
+(defn render-item [size item time]
   (graph/push-matrix)
   (apply graph/scale size)
   (graph/apply-matrix (-> :body item phys/get-matrix math/mat4f))
@@ -286,20 +284,20 @@
   (graph/pop-matrix)
 )
 
-(defn arrow [rtimer phys-world owner pos rot model]
+(defn arrow [time phys-world owner pos rot model]
   {
-    :start (rtimer)
+    :start time
     :model model
     :body (phys/capsule phys-world pos (mapv + [(/ Math/PI -2) 0 0] rot) 0.2 1.2 1)
     :render (partial render-item [1/4 1/4 1/4])
-    :next identity
+    :next (fn [s time] s)
     :hit-check (once-hit-check)
-    :effect (fn [item in phys]
+    :effect (fn [item in phys time]
       (let [
           c (get (phys :contacts) (item :body) ())
         ]
         (cond
-          (->> item :start (- (rtimer)) (< 2)) [ (remove-item-effect item) ]
+          (->> item :start (- time) (< 2)) [ (remove-item-effect item) ]
           (or (-> phys :body-to-char (contains? c) false?) (= c ()) (= c owner)) []
           :else [ (remove-item-effect item) (damage-effect c (item :hit-check) 100) ]
         )
@@ -308,16 +306,16 @@
   }
 )
 
-(defn fireball [rtimer phys-world owner pos rot model]
+(defn fireball [time phys-world owner pos rot model]
   {
     :model model
     :body (doto
       (phys/sphere phys-world pos rot 0.5 1)
       (phys/set-gravity [0 0 0])
     )
-    :next identity
+    :next (fn [s time] s)
     :render (partial render-item [1/2 1/2 1/2])
-    :effect (fn [item in phys]
+    :effect (fn [item in phys time]
       (let [c (get (phys :contacts) (item :body) ())]
         (cond
           (= c owner) []
@@ -329,8 +327,8 @@
   }
 )
 
-(defn state-age [s]
-  (- ((s :timer)) (s :start))
+(defn state-age [s time]
+  (- time (s :start))
 )
 
 (defn is-alive [ch] (-> ch :health (> 0)))
@@ -462,8 +460,8 @@
   ) ch chs)
 )
 
-(defn ai-next [chs body-to-char ch]
-  (let [ next (char-call ch :next (ai-in ch chs)) ]
+(defn ai-next [chs body-to-char ch time]
+  (let [ next (char-call ch :next (ai-in ch chs) time) ]
     (cond
       (-> ch :target (= ()))
         (assoc next :target (ai-target ch chs))
@@ -477,35 +475,35 @@
 (declare map-state)
 (declare class-state)
 
-(defn idle-state [timer rtimer]
-  (new-state "idle" timer rtimer (fn [s ch in]
+(defn idle-state [time]
+  (new-state "idle" time (fn [s ch in time]
       (let [
           { :keys [movement action] } in
         ]
         (cond
-          (= action :attack) (map-state ch :attack timer rtimer)
+          (= action :attack) (map-state ch :attack time)
           (math/zero-len? movement) (next-char-mov ch in)
-          :else (map-state ch :walk timer rtimer)
+          :else (map-state ch :walk time)
         )
       )
     )
-    (fn [s ch in] (move-char ch [0 0 0]))
+    (fn [s ch in time] (move-char ch [0 0 0]))
   )
 )
 
-(defn walk-state [timer rtimer]
-  (new-state "walk" timer rtimer (fn [s ch in]
+(defn walk-state [time]
+  (new-state "walk" time (fn [s ch in time]
       (let [
           { :keys [movement action] } in
         ]
         (cond
-          (= action :attack) (map-state ch :attack timer rtimer)
-          (math/zero-len? movement) (map-state ch :idle timer rtimer)
+          (= action :attack) (map-state ch :attack time)
+          (math/zero-len? movement) (map-state ch :idle time)
           :else (next-char-mov ch in)
         )
       )
     )
-    (fn [s ch in]
+    (fn [s ch in time]
       (let [
           { :keys [movement] } in
         ]
@@ -516,35 +514,35 @@
   )
 )
 
-(defn attack-state [attack-anims timer rtimer]
+(defn attack-state [attack-anims time]
   (let [
       anim (attack-anims (rand-int (count attack-anims)))
     ]
-    (new-state anim timer rtimer
-      (fn [s ch in]
+    (new-state anim time
+      (fn [s ch in time]
         (cond
-          (< (char-anim-length ch anim) (state-age s)) (map-state ch :idle timer rtimer)
+          (< (char-anim-length ch anim) (state-age s time)) (map-state ch :idle time)
           :else (next-char-mov ch in)
         )
       )
-      (fn [s ch in] (move-char ch [0 0 0]))
+      (fn [s ch in time] (move-char ch [0 0 0]))
     )
   )
 )
 
-(defn projectile-attack-state [attack-anim projectile-spawn spawn-time spawn-force timer rtimer]
+(defn projectile-attack-state [attack-anim projectile-spawn spawn-time spawn-force time]
   (let [
-      atk (attack-state [attack-anim] timer rtimer)
+      atk (attack-state [attack-anim] time)
       effect-fn
-      (fn [s ch in phys]
+      (fn [s ch in phys time]
         (cond
-          (or (-> s :has-arrow deref true?) (-> s state-age (< spawn-time))) []
+          (or (-> s :has-arrow deref true?) (-> s (state-age time) (< spawn-time))) []
           :else (let [
               { :keys [look pos body world] } ch
               [lx ly lz] look
               arr-pos (mapv + pos (mapv * look (repeat 2)) [0 1.5 0])
               arr-rot [0 (math/clock lx lz) 0]
-              arr (projectile-spawn rtimer world body arr-pos arr-rot (-> ch :items first))
+              arr (projectile-spawn time world body arr-pos arr-rot (-> ch :items first))
             ]
             (phys/set-velocity (arr :body) (mapv * look (repeat spawn-force)))
             (reset! (s :has-arrow) true)
@@ -558,10 +556,10 @@
   )
 )
 
-(defn melee-attack-state [anims timer rtimer]
+(defn melee-attack-state [anims time]
   (let [
-      atk (attack-state anims timer rtimer)
-      eff-fn (fn [s ch in phys]
+      atk (attack-state anims time)
+      eff-fn (fn [s ch in phys time]
         (let [
             { :keys [pos look body] } ch
             { :keys [hit-check] } s
@@ -577,14 +575,14 @@
   )
 )
 
-(defn death-state [timer rtimer]
-  (assoc (new-state "death" timer rtimer (fn [s ch in]
+(defn death-state [time]
+  (assoc (new-state "death" time (fn [s ch in time]
       (cond
-        (>= (state-age s) (- (char-anim-length ch "death") 0.1)) (map-state ch :dead timer rtimer)
+        (>= (state-age s time) (- (char-anim-length ch "death") 0.1)) (map-state ch :dead time)
         :else (next-char-idle ch)
       )
     )
-    (fn [s ch in] (when
+    (fn [s ch in time] (when
         (-> s :disposed deref false?)
         (.removeRigidBody (ch :world) (ch :body))
         (-> s :disposed (reset! true))
@@ -592,18 +590,18 @@
     )
   ) :disposed (atom false))
 )
-(defn dead-state [timer rtimer]
-  (new-state "dead" timer rtimer (fn [s ch in] (next-char-idle ch)))
+(defn dead-state [time]
+  (new-state "dead" time (fn [s ch in time] (next-char-idle ch)))
 )
 
 (defn wrap-mortal [factory]
-  (fn [timer rtimer]
-    (let [state (factory timer rtimer)]
+  (fn [time]
+    (let [state (factory time)]
       (assoc state :next
-        (fn [s ch in]
+        (fn [s ch in time]
           (cond
-            (<= (ch :health) 0) (map-state ch :death timer rtimer)
-            :else ((state :next) s ch in)
+            (<= (ch :health) 0) (map-state ch :death time)
+            :else ((state :next) s ch in time)
           )
         )
       )
@@ -635,15 +633,15 @@
   }
 )
 
-(defn class-state [name sym timer rtimer]
-  ((-> states-map name sym) timer rtimer)
+(defn class-state [name sym time]
+  ((-> states-map name sym) time)
 )
 
-(defn map-state [ch sym timer rtimer]
-  (assoc ch :state (class-state (ch :name) sym timer rtimer))
+(defn map-state [ch sym time]
+  (assoc ch :state (class-state (ch :name) sym time))
 )
 
-(defn load-char [world preset pos look color side timer]
+(defn load-char [world preset pos look color side time]
   {
     :target ()
     :side side
@@ -659,45 +657,45 @@
     )
     :pos pos
     :look look
-    :state (class-state (preset :name) :idle timer timer)
-    :next (fn [ch in]
+    :state (class-state (preset :name) :idle time)
+    :next (fn [ch in time]
       (let [
           state (ch :state)
           next (state :next)
         ]
-        (next state ch in)
+        (next state ch in time)
       )
     )
-    :update (fn [ch in]
-      (char-call (ch :state) :update ch in)
+    :update (fn [ch in time]
+      (char-call (ch :state) :update ch in time)
     )
-    :render (fn [ch]
+    :render (fn [ch time]
       (let [
           { :keys [state look pos materials] } ch
-          { :keys [anim start rtimer] } state
+          { :keys [anim start] } state
           [lx ly lz] look
         ]
         (graph/push-matrix)
         (graph/apply-matrix (math/rotation 0 (math/clock lx lz) 0))
         (apply graph/translate pos)
-        (render-preset preset materials anim (- (rtimer) start))
+        (render-preset preset materials anim (- time start))
         (graph/pop-matrix)
         ()
       )
     )
-    :effect (fn [ch in phys]
-      (-> ch :state (char-call :effect ch in phys))
+    :effect (fn [ch in phys time]
+      (-> ch :state (char-call :effect ch in phys time))
     )
   }
 )
 
 (defn update-game-state [dev state]
   (let [
-      { :keys [player non-players movement action] } state
+      { :keys [player non-players movement action time] } state
       all (cons player non-players)
     ]
-    (update-char player (move-action-in movement action))
-    (doseq [n non-players] (update-char n (ai-in n all)))
+    (update-char player (move-action-in movement action) time)
+    (doseq [n non-players] (update-char n (ai-in n all) time))
   )
 )
 
@@ -719,7 +717,7 @@
 
 (defn next-game-state [dev state]
   (let [
-      { :keys [camrot campos player non-players items phys-world delta-time] } state
+      { :keys [camrot campos player non-players items phys-world time delta-time] } state
       { :keys [keyboard mouse] } dev
       
       cammat (apply math/rotation camrot)
@@ -742,13 +740,13 @@
       body-to-char (zipmap (map :body all-players) all-players)
       phys { :contacts contacts :body-to-char body-to-char }
       in (move-action-in movement action)
-      effects (apply concat (char-list-call (concat [player] non-players items) :effect in phys))
+      effects (apply concat (char-list-call (concat [player] non-players items) :effect in phys time))
       [effect global-effect] (multi-effect effects)
-      player (next-char player in)
+      player (next-char player in time)
       player (effect player)
-      non-players (mapv (partial ai-next all-players body-to-char) non-players)
+      non-players (mapv (partial ai-next all-players body-to-char) non-players (repeat time))
       non-players (mapv effect non-players)
-      items (char-list-call items :next)
+      items (char-list-call items :next time)
 
       playerpos (player :pos)
       camsub (mapv - campos playerpos)

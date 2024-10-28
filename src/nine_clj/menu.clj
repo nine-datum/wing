@@ -24,10 +24,10 @@
 )
 (defn menu-loop-base [dev res state]
   (let [
-      { :keys [gui-asset menu-image buttons] } state
+      { :keys [gui-asset images buttons] } state
       _ (mapv
-        (fn [[image layout [x y w h]]] gui/image gui-asset layout image x y w h [1 1 1 1])
-        (get state :images ())
+        (fn [[image layout [x y w h]]] (gui/image gui-asset layout image x y w h [1 1 1 1]))
+        images
       )
       bs (mapv (fn [[label func] i]
           (vector
@@ -59,6 +59,7 @@
       ["Покинуть сражение" (fn [dev res state] state)]
       ["Выйти в меню" (fn [dev res state] (menu-setup dev res))]
     ]
+    :images []
     :resume-state resume-state
   }
 )
