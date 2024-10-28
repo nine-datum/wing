@@ -35,11 +35,13 @@
 
 (defn button [asset layout label x y w h]
   (let [
+      mouse (asset :mouse)
       [x y w h] (layout asset x y w h)
-      [mx my] ((asset :mouse) :pos)
+      [mx my] (mouse :pos)
       [ex ey] (map + [x y] [w h])
       hovered (and (<= x mx ex) (<= y my ey))
-      pressed (and hovered ((asset :mouse) :left-down))
+      pressed (and hovered (mouse :left-down))
+      released (and hovered (mouse :left-up))
       img-color (cond
         pressed [1 1 1 1]
         hovered [0 1 0 1]
@@ -52,8 +54,8 @@
       )
     ]
     (graph/image (asset :button-image) (asset :image-shader) x y w h img-color)
-    (graph/text (asset :text-asset) (asset :text-shader) label (+ x (/ w 5)) (+ y (/ h 4)) w (* h 3/4) txt-color)
-    pressed
+    (graph/text (asset :text-asset) (asset :text-shader) label x y w h txt-color)
+    released
   )
 )
 

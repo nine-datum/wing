@@ -81,6 +81,6 @@
       (doseq [n (concat [player] non-players items)] (dat/render-char n))
     ))
 
-    (cond (-> dev :keyboard input/escape-down) ((res :menu-setup) dev res) :else state)
+    (cond (-> dev :keyboard input/escape-up) ((res :pause-menu-setup) dev res state) :else state)
   ))
 )

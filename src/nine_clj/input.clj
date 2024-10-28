@@ -25,6 +25,9 @@
         :left-down (-> m .left .isDown)
         :right-down (-> m .right .isDown)
         :middle-down (-> m .middle .isDown)
+        :left-up (-> m .left .isUp)
+        :right-up (-> m .right .isUp)
+        :middle-up (-> m .middle .isUp)
       )
     )
   )
@@ -61,6 +64,7 @@
 (defn key-down [keyboard key] (-> keyboard (.keyOf key) .isDown))
 (defn key-up [keyboard key] (-> keyboard (.keyOf key) .isUp))
 (defn escape-down [keyboard] (-> keyboard .escape .isDown))
+(defn escape-up [keyboard] (-> keyboard .escape .isUp))
 
 (defn wasd [kb]
   (mapv +

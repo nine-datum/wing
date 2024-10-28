@@ -37,6 +37,7 @@
       :menu-image menu-image
       :arena-setup arena/arena-setup
       :menu-setup menu/menu-setup
+      :pause-menu-setup menu/pause-menu-setup
     }
   )
 )

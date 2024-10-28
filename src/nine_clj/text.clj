@@ -158,6 +158,7 @@
       th (->> text (filter (partial = \newline)) count inc)
       tw tsy
       ty (dec th)
+      shift (-> [tw th] (mapv - target-size) (mapv (partial * 0.5)))
       tmul (/ th)
       bvs [
         [0 0 0]
@@ -195,6 +196,7 @@
             (mapv + (offsets i) (steps i))
             (mapv + [0 ty 0])
             (mapv * [(* tmul tw) tmul 1])
+            (mapv + shift)
           ) bvs
         )
       )
