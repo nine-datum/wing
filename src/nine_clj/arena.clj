@@ -41,20 +41,9 @@
   )
 )
 
-(defn arena-loop [dev res state]
-  (prof/reset)
-  (prof/profile :main-loop (let [
-      { :keys [get-time width height] } dev
-      time (get-time)
-      dt (- time (state :time))
-      pdt (min dt 1/10)
-      state (do
-        (prof/profile :jbullet-update (phys/update-world (state :phys-world) pdt))
-        (prof/profile :game-update (dat/update-game-state dev state))
-        (assoc state :time time :delta-time pdt)
-      )
-      state (prof/profile :game-next (dat/next-game-state dev state))
-      {:keys [
+(defn arena-render-loop [dev res state]
+  (let [
+      { :keys [
           player
           non-players
           items
@@ -64,8 +53,8 @@
           gui-asset
         ]
       } state
+      { :keys [ width height ] } dev
     ]
-
     (prof/profile :rendering (do
       (doto (dev :gl)
         (.clearDepth)
@@ -80,7 +69,24 @@
 
       (doseq [n (concat [player] non-players items)] (dat/render-char n))
     ))
+  )
+)
 
+(defn arena-loop [dev res state]
+  (prof/reset)
+  (prof/profile :main-loop (let [
+      { :keys [get-time width height] } dev
+      time (get-time)
+      dt (- time (state :time))
+      pdt (min dt 1/10)
+      state (do
+        (prof/profile :jbullet-update (phys/update-world (state :phys-world) pdt))
+        (prof/profile :game-update (dat/update-game-state dev state))
+        (assoc state :time time :delta-time pdt)
+      )
+      state (prof/profile :game-next (dat/next-game-state dev state))
+    ]
+    (arena-render-loop dev res state)
     (cond (-> dev :keyboard input/escape-up) ((res :pause-menu-setup) dev res state) :else state)
   ))
 )

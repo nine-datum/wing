@@ -22,11 +22,7 @@
     ]
   }
 )
-(defn menu-loop [dev res state]
-  (doto (dev :gl)
-    (.clearDepth)
-    (.clearColor 0 0 0 0)
-  )
+(defn menu-loop-base [dev res state]
   (let [
       { :keys [gui-asset menu-image buttons] } state
       _ (mapv
@@ -46,6 +42,13 @@
     (nth (->> bs (filter (comp true? first)) (map (comp #(% dev res state) last))) 0 state)
   )
 )
+(defn menu-loop [dev res state]
+  (doto (dev :gl)
+    (.clearDepth)
+    (.clearColor 0 0 0 0)
+  )
+  (menu-loop-base dev res state)
+)
 
 (defn pause-menu-setup [dev res resume-state]
   {
@@ -61,8 +64,9 @@
 )
 
 (defn pause-menu-loop [dev res state]
+  (-> res :arena-render-loop (apply [dev res (state :resume-state)]))
   (cond
     (-> dev :keyboard input/escape-up) (state :resume-state)
-    :else (menu-loop dev res state)
+    :else (menu-loop-base dev res state)
   )
 )

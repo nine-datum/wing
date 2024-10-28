@@ -36,6 +36,7 @@
       :gui-asset gui-asset
       :menu-image menu-image
       :arena-setup arena/arena-setup
+      :arena-render-loop arena/arena-render-loop
       :menu-setup menu/menu-setup
       :pause-menu-setup menu/pause-menu-setup
     }
