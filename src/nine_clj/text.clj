@@ -154,12 +154,6 @@
       )
       l (.length text)
       r (* 6 l)
-      [tsx tsy] target-size
-      th (->> text (filter (partial = \newline)) count inc)
-      tw tsy
-      ty (dec th)
-      shift (-> [tw th] (mapv - target-size) (mapv (partial * 0.5)))
-      tmul (/ th)
       bvs [
         [0 0 0]
         [1 0 0]
@@ -189,14 +183,28 @@
           (mapv #(mapv + (map * % [sx sy] (repeat 1/16)) [x y]) buv)
         )
       )
+      [tsx tsy] target-size
+      lines (->> text (filter (partial = \newline)) count inc)
+      text-width-mul tsy
+      text-size-mul (/ lines)
+      [sizes offsets steps] (map
+        (partial mapv #(mapv * %1 %2) (repeat [(* text-width-mul text-size-mul) text-size-mul 1]))
+        [sizes offsets steps]
+      )
+      bounds-top-left (->> steps first (mapv + (->> sizes first second (vector 0))))
+      bounds-bottom-right [(->> steps (map first) (apply max)) (->> steps (map second) (apply min))]
+      bounds-min (mapv min bounds-top-left bounds-bottom-right)
+      bounds-max (mapv max bounds-top-left bounds-bottom-right)
+      bounds-size (mapv - bounds-max bounds-min)
+      [shift-x shift-y] (->>
+        (mapv - [1 1] bounds-size)
+        (mapv (partial * 0.5))
+      )
       bx (fn [i]
         (mapv #(
             ->> %
             (mapv * (sizes i))
-            (mapv + (offsets i) (steps i))
-            (mapv + [0 ty 0])
-            (mapv * [(* tmul tw) tmul 1])
-            (mapv + shift)
+            (mapv + (offsets i) (steps i) [shift-x shift-y 0])
           ) bvs
         )
       )
