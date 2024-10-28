@@ -35,7 +35,7 @@
       )
       bs (mapv (fn [[label func] i]
           (vector
-            (gui/button gui-asset gui/aspect-fit-layout label -0.4 (-> i (+ 0.4) (* -0.2)) 0.8 0.15)
+            (gui/button gui-asset gui/aspect-fit-layout label -0.5 (-> i (+ 0.4) (* -0.2)) 1 0.1)
             func
           )
         )
