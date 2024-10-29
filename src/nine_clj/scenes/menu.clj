@@ -1,4 +1,4 @@
-(ns nine-clj.menu
+(ns nine-clj.scenes.menu
   [:require
     [nine-clj.gui :as gui]
     [nine-clj.input :as input]

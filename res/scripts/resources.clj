@@ -8,8 +8,8 @@
   '[nine-clj.phys :as phys]
   '[nine-clj.prof :as prof]
   '[nine-clj.math :as math]
-  '[nine-clj.arena :as arena]
-  '[nine-clj.menu :as menu]
+  '[nine-clj.scenes.arena :as arena]
+  '[nine-clj.scenes.menu :as menu]
 )
 (use 'nine-clj.core)
 (fn [dev]

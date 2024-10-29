@@ -1,4 +1,4 @@
-(ns nine-clj.arena
+(ns nine-clj.scenes.arena
   [:require
     [nine-clj.datum :as dat]
     [nine-clj.graph :as graph]

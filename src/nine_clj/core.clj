@@ -11,8 +11,6 @@
     [nine-clj.prof :as prof]
     [nine-clj.gui :as gui]
     [nine-clj.scripting :as scripting]
-    [nine-clj.arena]
-    [nine-clj.menu]
   )
   (:import
     [nine.lwjgl
@@ -90,6 +88,7 @@
             :height height
           }
           res (-> "res/scripts/resources.clj" scripting/read-file (.invoke dev))
+          setup (res setup)
         ]
         ((dev :mouse) :update)
         (-> dev :keyboard input/keyboard-update)
@@ -110,5 +109,5 @@
 )
 
 (defn -main [& args]
-  (window 800 600 nine-clj.menu/menu-setup {})
+  (window 800 600 :menu-setup {})
 )
