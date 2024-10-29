@@ -1,14 +1,6 @@
 (ns nine-clj.scenes.arena
   [:require
-    [nine-clj.datum :as dat]
-    [nine-clj.graph :as graph]
-    [nine-clj.geom :as geom]
-    [nine-clj.gui :as gui]
-    [nine-clj.input :as input]
-    [nine-clj.phys :as phys]
-    [nine-clj.prof :as prof]
-    [nine-clj.math :as math]
-    [nine-clj.scripting :as scripting]
+    [nine-clj.scenes.generic :as generic]
   ]
 )
 
@@ -17,79 +9,12 @@
 (defn arena-setup [dev res]
   (let
     [
-      { :keys [arena arena-shape char-presets gui-asset] } res
-      phys-world (phys/dynamics-world)
-      arena-body (mapv #(phys/add-rigid-body phys-world % [0 0 0] [0 0 0] 0) arena-shape)
-
-      players ((scripting/read-file "res/scripts/arena_spawn.clj") phys-world char-presets)
-      player (first players)
-      non-players (rest players)
-      [campos camrot] (dat/player-cam player)
+      { :keys [arena-pause-menu-setup] } res
     ]
-    {
-      :phys-world phys-world
-      :player player
-      :non-players non-players
-      :items ()
-      :scene arena
-      :gui-asset gui-asset
-      :campos campos
-      :camrot camrot
-      :time (-> dev :get-time (apply []))
-      :loop arena-loop
-    }
-  )
-)
-
-(defn arena-render-loop [dev res state]
-  (let [
-      { :keys [
-          player
-          non-players
-          items
-          scene
-          campos
-          camrot
-          gui-asset
-          time
-        ]
-      } state
-      { :keys [ width height ] } dev
-    ]
-    (prof/profile :rendering (do
-      (doto (dev :gl)
-        (.clearDepth)
-        (.clearColor 0.5 0.5 0.7 0)
-      )
-      (graph/world-light [0 -1 0])
-
-      (graph/projection (math/perspective (width) (height) (math/radians 60) 0.01 1000))
-      (graph/camera (math/first-person-camera campos camrot))
-
-      (graph/model scene)
-
-      (doseq [n (concat [player] non-players items)] (dat/render-char n time))
-    ))
+    (generic/generic-setup dev res arena-loop arena-pause-menu-setup :arena)
   )
 )
 
 (defn arena-loop [dev res state]
-  (let [
-      { :keys [get-time width height] } dev
-      real-time (get-time)
-      last-real-time (get state :last-real-time real-time)
-      dt (- real-time last-real-time)
-      pdt (min dt 1/10)
-      time (state :time)
-      time (+ time pdt)
-      state (do
-        (prof/profile :jbullet-update (phys/update-world (state :phys-world) pdt))
-        (prof/profile :game-update (dat/update-game-state dev state))
-        (assoc state :time time :last-real-time real-time :delta-time pdt)
-      )
-      state (prof/profile :game-next (dat/next-game-state dev state))
-    ]
-    (arena-render-loop dev res state)
-    (cond (-> dev :keyboard input/escape-up) ((res :pause-menu-setup) dev res state) :else state)
-  )
+  (generic/generic-loop dev res state)
 )

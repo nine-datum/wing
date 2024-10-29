@@ -8,10 +8,13 @@
   '[nine-clj.phys :as phys]
   '[nine-clj.prof :as prof]
   '[nine-clj.math :as math]
+  '[nine-clj.scripting :as scripting]
   '[nine-clj.scenes.arena :as arena]
+  '[nine-clj.scenes.world :as world]
   '[nine-clj.scenes.menu :as menu]
 )
 (use 'nine-clj.core)
+
 (fn [dev]
   (let [
       { :keys [gl storage mouse] } dev
@@ -19,10 +22,20 @@
       diffuse-shader (graph/load-shader gl storage "res/shaders/diffuse_vertex.glsl" "res/shaders/diffuse_fragment.glsl")
       graphics (graph/load-graphics gl storage diffuse-shader skin-shader)
       char-presets (dat/load-presets gl storage diffuse-shader skin-shader)
-      arena (graph/load-model graphics "res/datum/scene/arena.dae")
-      arena-geom (geom/read-geom storage "res/datum/scene/arena.dae")
-      arena-geom (mapv :vertex arena-geom)
-      arena-shape (mapv phys/geom-shape arena-geom)
+      load-scene (fn [file]
+        (hash-map
+          :model (graph/load-model graphics file)
+          :shapes (->> file
+            (geom/read-geom storage)
+            (mapv :vertex)
+            (mapv phys/geom-shape)
+          )
+        )
+      )
+      arena (load-scene "res/datum/scene/arena.dae")
+      world (load-scene "res/datum/scene/arena.dae")
+      arena-spawn (scripting/read-file "res/scripts/arena_spawn.clj")
+      world-spawn (scripting/read-file "res/scripts/world_spawn.clj")
       gui-asset (gui/gui-asset (assoc dev :mouse (input/viewport-mouse mouse width height)))
       menu-image (graph/load-image gl storage "res/images/menu.png")
     ]
@@ -31,14 +44,15 @@
       :diffuse-shader diffuse-shader
       :graphics graphics
       :char-presets char-presets
-      :arena arena
-      :arena-shape arena-shape
+      :arena (assoc arena :spawn arena-spawn)
+      :world (assoc world :spawn world-spawn)
       :gui-asset gui-asset
       :menu-image menu-image
       :arena-setup arena/arena-setup
-      :arena-render-loop arena/arena-render-loop
+      :world-setup world/world-setup
       :menu-setup menu/menu-setup
-      :pause-menu-setup menu/pause-menu-setup
+      :arena-pause-menu-setup menu/arena-pause-menu-setup
+      :world-pause-menu-setup menu/world-pause-menu-setup
     }
   )
 )
