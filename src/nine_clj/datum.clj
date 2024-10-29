@@ -789,7 +789,7 @@
       state (global-effect (assoc state
         :action action
         :campos (mat/lerp (state :campos) campos (* 5 delta-time))
-        :camrot (mat/lerp (state :camrot) camrot (* 5 delta-time))
+        :camrot (math/lerpv-angle (state :camrot) camrot (* 5 delta-time))
         :movement movement
         :player player
         :items items

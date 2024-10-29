@@ -135,8 +135,29 @@
   (+ a (* t (- b a)))
 )
 
+(defn lerp-angle [a b t]
+  (let [
+      p Math/PI
+      dp (* p 2)
+      a (mod a dp)
+      b (mod b dp)
+      d (- b a)
+      d (cond
+        (> d p) (-> dp (- d) -)
+        (< d (- p)) (+ dp d)
+        :else d
+      )
+    ]
+    (-> d (* t) (+ a))
+  )
+)
+
 (defn lerpv [a b t]
   (mapv lerp a b (repeat t))
+)
+
+(defn lerpv-angle [a b t]
+  (mapv lerp-angle a b (repeat t))
 )
 
 (defn look-rot[dir]
