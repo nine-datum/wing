@@ -32,10 +32,13 @@
           )
         )
       )
+      spawn-func (fn [file]
+        (fn [& args] (-> file scripting/read-file (apply args)))
+      )
       arena (load-scene "res/datum/scene/arena.dae")
-      world (load-scene "res/datum/scene/arena.dae")
-      arena-spawn (scripting/read-file "res/scripts/arena_spawn.clj")
-      world-spawn (scripting/read-file "res/scripts/world_spawn.clj")
+      world (load-scene "res/datum/scene/world/world.dae")
+      arena-spawn (spawn-func "res/scripts/arena_spawn.clj")
+      world-spawn (spawn-func "res/scripts/world_spawn.clj")
       gui-asset (gui/gui-asset (assoc dev :mouse (input/viewport-mouse mouse width height)))
       menu-image (graph/load-image gl storage "res/images/menu.png")
     ]
