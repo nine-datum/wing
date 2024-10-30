@@ -2,6 +2,7 @@
   (:require
     [nine-clj.geom :as geom]
     [nine-clj.math :as math]
+    [nine-clj.prof :as prof]
     [clojure.core.matrix :as mat]
   )
   (:import
@@ -230,9 +231,7 @@
       c (count v)
       b (byte-buffer (* 4 c))
     ]
-    (doseq [i (range c)]
-      (.putFloat b (* 4 i) (float (v i)))
-    )
+    (-> b .asFloatBuffer (.put (float-array v)))
     b
   )
 )
@@ -243,9 +242,7 @@
       c (count v)
       b (byte-buffer (* 4 c))
     ]
-    (doseq [i (range c)]
-      (.putInt b (* 4 i) (int (v i)))
-    )
+    (-> b .asIntBuffer (.put (int-array v)))
     b
   )
 )

@@ -14,10 +14,6 @@
   ]
 )
 
-(defn buffer-to-vec [b conv]
-  (mapv (comp conv #(.at b %)) (range (.length b)))
-)
-
 (defn read-geom [storage file]
   (let [
       node (. ColladaNode fromFile (.open storage file))
@@ -31,8 +27,8 @@
               v (.map floats "VERTEX")
               i (.map ints "INDEX")
               v (.fromRightToLeftHanded v)
-              rv (buffer-to-vec v float)
-              ri (buffer-to-vec i int)
+              rv (-> v .toList vec)
+              ri (-> i .toList vec)
             ]
             (swap! res (partial cons { :vertex rv :index ri }))
           )

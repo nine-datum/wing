@@ -24,6 +24,13 @@
   )
 )
 
+(defmacro pmeasure [name expr]
+  `(let [[r# t#] (measure ~expr)]
+    (println (str ~name " took " (double (/ t# 1000000)) " ms"))
+    r#
+  )
+)
+
 (defn reset [] (reset! last-map @time-map) (reset! time-map {}))
 
 (defn cover-nil [x] (if (nil? x) 0 x))
