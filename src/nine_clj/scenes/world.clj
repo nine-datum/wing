@@ -26,8 +26,6 @@
       tex-names ["sand.png" "rock.png" "grass.png" "snow.png"]
       tex-names (mapv (partial str "res/datum/scene/world/") tex-names)
       textures (mapv #(.texture gl (.open storage %)) tex-names)
-      map-tex (.texture gl (.open storage "res/datum/scene/world/SplatAlpha_0.png") false)
-      textures (conj textures map-tex)
       uniforms (mapv
         #(-> shader
           .player
@@ -36,8 +34,6 @@
         )
         (range 1 5)
       )
-      map-uniform (-> shader .player .uniforms (.uniformTexture "global" 5))
-      uniforms (conj uniforms map-uniform)
       uniforms-load (proxy [Drawing] [] (draw [] (mapv #(.load %1 %2) uniforms textures)))
       model (graph/load-model graphics file)
       model-geom (model :model)
