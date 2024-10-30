@@ -1,7 +1,16 @@
 (ns nine-clj.core-test
-  (:require [clojure.test :refer :all]
-            [nine-clj.core :refer :all]))
+  (:require
+    [clojure.test :refer :all]
+    [nine-clj.core :refer :all]
+    [nine-clj.math :as math]
+  )
+)
 
-(deftest a-test
-  (testing "FIXME, I fail."
-    (is (= 0 1))))
+(deftest clock-test
+  (testing "Clock functions"
+    (is (=
+      (->> 360 range (map (comp double (partial apply math/clock) math/clock-xy)))
+      (range 360)
+    ))
+  )
+)

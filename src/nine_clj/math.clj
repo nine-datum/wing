@@ -68,7 +68,7 @@
 )
 
 (defn clock-xy [a]
-  [(- (Math/sin a)) (Math/cos a)]
+  [(Math/sin a) (Math/cos a)]
 )
 
 (defn x0y [x y] [x 0 y])
@@ -135,7 +135,7 @@
   (+ a (* t (- b a)))
 )
 
-(defn lerp-angle [a b t]
+(defn angle- [b a]
   (let [
       p Math/PI
       dp (* p 2)
@@ -147,6 +147,16 @@
         (< d (- p)) (+ dp d)
         :else d
       )
+    ]
+    d
+  )
+)
+
+(defn lerp-angle [a b t]
+  (let [
+      dp (* Math/PI 2)
+      a (mod a dp)
+      d (angle- b a)
     ]
     (-> d (* t) (+ a))
   )

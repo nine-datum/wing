@@ -384,6 +384,62 @@
  { :movement [0 0 0] :action a :look l }
 )
 
+(defn real-look-in [ch delta-time look]
+  (cond
+    (-> look mat/length zero?) (-> ch :look look-in)
+    :else
+    (let [
+        [cx cy cz] (ch :look)
+        [lx ly lz] look
+        c-angle (math/clock cx cz)
+        l-angle (math/clock lx lz)
+        delta (math/angle- l-angle c-angle)
+        eps (/ Math/PI 30)
+        dir (cond
+          (> delta eps) 1
+          (< delta (- eps)) -1
+          :else delta
+        )
+        m (* dir Math/PI 4 delta-time)
+        [lx lz] (math/clock-xy (+ c-angle m))
+      ]
+      (look-in (math/normalize [lx ly lz]))
+    )
+  )
+)
+
+(defn real-move-in [ch delta-time mov]
+  (let [
+      mnorm (math/normalize mov)
+      look (->> mnorm (real-look-in ch delta-time) :look)
+      d (mat/dot mnorm look)
+      d (if (> d 0) d 0)
+    ]
+    (assoc (move-in (mapv * (repeat d) mov)) :look look)
+  )
+)
+
+(defn real-move-action-in [ch delta-time mov action]
+  (assoc (real-move-in ch delta-time mov) :action action)
+)
+
+(defn real-look-action-in [ch delta-time look action]
+  (assoc (real-look-in ch delta-time look) :action action)
+)
+
+(defn ch-move-in [ch delta-time mov]
+  (move-in mov)
+)
+(defn ch-look-in [ch delta-time look]
+  (look-in look)
+)
+(defn ch-look-action-in [ch delta-time look action]
+  (look-action-in look action)
+)
+(defn ch-move-action-in [ch delta-time mov action]
+  (move-action-in mov action)
+)
+
 (defn target-dir [ch]
   (let [
       { :keys [ pos target ] } ch
@@ -409,59 +465,59 @@
   )
 )
 
-(defn ai-in-fighter [ch chs]
+(defn ai-in-fighter [ch chs delta-time]
   (let [
       target (ch :target)
       tdir (target-dir ch)
       [mx my mz] (math/normalize tdir)
     ]
     (cond
-      (= target ()) (move-in [0 0 0])
-      (->> tdir mat/length (> 2)) (look-action-in tdir :attack)
-      :else (move-in [mx 0 mz])
+      (= target ()) (ch-move-in ch delta-time [0 0 0])
+      (->> tdir mat/length (> 2)) (ch-look-action-in ch delta-time tdir :attack)
+      :else (ch-move-in ch delta-time [mx 0 mz])
     )
   )
 )
 
-(defn ai-in-mage [ch chs]
+(defn ai-in-mage [ch chs delta-time]
   (let [
       target (ch :target)
       tdir (target-dir ch)
       [mx my mz] (math/normalize tdir)
     ]
     (cond
-      (= target ()) (move-in [0 0 0])
-      (-> tdir mat/length (< 20)) (look-action-in tdir :attack)
-      :else (move-in [mx 0 mz])
+      (= target ()) (ch-move-in ch delta-time [0 0 0])
+      (-> tdir mat/length (< 20)) (ch-look-action-in ch delta-time tdir :attack)
+      :else (ch-move-in ch delta-time [mx 0 mz])
     )
   )
 )
 
-(defn ai-in-archer [ch chs]
+(defn ai-in-archer [ch chs delta-time]
   (let [
       target (ch :target)
       tdir (target-dir ch)
       [mx my mz] (math/normalize tdir)
     ]
     (cond
-      (= target ()) (move-in [0 0 0])
-      (-> tdir mat/length (< 20)) (look-action-in tdir :attack)
-      :else (move-in [mx 0 mz])
+      (= target ()) (ch-move-in ch delta-time [0 0 0])
+      (-> tdir mat/length (< 20)) (ch-look-action-in ch delta-time tdir :attack)
+      :else (ch-move-in ch delta-time [mx 0 mz])
     )
   )
 )
 
-(defn ai-in [ch chs]
+(defn ai-in [ch chs delta-time]
   ((case (ch :name)
     :fighter ai-in-fighter
     :ninja ai-in-fighter
     :mage ai-in-mage
     :archer ai-in-archer
-  ) ch chs)
+  ) ch chs delta-time)
 )
 
-(defn ai-next [chs body-to-char ch time]
-  (let [ next (char-call ch :next (ai-in ch chs) time) ]
+(defn ai-next [chs body-to-char ch time delta-time]
+  (let [ next (char-call ch :next (ai-in ch chs delta-time) time) ]
     (cond
       (-> ch :target (= ()))
         (assoc next :target (ai-target ch chs))
@@ -691,11 +747,11 @@
 
 (defn update-game-state [dev state]
   (let [
-      { :keys [player non-players movement action time] } state
+      { :keys [player non-players movement action time delta-time] } state
       all (cons player non-players)
     ]
-    (update-char player (move-action-in movement action) time)
-    (doseq [n non-players] (update-char n (ai-in n all) time))
+    (update-char player (ch-move-action-in player delta-time movement action) time)
+    (doseq [n non-players] (update-char n (ai-in n all delta-time) time))
   )
 )
 
@@ -739,12 +795,12 @@
       all-players (cons player non-players)
       body-to-char (zipmap (map :body all-players) all-players)
       phys { :contacts contacts :body-to-char body-to-char }
-      in (move-action-in movement action)
+      in (ch-move-action-in player delta-time movement action)
       effects (apply concat (char-list-call (concat [player] non-players items) :effect in phys time))
       [effect global-effect] (multi-effect effects)
       player (next-char player in time)
       player (effect player)
-      non-players (mapv (partial ai-next all-players body-to-char) non-players (repeat time))
+      non-players (mapv (partial ai-next all-players body-to-char) non-players (repeat time) (repeat delta-time))
       non-players (mapv effect non-players)
       items (char-list-call items :next time)
 
@@ -789,7 +845,7 @@
       state (global-effect (assoc state
         :action action
         :campos (mat/lerp (state :campos) campos (* 5 delta-time))
-        :camrot (math/lerpv-angle (state :camrot) camrot (* 5 delta-time))
+        :camrot (math/lerpv-angle (state :camrot) camrot (* 10 delta-time))
         :movement movement
         :player player
         :items items

@@ -34,6 +34,7 @@
       :gui-asset gui-asset
       :campos campos
       :camrot camrot
+      :movement [0 0 0]
       :time (-> dev :get-time (apply []))
       :loop loop
       :pause-menu pause-menu
