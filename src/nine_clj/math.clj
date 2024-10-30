@@ -86,7 +86,7 @@
 )
 
 (defn rotation [x y z]
-  (. Matrix4f rotation (vec3f (- x) y z))
+  (. Matrix4f rotation (vec3f x y z))
 )
 
 (defn get-vec-column-3 [mat n]

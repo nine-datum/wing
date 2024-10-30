@@ -755,7 +755,7 @@
   )
 )
 
-(def cam+ 4)
+(def cam+ 2)
 (def camdist 8)
 (def camrotx+ (/ Math/PI 12))
 
@@ -804,15 +804,6 @@
       non-players (mapv effect non-players)
       items (char-list-call items :next time)
 
-      playerpos (player :pos)
-      camsub (mapv - campos playerpos)
-      camsub (update camsub 1 (constantly 0))
-      camsub (if (zero? (mat/length camsub)) [0 0 -1] (mat/normalise camsub))
-
-      [cx cy cz] (mapv - camsub)
-      camrot [camrotx+ (math/clock cx cz) 0]
-      campos (mapv + playerpos (mapv + [0 cam+ 0] (mapv * camsub (repeat camdist))))
-
       [player non-players]
       (cond (or (-> player is-alive false?) (input/key-up keyboard \c))
         (let [
@@ -830,11 +821,23 @@
             )
           )
         )
-        :else [player non-players campos camrot]
+        :else [player non-players]
       )
 
-      campiv (mapv + playerpos [0 2 0])
-      camdir (mapv - campos campiv)
+      playerpos (player :pos)
+      camsub (mapv - campos playerpos)
+      camsub (update camsub 1 (constantly 0))
+      camsub (if (zero? (mat/length camsub)) [0 0 -1] (mat/normalise camsub))
+
+      [cx cy cz] (mapv - camsub)
+      camrot [camrotx+ (math/clock cx cz) 0]
+      [arrows-x arrows-y] (input/arrows keyboard)
+      arrows-rot [(-> arrows-y - (* Math/PI 1/4)) (* arrows-x Math/PI 10 delta-time) 0]
+      camrot (mapv + camrot arrows-rot)
+      cammat (apply math/rotation camrot)
+      campiv (mapv + playerpos [0 cam+ 0])
+      camdir (->> camdist - (math/vec3f 0 0) (.transformVector cammat) math/floats-from-vec3f)
+
       ray-origin campiv
       ray-len (mat/length camdir)
       { :keys [has-hit dist normal] } (phys/ray-check phys-world ray-origin camdir ray-len)
