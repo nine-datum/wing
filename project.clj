@@ -6,7 +6,7 @@
   :dependencies [
     [org.clojure/clojure "1.11.1"]
     [net.mikera/core.matrix "0.63.0"]
-    [io.github.taqmuraz/nine "1.2.36"]
+    [io.github.taqmuraz/nine "1.2.37"]
     [cz.advel.jbullet/jbullet "20101010-1"]
   ]
   ;:jvm-opts ["-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005"]
