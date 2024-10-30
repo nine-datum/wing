@@ -22,9 +22,9 @@
       diffuse-shader (graph/load-shader gl storage "res/shaders/diffuse_vertex.glsl" "res/shaders/diffuse_fragment.glsl")
       graphics (graph/load-graphics gl storage diffuse-shader skin-shader)
       char-presets (dat/load-presets gl storage diffuse-shader skin-shader)
-      load-scene (fn [file]
+      load-scene (fn [load-model-fn file]
         (hash-map
-          :model (graph/load-model graphics file)
+          :model (load-model-fn file)
           :shapes (->> file
             (geom/read-geom storage)
             (mapv :vertex)
@@ -35,8 +35,8 @@
       spawn-func (fn [file]
         (fn [& args] (-> file scripting/read-file (apply args)))
       )
-      arena (load-scene "res/datum/scene/arena.dae")
-      world (load-scene "res/datum/scene/world/world.dae")
+      arena (load-scene (partial graph/load-model graphics) "res/datum/scene/arena.dae")
+      world (load-scene (partial world/load-world-model dev) "res/datum/scene/world/world.dae")
       arena-spawn (spawn-func "res/scripts/arena_spawn.clj")
       world-spawn (spawn-func "res/scripts/world_spawn.clj")
       gui-asset (gui/gui-asset (assoc dev :mouse (input/viewport-mouse mouse width height)))
