@@ -22,7 +22,7 @@
       node (. ColladaNode fromFile (.open storage file))
       g (ColladaBasicGeometryParser.)
       vs (ColladaBasicVisualSceneParser.)
-      res (atom (hash-map))
+      res (atom (list))
     ]
     (.read g node
       (proxy [BuffersReader] []
@@ -34,21 +34,28 @@
               rv (-> v .toList vec)
               ri (-> i .toList vec)
             ]
-            (swap! res #(assoc % (str "#" s) { :vertex rv :index ri :root (. Matrix4f identity) }))
+            (swap! res (partial cons { :source (str "#" s) :vertex rv :index ri :root (. Matrix4f identity) }))
           )
         )
       )
     )
+    (swap! res (partial group-by :source))
     (.read vs node
       (proxy [ColladaVisualSceneReader] []
         (read [id root]
           (cond
-            (contains? @res id) (swap! res #(update % id (fn [geom] (assoc geom :root root))))
+            (contains? @res id) (swap! res
+              #(update % id
+                (fn [geoms]
+                  (mapv (fn [geom] (assoc geom :root root)) geoms)
+                )
+              )
+            )
           )
         )
       )
     )
-    (vals @res)
+    (->> @res vals (apply concat))
   )
 )
 
