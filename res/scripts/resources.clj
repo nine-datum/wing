@@ -27,8 +27,9 @@
           :model (load-model-fn file)
           :shapes (->> file
             (geom/read-geom storage)
-            (mapv :vertex)
-            (mapv phys/geom-shape)
+            (map #(map % [:vertex :root]))
+            (mapv (partial apply phys/geom-shape))
+            time
           )
         )
       )

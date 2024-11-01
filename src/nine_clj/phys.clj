@@ -247,13 +247,15 @@
   )
 )
 
-(defn geom-shape [verts]
+(defn geom-shape [verts root]
   (let [
       v (vec verts)
       c (/ (count v) 3)
       i (vec (range c))
       t (/ (count i) 3)
       vbuf (float-byte-buffer v)
+      fvbuf (.asFloatBuffer vbuf)
+      _ (.applyToPointBuffer root fvbuf fvbuf)
       ibuf (int-byte-buffer i)
       arr (TriangleIndexVertexArray. t ibuf 12 c vbuf 12)
     ]

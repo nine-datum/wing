@@ -4,11 +4,14 @@
       Buffer
       CachedBuffer
     ]
+    [nine.math Matrix4f]
     [nine.geometry.collada
       ColladaGeometryParser
       ColladaBasicGeometryParser
+      ColladaBasicVisualSceneParser
       ColladaNode
       BuffersReader
+      ColladaVisualSceneReader
       BufferMapping
     ]
   ]
@@ -18,7 +21,8 @@
   (let [
       node (. ColladaNode fromFile (.open storage file))
       g (ColladaBasicGeometryParser.)
-      res (atom (list))
+      vs (ColladaBasicVisualSceneParser.)
+      res (atom (hash-map))
     ]
     (.read g node
       (proxy [BuffersReader] []
@@ -30,12 +34,21 @@
               rv (-> v .toList vec)
               ri (-> i .toList vec)
             ]
-            (swap! res (partial cons { :vertex rv :index ri }))
+            (swap! res #(assoc % (str "#" s) { :vertex rv :index ri :root (. Matrix4f identity) }))
           )
         )
       )
     )
-    @res
+    (.read vs node
+      (proxy [ColladaVisualSceneReader] []
+        (read [id root]
+          (cond
+            (contains? @res id) (swap! res #(update % id (fn [geom] (assoc geom :root root))))
+          )
+        )
+      )
+    )
+    (vals @res)
   )
 )
 
