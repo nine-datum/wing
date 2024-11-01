@@ -440,12 +440,12 @@
   (move-action-in mov action)
 )
 
-(defn target-dir [ch]
+(defn target-dir [ch body-to-char]
   (let [
       { :keys [ pos target ] } ch
       tdir (cond
         (= target ()) [0 0 0]
-        :else (mapv - (phys/get-position target) pos)
+        :else (mapv - (-> target body-to-char :pos) pos)
       )
     ]
     tdir
@@ -465,10 +465,10 @@
   )
 )
 
-(defn ai-in-fighter [ch chs delta-time]
+(defn ai-in-fighter [ch chs body-to-char delta-time]
   (let [
       target (ch :target)
-      tdir (target-dir ch)
+      tdir (target-dir ch body-to-char)
       [mx my mz] (math/normalize tdir)
     ]
     (cond
@@ -479,10 +479,10 @@
   )
 )
 
-(defn ai-in-mage [ch chs delta-time]
+(defn ai-in-mage [ch chs body-to-char delta-time]
   (let [
       target (ch :target)
-      tdir (target-dir ch)
+      tdir (target-dir ch body-to-char)
       [mx my mz] (math/normalize tdir)
     ]
     (cond
@@ -493,10 +493,10 @@
   )
 )
 
-(defn ai-in-archer [ch chs delta-time]
+(defn ai-in-archer [ch chs body-to-char delta-time]
   (let [
       target (ch :target)
-      tdir (target-dir ch)
+      tdir (target-dir ch body-to-char)
       [mx my mz] (math/normalize tdir)
     ]
     (cond
@@ -507,17 +507,17 @@
   )
 )
 
-(defn ai-in [ch chs delta-time]
+(defn ai-in [ch chs body-to-char delta-time]
   ((case (ch :name)
     :fighter ai-in-fighter
     :ninja ai-in-fighter
     :mage ai-in-mage
     :archer ai-in-archer
-  ) ch chs delta-time)
+  ) ch chs body-to-char delta-time)
 )
 
 (defn ai-next [chs body-to-char ch time delta-time]
-  (let [ next (char-call ch :next (ai-in ch chs delta-time) time) ]
+  (let [ next (char-call ch :next (ai-in ch chs body-to-char delta-time) time) ]
     (cond
       (-> ch :target (= ()))
         (assoc next :target (ai-target ch chs))
@@ -749,9 +749,10 @@
   (let [
       { :keys [player non-players movement action time delta-time] } state
       all (cons player non-players)
+      body-to-char (zipmap (map :body all) all)
     ]
     (update-char player (ch-move-action-in player delta-time movement action) time)
-    (doseq [n non-players] (update-char n (ai-in n all delta-time) time))
+    (doseq [n non-players] (update-char n (ai-in n all body-to-char delta-time) time))
   )
 )
 
