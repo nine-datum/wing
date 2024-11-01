@@ -255,8 +255,8 @@
   }
 )
 
-(defn load-anim [graphics file] (.instance-always (.animation graphics file (condition-equality "JOINT"))))
-(defn load-obj-anim [graphics file] (.instance-always (.animation graphics file (condition-equality "NODE"))))
+(defn load-anim [graphics file] (instance-always (.animation graphics file (condition-equality "JOINT"))))
+(defn load-obj-anim [graphics file] (instance-always (.animation graphics file (condition-equality "NODE"))))
 
 (defn skeleton-func [func]
   (proxy [Skeleton] []

@@ -21,7 +21,10 @@
       skin-shader (graph/load-shader gl storage "res/shaders/diffuse_skin_vertex.glsl" "res/shaders/diffuse_fragment.glsl")
       diffuse-shader (graph/load-shader gl storage "res/shaders/diffuse_vertex.glsl" "res/shaders/diffuse_fragment.glsl")
       graphics (graph/load-graphics gl storage diffuse-shader skin-shader)
-      char-presets (dat/load-presets gl storage diffuse-shader skin-shader)
+      char-presets (merge
+        (dat/load-presets gl storage diffuse-shader skin-shader)
+        (world/load-presets dev diffuse-shader skin-shader)
+      )
       load-scene (fn [load-model-fn file]
         (hash-map
           :model (load-model-fn file)
