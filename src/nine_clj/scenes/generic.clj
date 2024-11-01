@@ -9,6 +9,7 @@
     [nine-clj.prof :as prof]
     [nine-clj.math :as math]
     [nine-clj.scripting :as scripting]
+    [nine-clj.mac :refer [-->]]
   ]
 )
 
@@ -35,7 +36,7 @@
       :campos campos
       :camrot camrot
       :movement [0 0 0]
-      :time (-> dev :get-time (apply []))
+      :time (--> dev :get-time ())
       :loop loop
       :pause-menu pause-menu
     }

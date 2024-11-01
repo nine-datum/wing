@@ -111,11 +111,20 @@
   }
 )
 
+(defn stats [walk-speed walk-anim-speed attack-damage health]
+  {
+    :walk-speed walk-speed
+    :walk-anim-speed walk-anim-speed
+    :attack-damage attack-damage
+    :health health
+  }
+)
+
 (def char-stats {
-    :archer { :walk-speed 8 }
-    :fighter { :walk-speed 5 }
-    :ninja { :walk-speed 10 }
-    :mage { :walk-speed 7 }
+    :archer (stats 8 1 50 100)
+    :fighter (stats 5 0.75 25 150)
+    :ninja (stats 10 1.2 35 80)
+    :mage (stats 7 1 75 80)
   }
 )
 
@@ -582,7 +591,7 @@
         ()
       )
     )
-  ) :speed (fn [ch] (-> ch (get-char-stat :walk-speed) (/ 7))))
+  ) :speed (fn [ch] (-> ch (get-char-stat :walk-anim-speed))))
 )
 
 (defn attack-state [attack-anims time]
@@ -716,7 +725,7 @@
   {
     :target ()
     :side side
-    :health 100
+    :health (-> preset :name char-stats :health)
     :world world
     :items (preset :items)
     :name (preset :name)

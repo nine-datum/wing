@@ -2,6 +2,7 @@
   [:require
     [nine-clj.graph :as graph]
     [nine-clj.text :as text]
+    [nine-clj.mac :refer [-->]]
   ]
 )
 
@@ -61,8 +62,8 @@
 
 (defn aspect-fit-layout [asset x y w h]
   (let [
-      sw (-> asset :width (apply []))
-      sh (-> asset :height (apply []))
+      sw (--> asset :width ())
+      sh (--> asset :height ())
       m (cond (> sw sh) [(/ sh sw) 1] :else [1 (/ sw sh)])
     ]
     (mapv * [x y w h] (cycle m))
