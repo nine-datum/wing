@@ -111,6 +111,20 @@
   }
 )
 
+(def char-stats {
+    :archer { :walk-speed 8 }
+    :fighter { :walk-speed 5 }
+    :ninja { :walk-speed 10 }
+    :mage { :walk-speed 7 }
+  }
+)
+
+(defn char-anim-speed [ch]
+  (-> ch :state :speed (apply [ch]))
+)
+
+(defn get-char-stat [ch stat] (-> ch :name char-stats stat))
+
 (defn read-preset [storage key]
   (let
     [
@@ -220,6 +234,7 @@
       :next next
       :update update
       :effect effect
+      :speed (constantly 1)
     }
   )
 )
@@ -299,7 +314,7 @@
         (cond
           (->> item :start (- time) (< 2)) [ (remove-item-effect item) ]
           (or (-> phys :body-to-char (contains? c) false?) (= c ()) (= c owner)) []
-          :else [ (remove-item-effect item) (damage-effect c (item :hit-check) 100) ]
+          :else [ (remove-item-effect item) (damage-effect c (item :hit-check) 50) ]
         )
       )
     )
@@ -548,7 +563,7 @@
 )
 
 (defn walk-state [time]
-  (new-state "walk" time (fn [s ch in time]
+  (assoc (new-state "walk" time (fn [s ch in time]
       (let [
           { :keys [movement action] } in
         ]
@@ -563,11 +578,11 @@
       (let [
           { :keys [movement] } in
         ]
-        (move-char ch (mapv (partial * 6) movement))
+        (move-char ch (mapv (partial * (get-char-stat ch :walk-speed)) movement))
         ()
       )
     )
-  )
+  ) :speed (fn [ch] (-> ch (get-char-stat :walk-speed) (/ 7))))
 )
 
 (defn attack-state [attack-anims time]
@@ -730,11 +745,12 @@
           { :keys [state look pos materials] } ch
           { :keys [anim start] } state
           [lx ly lz] look
+          anim-speed (char-anim-speed ch)
         ]
         (graph/push-matrix)
         (graph/apply-matrix (math/rotation 0 (math/clock lx lz) 0))
         (apply graph/translate pos)
-        (render-preset preset materials anim (- time start))
+        (render-preset preset materials anim (-> time (- start) (* anim-speed)))
         (graph/pop-matrix)
         ()
       )

@@ -29,7 +29,6 @@
             (geom/read-geom storage)
             (map #(map % [:vertex :root]))
             (mapv (partial apply phys/geom-shape))
-            time
           )
         )
       )

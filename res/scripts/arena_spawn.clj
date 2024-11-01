@@ -11,7 +11,7 @@
       make-green (fn [preset n] (make-char preset [(+ 25 (* 2 (quot n 15))) 0 (step (mod n 10))] [-1 0 0] [0 1 0 1] :green))
       players (concat
         (map make-green (repeat (presets :ninja)) (range 40))
-        (map make-red (repeat (presets :fighter)) (range 40))
+        (map make-red (repeat (presets :archer)) (range 40))
       )
     ]
     players
