@@ -142,10 +142,11 @@
 (defn update-world-state [dev state]
   (let [
       { :keys [keyboard] } dev
-      { :keys [player time camrot] } state
+      { :keys [player non-players time delta-time camrot] } state
       in (dat/move-in (dat/cam-rel-movement keyboard camrot))
     ]
     (--> player :update (player in time))
+    (doseq [n non-players] (--> n :update (n (dat/ch-move-in n delta-time [0 0 0]) time)))
   )
 )
 
@@ -179,6 +180,7 @@
 
       in (dat/ch-move-in player delta-time (dat/cam-rel-movement keyboard camrot))
       player (--> player :next (player in time))
+      non-players (mapv #(--> % :next (% (dat/ch-move-in % delta-time [0 0 0]) time)) non-players)
     ]
     (assoc state
       :campos (math/lerpv (state :campos) campos (* delta-time 5))
@@ -186,6 +188,7 @@
       :camrot-xy camrot-xy
       :camdist camdist
       :player player
+      :non-players non-players
     )
   )
 )
