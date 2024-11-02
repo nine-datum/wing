@@ -98,7 +98,7 @@
           [lx ly lz] look
           rot-y (math/clock lx lz)
           anims (ch :anims)
-          [anim obj-anim] (->> ch :anim anims (mapv #(graph/animate % time)))
+          [anim obj-anim] (->> ch :anim anims (mapv #(graph/animate % (* 6 time))))
         ]
         (graph/push-matrix)
         (graph/apply-matrix (math/transform pos [0 rot-y 0] [1 1 1]))
