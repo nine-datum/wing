@@ -101,7 +101,7 @@
     :rider-materials (dat/load-char-materials rider-preset rider-color)
     :anim :idle
     :update (fn [ch in time]
-      (->> in :movement (mapv * (repeat 10)) (phys/move-char (ch :body)))
+      (->> in :movement (mapv * (repeat 18)) (phys/move-char (ch :body)))
     )
     :next (fn [ch in time]
       (let [
