@@ -3,8 +3,11 @@
     [nine-clj.scenes.generic :as generic]
     [nine-clj.graph :as graph]
     [nine-clj.math :as math]
+    [clojure.core.matrix :as mat]
     [nine-clj.input :as input]
     [nine-clj.datum :as dat]
+    [nine-clj.phys :as phys]
+    [nine-clj.mac :refer [-->]]
   ]
   [:import
     [nine.main TransformedDrawing]
@@ -66,7 +69,10 @@
     ]
     {
       :model model
-      :anims { :idle [idle-anim idle-obj-anim] :walk [walk-anim walk-obj-anim] }
+      :anims {
+        :idle { :anim idle-anim :obj-anim idle-obj-anim :speed 1 }
+        :walk { :anim walk-anim :obj-anim walk-obj-anim :speed 6 }
+      }
     }
   )
 )
@@ -81,22 +87,40 @@
   }
 )
 
-(defn load-unit [horse-preset rider-preset rider-color pos look]
+(defn load-unit [phys-world horse-preset rider-preset rider-color pos look]
   {
     :pos pos
     :look look
+    :body (doto
+      (phys/capsule phys-world pos [0 0 0] 0.5 1.5 100)
+      (phys/set-rotation-enabled false)
+    )
     :model (horse-preset :model)
     :anims (horse-preset :anims)
     :rider-preset rider-preset
     :rider-materials (dat/load-char-materials rider-preset rider-color)
-    :anim :walk
+    :anim :idle
+    :update (fn [ch in time]
+      (->> in :movement (mapv * (repeat 10)) (phys/move-char (ch :body)))
+    )
+    :next (fn [ch in time]
+      (let [
+          { :keys [pos look body] } ch
+          anim (-> in :movement mat/length zero? (if :idle :walk))
+          look (in :look)
+          pos (->> body phys/get-position (mapv + [0 -1 0]))
+        ]
+        (assoc ch :anim anim :look look :pos pos)
+      )
+    )
     :render (fn [ch time]
       (let [
           { :keys [pos look rider-preset rider-materials] } ch
           [lx ly lz] look
           rot-y (math/clock lx lz)
           anims (ch :anims)
-          [anim obj-anim] (->> ch :anim anims (mapv #(graph/animate % (* 6 time))))
+          { :keys [anim obj-anim speed] } (-> ch :anim anims)
+          [anim obj-anim] (mapv #(graph/animate % (* time speed)) [anim obj-anim])
         ]
         (graph/push-matrix)
         (graph/apply-matrix (math/transform pos [0 (+ rot-y Math/PI) 0] [1 1 1]))
@@ -115,7 +139,15 @@
   (generic/generic-loop dev res state)
 )
 
-(defn update-world-state [dev state] state)
+(defn update-world-state [dev state]
+  (let [
+      { :keys [keyboard] } dev
+      { :keys [player time camrot] } state
+      in (dat/move-in (dat/cam-rel-movement keyboard camrot))
+    ]
+    (--> player :update (player in time))
+  )
+)
 
 (defn next-world-state [dev state]
   (let [
@@ -145,11 +177,12 @@
       campiv (->> player :pos (mapv + [0 3 0]))
       campos (->> camdir math/normalize (mapv * (repeat camdist)) (mapv + campiv))
 
-      player (update player :pos #(mapv + % (->> player :look (mapv (partial * delta-time 12)))))
+      in (dat/ch-move-in player delta-time (dat/cam-rel-movement keyboard camrot))
+      player (--> player :next (player in time))
     ]
     (assoc state
-      :campos campos
-      :camrot camrot
+      :campos (math/lerpv (state :campos) campos (* delta-time 5))
+      :camrot (math/lerpv (state :camrot) camrot (* delta-time 10))
       :camrot-xy camrot-xy
       :camdist camdist
       :player player

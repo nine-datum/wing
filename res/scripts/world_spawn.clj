@@ -8,7 +8,7 @@
   (let [
       horse-preset (presets :horse)
       rider-preset (presets :ninja)
-      player (world/load-unit horse-preset rider-preset [0 1 0 1] [0 0 0] (math/normalize[-1 0 -1]))
+      player (world/load-unit phys-world horse-preset rider-preset [0 1 0 1] [0 2 0] [0 0 1])
     ]
     [player]
   )

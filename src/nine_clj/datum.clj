@@ -464,7 +464,7 @@
 )
 
 (defn ch-move-in [ch delta-time mov]
-  (move-in mov)
+  (update (move-in mov) :look #(cond (-> % mat/length zero?) (ch :look) :else %))
 )
 (defn ch-look-in [ch delta-time look]
   (look-in look)
@@ -813,11 +813,8 @@
   )
 )
 
-(defn next-game-state [dev state]
+(defn cam-rel-movement [keyboard camrot]
   (let [
-      { :keys [camrot campos player non-players items phys-world time delta-time] } state
-      { :keys [keyboard mouse] } dev
-      
       cammat (apply math/rotation camrot)
       cam-fwd (math/get-column-3 cammat 2)
       cam-right (math/get-column-3 cammat 0)
@@ -827,6 +824,17 @@
       cam-right (mapv (partial * wasd-x) cam-right)
       [mov-x mov-y mov-z] (mapv + cam-fwd cam-right)
       movement (math/normalize [mov-x 0 mov-z])
+    ]
+    movement
+  )
+)
+
+(defn next-game-state [dev state]
+  (let [
+      { :keys [camrot campos player non-players items phys-world time delta-time] } state
+      { :keys [keyboard mouse] } dev
+
+      movement (cam-rel-movement keyboard camrot)
 
       action (cond
         (input/key-down keyboard \f) :attack
