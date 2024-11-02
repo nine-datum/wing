@@ -170,6 +170,10 @@
   (mapv lerp-angle a b (repeat t))
 )
 
+(defn clampv [v vmin vmax]
+  (->> v (map min vmax) (mapv max vmin))
+)
+
 (defn look-rot[dir]
   (let[
       [x y z] dir

@@ -16,12 +16,12 @@
 (defn generic-setup [dev res loop pause-menu level]
   (let
     [
-      { :keys [char-presets gui-asset] } res
-      { :keys [model shapes spawn] } (res level)
+      { :keys [gui-asset] } res
+      { :keys [presets model shapes spawn update-state update-phys next-state] } (res level)
       phys-world (phys/dynamics-world)
       arena-body (mapv #(phys/add-rigid-body phys-world % [0 0 0] [0 0 0] 0) shapes)
 
-      players (spawn phys-world char-presets)
+      players (spawn phys-world presets)
       player (first players)
       non-players (rest players)
       [campos camrot] (dat/player-cam player)
@@ -38,6 +38,9 @@
       :movement [0 0 0]
       :time (--> dev :get-time ())
       :loop loop
+      :update-state update-state
+      :update-phys update-phys
+      :next-state next-state
       :pause-menu pause-menu
     }
   )
@@ -78,6 +81,12 @@
 (defn generic-loop [dev res state]
   (let [
       { :keys [get-time width height] } dev
+      { :keys [
+          next-state
+          update-state
+          update-phys
+        ]
+      } state
       real-time (get-time)
       last-real-time (get state :last-real-time real-time)
       dt (- real-time last-real-time)
@@ -85,11 +94,11 @@
       time (state :time)
       time (+ time pdt)
       state (do
-        (prof/profile :jbullet-update (phys/update-world (state :phys-world) pdt))
-        (prof/profile :game-update (dat/update-game-state dev state))
+        (prof/profile :update-phys (update-phys (state :phys-world) pdt))
+        (prof/profile :update-state (update-state dev state))
         (assoc state :time time :last-real-time real-time :delta-time pdt)
       )
-      state (prof/profile :game-next (dat/next-game-state dev state))
+      state (prof/profile :next-state (next-state dev state))
     ]
     (generic-render-loop dev res state)
     (cond (-> dev :keyboard input/escape-up) ((state :pause-menu) dev res state) :else state)

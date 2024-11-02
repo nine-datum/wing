@@ -3,6 +3,7 @@
     [nine-clj.scenes.generic :as generic]
     [nine-clj.graph :as graph]
     [nine-clj.math :as math]
+    [nine-clj.input :as input]
   ]
   [:import
     [nine.main TransformedDrawing]
@@ -104,6 +105,44 @@
 )
 
 (defn world-loop [dev res state]
-  (generic/generic-render-loop dev res state)
-  state
+  (generic/generic-loop dev res state)
+)
+
+(defn update-world-state [dev state] state)
+
+(defn next-world-state [dev state]
+  (let [
+      { :keys [keyboard] } dev
+      { :keys [player non-players campos camrot time delta-time] } state
+      camrot-xy (get state :camrot-xy [0 0])
+      camdist (get state :camdist 8)
+      camdist (->
+        (cond
+          (input/key-down keyboard \q) 1
+          (input/key-down keyboard \e) -1
+          :else 0
+        )
+        (* delta-time 30)
+        (+ camdist)
+        (max 4)
+        (min 30)
+      )
+      [arr-x arr-y] (input/arrows keyboard)
+      [cx cy] (mapv + camrot-xy [(-> arr-y - (* delta-time 2)) (* arr-x delta-time 2)])
+      cx (->> Math/PI (* 1/4) (min cx) (max 0))
+      camrot-xy [cx cy]
+      [cdir-x cdir-z] (math/clock-xy cy)
+      [cdir-y _] (math/clock-xy cx)
+      camdir [(- cdir-x) cdir-y (- cdir-z)]
+      camrot [cx cy 0]
+      campiv (->> player :pos (mapv + [0 3 0]))
+      campos (->> camdir math/normalize (mapv * (repeat camdist)) (mapv + campiv))
+    ]
+    (assoc state
+      :campos campos
+      :camrot camrot
+      :camrot-xy camrot-xy
+      :camdist camdist
+    )
+  )
 )

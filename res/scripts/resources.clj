@@ -21,10 +21,8 @@
       skin-shader (graph/load-shader gl storage "res/shaders/diffuse_skin_vertex.glsl" "res/shaders/diffuse_fragment.glsl")
       diffuse-shader (graph/load-shader gl storage "res/shaders/diffuse_vertex.glsl" "res/shaders/diffuse_fragment.glsl")
       graphics (graph/load-graphics gl storage diffuse-shader skin-shader)
-      char-presets (merge
-        (dat/load-presets gl storage diffuse-shader skin-shader)
-        (world/load-presets dev diffuse-shader skin-shader)
-      )
+      arena-presets (dat/load-presets gl storage diffuse-shader skin-shader)
+      world-presets (world/load-presets dev diffuse-shader skin-shader)
       load-scene (fn [load-model-fn file]
         (hash-map
           :model (load-model-fn file)
@@ -49,9 +47,20 @@
       :skin-shader skin-shader
       :diffuse-shader diffuse-shader
       :graphics graphics
-      :char-presets char-presets
-      :arena (assoc arena :spawn arena-spawn)
-      :world (assoc world :spawn world-spawn)
+      :arena (assoc arena
+        :presets arena-presets
+        :spawn arena-spawn
+        :update-state dat/update-game-state
+        :update-phys phys/update-world
+        :next-state dat/next-game-state
+      )
+      :world (assoc world
+        :presets world-presets
+        :spawn world-spawn
+        :update-state world/update-world-state
+        :update-phys phys/update-world
+        :next-state world/next-world-state
+      )
       :gui-asset gui-asset
       :menu-image menu-image
       :arena-setup arena/arena-setup
