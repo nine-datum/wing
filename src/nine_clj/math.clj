@@ -33,7 +33,7 @@
 (defn vec3f [x y z] (. Vector3f newXYZ x y z))
 
 (defn mat4f [fs]
-  (. Matrix4f fromIterable (mapv float fs))
+  (. Matrix4f fromArray (double-array fs))
 )
 
 (defn radians [d]
@@ -41,7 +41,7 @@
 )
 
 (defn perspective [w h fov near far]
-  (. Matrix4f perspective (/ w (float h)) fov near far)
+  (. Matrix4f perspective (/ w h) fov near far)
 )
 
 (defn normalize [v]
