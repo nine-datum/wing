@@ -52,11 +52,11 @@
   )
 )
 
-(defn load-human-preset [dev diffuse-shader skin-shader geom-file idle-file walk-file]
+(defn load-unit-preset [dev diffuse-shader skin-shader geom-file idle-file walk-file]
   (let
     [
       { :keys [gl storage ] } dev
-      graphics (graph/load-graphics gl storage skin-shader diffuse-shader)
+      graphics (graph/load-graphics gl storage diffuse-shader skin-shader)
       model (graph/load-animated-model graphics geom-file)
       idle-anim (graph/load-anim graphics idle-file)
       idle-obj-anim (graph/load-obj-anim graphics idle-file)
@@ -72,15 +72,20 @@
 
 (defn load-presets [dev diffuse-shader skin-shader]
   {
-    :human (load-human-preset dev diffuse-shader skin-shader
+    :human (load-unit-preset dev diffuse-shader skin-shader
       "res/world/human/human-idle.dae"
       "res/world/human/human-idle.dae"
       "res/world/human/human-walk.dae"
     )
+    :horse (load-unit-preset dev diffuse-shader skin-shader
+      "res/world/horse/horse_idle.dae"
+      "res/world/horse/horse_idle.dae"
+      "res/world/horse/horse_run.dae"
+    )
   }
 )
 
-(defn load-human [preset pos look]
+(defn load-unit [preset pos look]
   {
     :pos pos
     :look look

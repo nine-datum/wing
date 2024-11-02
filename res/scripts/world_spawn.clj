@@ -6,8 +6,8 @@
 )
 (fn [phys-world presets]
   (let [
-      human-preset (presets :human)
-      player (world/load-human human-preset [-50 0 -50] (math/normalize[-1 0 -1]))
+      horse-preset (presets :horse)
+      player (world/load-unit horse-preset [-50 0 -50] (math/normalize[-1 0 -1]))
     ]
     [player]
   )
