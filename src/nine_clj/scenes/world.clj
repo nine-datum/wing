@@ -78,7 +78,7 @@
       "res/world/human/human-walk.dae"
     )
     :horse (load-unit-preset dev diffuse-shader skin-shader
-      "res/world/horse/horse_idle.dae"
+      "res/world/horse/horse_run.dae"
       "res/world/horse/horse_idle.dae"
       "res/world/horse/horse_run.dae"
     )
