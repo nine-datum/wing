@@ -91,7 +91,7 @@
     :look look
     :model (preset :model)
     :anims (preset :anims)
-    :anim :idle
+    :anim :walk
     :render (fn [ch time]
       (let [
           { :keys [pos look] } ch
