@@ -99,10 +99,10 @@
           [anim obj-anim] (->> ch :anim anims (mapv #(graph/animate % (* 6 time))))
         ]
         (graph/push-matrix)
-        (graph/apply-matrix (math/transform pos [0 rot-y 0] [1 1 1]))
+        (graph/apply-matrix (math/transform pos [0 (+ rot-y Math/PI) 0] [1 1 1]))
         (-> ch :model (graph/animated-model anim obj-anim))
-        (graph/apply-matrix (.transform anim "rider"))
-        (-> Math/PI (/ 2) (graph/rotate 0 Math/PI))
+        (graph/apply-matrix-before (.transform anim "rider"))
+        (-> Math/PI (/ 2) (math/rotation 0 0) graph/apply-matrix-before)
         (graph/translate 0 0.1 0)
         (dat/render-preset rider-preset rider-materials "armature|riding" time)
         (graph/pop-matrix)
@@ -145,7 +145,7 @@
       campiv (->> player :pos (mapv + [0 3 0]))
       campos (->> camdir math/normalize (mapv * (repeat camdist)) (mapv + campiv))
 
-      player (update player :pos #(mapv + % (->> player :look (mapv (partial * delta-time 4)))))
+      player (update player :pos #(mapv + % (->> player :look (mapv (partial * delta-time 12)))))
     ]
     (assoc state
       :campos campos
