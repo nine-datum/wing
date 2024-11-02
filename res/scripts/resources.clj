@@ -55,7 +55,7 @@
         :next-state dat/next-game-state
       )
       :world (assoc world
-        :presets world-presets
+        :presets (merge arena-presets world-presets)
         :spawn world-spawn
         :update-state world/update-world-state
         :update-phys phys/update-world

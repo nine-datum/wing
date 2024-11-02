@@ -4,6 +4,7 @@
     [nine-clj.graph :as graph]
     [nine-clj.math :as math]
     [nine-clj.input :as input]
+    [nine-clj.datum :as dat]
   ]
   [:import
     [nine.main TransformedDrawing]
@@ -72,11 +73,6 @@
 
 (defn load-presets [dev diffuse-shader skin-shader]
   {
-    :human (load-unit-preset dev diffuse-shader skin-shader
-      "res/world/human/human-idle.dae"
-      "res/world/human/human-idle.dae"
-      "res/world/human/human-walk.dae"
-    )
     :horse (load-unit-preset dev diffuse-shader skin-shader
       "res/world/horse/horse_run.dae"
       "res/world/horse/horse_idle.dae"
@@ -85,16 +81,18 @@
   }
 )
 
-(defn load-unit [preset pos look]
+(defn load-unit [horse-preset rider-preset rider-color pos look]
   {
     :pos pos
     :look look
-    :model (preset :model)
-    :anims (preset :anims)
+    :model (horse-preset :model)
+    :anims (horse-preset :anims)
+    :rider-preset rider-preset
+    :rider-materials (dat/load-char-materials rider-preset rider-color)
     :anim :walk
     :render (fn [ch time]
       (let [
-          { :keys [pos look] } ch
+          { :keys [pos look rider-preset rider-materials] } ch
           [lx ly lz] look
           rot-y (math/clock lx lz)
           anims (ch :anims)
@@ -103,6 +101,10 @@
         (graph/push-matrix)
         (graph/apply-matrix (math/transform pos [0 rot-y 0] [1 1 1]))
         (-> ch :model (graph/animated-model anim obj-anim))
+        (graph/apply-matrix (.transform anim "rider"))
+        (-> Math/PI (/ 2) (graph/rotate 0 Math/PI))
+        (graph/translate 0 0.1 0)
+        (dat/render-preset rider-preset rider-materials "armature|riding" time)
         (graph/pop-matrix)
       )
     )
@@ -142,12 +144,15 @@
       camrot [cx cy 0]
       campiv (->> player :pos (mapv + [0 3 0]))
       campos (->> camdir math/normalize (mapv * (repeat camdist)) (mapv + campiv))
+
+      player (update player :pos #(mapv + % (->> player :look (mapv (partial * delta-time 4)))))
     ]
     (assoc state
       :campos campos
       :camrot camrot
       :camrot-xy camrot-xy
       :camdist camdist
+      :player player
     )
   )
 )

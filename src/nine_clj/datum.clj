@@ -74,6 +74,9 @@
       "walk"
       "death"
       "dead"
+      "idle_pass"
+      "walk_pass"
+      "armature|riding"
     )
     :fighter (preset "fighter" "Cube_002-mesh" []
       {}
@@ -85,6 +88,9 @@
       "walk"
       "death"
       "dead"
+      "idle_pass"
+      "walk_pass"
+      "armature|riding"
     )
     :mage (preset "mage" "Cube_002-mesh" ["res/datum/fireball.dae"]
       {}
@@ -96,6 +102,9 @@
       "walk"
       "death"
       "dead"
+      "idle_pass"
+      "walk_pass"
+      "armature|riding"
     )
     :ninja (preset "ninja" "Cube_003-mesh" []
       {}
@@ -107,6 +116,9 @@
       "walk"
       "death"
       "dead"
+      "idle_pass"
+      "walk_pass"
+      "armature|riding"
     )
   }
 )
@@ -721,6 +733,10 @@
   (assoc ch :state (class-state (ch :name) sym time))
 )
 
+(defn load-char-materials [preset color]
+  ((preset :materials-loader) (-> preset :model :materials) color)
+)
+
 (defn load-char [world preset pos look color side time]
   {
     :target ()
@@ -730,7 +746,7 @@
     :items (preset :items)
     :name (preset :name)
     :anims (preset :anims)
-    :materials ((preset :materials-loader) (-> preset :model :materials) color)
+    :materials (load-char-materials preset color)
     :body (-> world
       (phys/capsule (mapv + [0 1 0] pos) [0 0 0] 0.25 3/2 1)
       (phys/set-rotation-enabled false)
