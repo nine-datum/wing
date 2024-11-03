@@ -58,7 +58,7 @@
       :world (assoc world
         :presets (merge arena-presets world-presets)
         :spawn world-spawn
-        :update-state world/update-world-state
+        :update-state (constantly ())
         :update-phys phys/update-world
         :next-state world/next-world-state
       )

@@ -59,11 +59,21 @@
 
 (defn load-water-model [dev file]
   (let [
-      { :keys [gl storage] } dev
-      shader (graph/load-shader gl storage "res/shaders/diffuse_vertex.glsl" "res/shaders/diffuse_fragment.glsl")
+      { :keys [gl storage get-time] } dev
+      shader (graph/load-shader gl storage "res/shaders/diffuse_vertex.glsl" "res/shaders/water_fragment.glsl")
       graphics (graph/load-graphics gl storage shader shader)
+      uniform (-> shader .player .uniforms (.uniformVector  "time"))
+      uniform-load (proxy [Drawing] [] (draw [] (->> (get-time) (repeat 3) (apply math/vec3f) (.load uniform))))
+      model (graph/load-model graphics file)
+      model-geom (model :model)
+      geom (proxy [TransformedDrawing] []
+        (transform [proj light root mats]
+          (.draw (.play (.player shader) uniform-load))
+          (.transform model-geom proj light root mats)
+        )
+      )
     ]
-    (graph/load-model graphics file)
+    (assoc model :model geom)
   )
 )
 
@@ -167,17 +177,6 @@
 (defn world-render-loop [dev res state]
   (generic/generic-render-loop dev res state)
   (-> res :world-water graph/model)
-)
-
-(defn update-world-state [dev state]
-  (let [
-      { :keys [keyboard] } dev
-      { :keys [player non-players time delta-time camrot] } state
-      in (dat/move-in (dat/cam-rel-movement keyboard camrot))
-    ]
-    (--> player :update (player in time))
-    (doseq [n non-players] (--> n :update (n (dat/ch-move-in n delta-time [0 0 0]) time)))
-  )
 )
 
 (defn next-world-state [dev state]
