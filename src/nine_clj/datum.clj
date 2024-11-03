@@ -314,8 +314,8 @@
 
 (defn render-item [size item time]
   (graph/push-matrix)
-  (apply graph/scale size)
   (graph/apply-matrix (-> :body item phys/get-matrix math/mat4f))
+  (apply graph/scale size)
   (graph/model (item :model))
   (graph/pop-matrix)
 )
@@ -773,8 +773,8 @@
           anim-speed (char-anim-speed ch)
         ]
         (graph/push-matrix)
-        (graph/apply-matrix (math/rotation 0 (math/clock lx lz) 0))
         (apply graph/translate pos)
+        (graph/apply-matrix (math/rotation 0 (math/clock lx lz) 0))
         (render-preset preset materials anim (-> time (- start) (* anim-speed)))
         (graph/pop-matrix)
         ()

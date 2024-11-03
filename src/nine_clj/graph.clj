@@ -90,8 +90,7 @@
 (defn pop-matrix [] (swap! matrix-stack rest))
 (defn peek-matrix [] (first @matrix-stack))
 (defn swap-matrix [f] (swap! matrix-stack #(cons (->> % first f) (rest %))))
-(defn apply-matrix [m] (swap-matrix #(.mul m %)))
-(defn apply-matrix-before [m] (swap-matrix #(.mul % m)))
+(defn apply-matrix "applies matrix m transformation after the head of the stack" [m] (swap-matrix #(.mul % m)))
 (defn reset-matrix-stack [] (reset! matrix-stack (list (math/mat-identity))))
 
 (defn translate [x y z]
