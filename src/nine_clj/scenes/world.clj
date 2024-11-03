@@ -19,9 +19,11 @@
 
 (defn world-setup [dev res]
   (let [
-      { :keys [world-pause-menu-setup] } res
+      { :keys [world-pause-menu-setup world-water] } res
     ]
-    (generic/generic-setup dev res world-loop world-pause-menu-setup :world)
+    (assoc (generic/generic-setup dev res world-loop world-pause-menu-setup :world)
+      :water world-water
+    )
   )
 )
 
@@ -53,6 +55,16 @@
       )
     ]
     (assoc model :model geom)
+  )
+)
+
+(defn load-water-model [dev file]
+  (let [
+      { :keys [gl storage] } dev
+      shader (graph/load-shader gl storage "res/shaders/diffuse_vertex.glsl" "res/shaders/diffuse_fragment.glsl")
+      graphics (graph/load-graphics gl storage shader shader)
+    ]
+    (graph/load-model graphics file)
   )
 )
 
@@ -147,7 +159,10 @@
 )
 
 (defn world-loop [dev res state]
-  (generic/generic-loop dev res state)
+  (let [r (generic/generic-loop dev res state)]
+    (-> state :water graph/model)
+    r
+  )
 )
 
 (defn update-world-state [dev state]

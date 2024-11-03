@@ -38,6 +38,7 @@
       )
       arena (load-scene (partial graph/load-model graphics) "res/datum/scene/arena.dae")
       world (load-scene (partial world/load-world-model dev) "res/datum/scene/world/world.dae")
+      world-water (world/load-water-model dev "res/datum/scene/world/water.dae")
       arena-spawn (spawn-func "res/scripts/arena_spawn.clj")
       world-spawn (spawn-func "res/scripts/world_spawn.clj")
       gui-asset (gui/gui-asset (assoc dev :mouse (input/viewport-mouse mouse width height)))
@@ -61,6 +62,7 @@
         :update-phys phys/update-world
         :next-state world/next-world-state
       )
+      :world-water world-water
       :gui-asset gui-asset
       :menu-image menu-image
       :arena-setup arena/arena-setup
