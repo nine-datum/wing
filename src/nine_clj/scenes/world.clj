@@ -98,6 +98,9 @@
   }
 )
 
+(def unit-body-offset 1)
+(def water-level 189)
+
 (defn load-unit [phys-world horse-preset rider-preset rider-color pos look]
   {
     :pos pos
@@ -114,19 +117,30 @@
     :rider-materials (dat/load-char-materials rider-preset rider-color)
     :anim :idle
     :update (fn [ch in time]
-      (->> in :movement (mapv * (repeat 18)) (phys/move-char (ch :body)))
+      (let [
+          { :keys [body swimming? up] } ch
+          movement (in :movement)
+          speed (if swimming? 8 18)
+        ]
+        (->> movement (mapv * (repeat speed)) (phys/move-unit body up))
+      )
     )
     :next (fn [ch in time delta-time]
       (let [
           { :keys [pos look up body phys-world] } ch
           anim (-> in :movement mat/length zero? (if :idle :walk))
           look (in :look)
-          pos (->> body phys/get-position (mapv + [0 -1 0]))
+          pos (->> body phys/get-position (mapv + [0 (- unit-body-offset) 0]))
+          [px py pz] pos
+          swimming? (< (+ unit-body-offset py) water-level)
+          py (if swimming? (- water-level unit-body-offset) py)
+          pos [px py pz]
           ray-origin (mapv + pos [0 1 0])
           { :keys [has-hit normal] } (phys/ray-check phys-world ray-origin [0 -1 0] 100)
           up (if has-hit (->> delta-time (* 5) (math/lerpv up normal)) up)
+          up (if swimming? [0 1 0] up)
         ]
-        (assoc ch :anim anim :look look :pos pos :up up)
+        (assoc ch :anim anim :look look :pos pos :up up :swimming? swimming?)
       )
     )
     :render (fn [ch time]
