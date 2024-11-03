@@ -13,7 +13,7 @@
   ]
 )
 
-(defn generic-setup [dev res loop pause-menu level]
+(defn generic-setup [dev res loop render-loop pause-menu level]
   (let
     [
       { :keys [gui-asset] } res
@@ -38,6 +38,7 @@
       :movement [0 0 0]
       :time (--> dev :get-time ())
       :loop loop
+      :render-loop render-loop
       :update-state update-state
       :update-phys update-phys
       :next-state next-state
@@ -83,6 +84,7 @@
       { :keys [get-time width height] } dev
       { :keys [
           next-state
+          render-loop
           update-state
           update-phys
         ]
@@ -100,7 +102,7 @@
       )
       state (prof/profile :next-state (next-state dev state))
     ]
-    (generic-render-loop dev res state)
+    (render-loop dev res state)
     (cond (-> dev :keyboard input/escape-up) ((state :pause-menu) dev res state) :else state)
   )
 )

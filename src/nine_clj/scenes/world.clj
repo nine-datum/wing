@@ -16,14 +16,13 @@
 )
 
 (declare world-loop)
+(declare world-render-loop)
 
 (defn world-setup [dev res]
   (let [
-      { :keys [world-pause-menu-setup world-water] } res
+      { :keys [world-pause-menu-setup] } res
     ]
-    (assoc (generic/generic-setup dev res world-loop world-pause-menu-setup :world)
-      :water world-water
-    )
+    (generic/generic-setup dev res world-loop world-render-loop world-pause-menu-setup :world)
   )
 )
 
@@ -159,10 +158,12 @@
 )
 
 (defn world-loop [dev res state]
-  (let [r (generic/generic-loop dev res state)]
-    (-> state :water graph/model)
-    r
-  )
+  (generic/generic-loop dev res state)
+)
+
+(defn world-render-loop [dev res state]
+  (generic/generic-render-loop dev res state)
+  (-> res :world-water graph/model)
 )
 
 (defn update-world-state [dev state]

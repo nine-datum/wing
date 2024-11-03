@@ -3,6 +3,7 @@
     [nine-clj.gui :as gui]
     [nine-clj.input :as input]
     [nine-clj.scenes.generic :as generic]
+    [nine-clj.scenes.world :as world]
   ]
 )
 
@@ -51,18 +52,19 @@
   (menu-loop-base dev res state)
 )
 
-(defn pause-menu-setup [dev res images buttons resume-state]
+(defn pause-menu-setup [dev res images buttons render-loop resume-state]
   {
     :loop pause-menu-loop
     :gui-asset (res :gui-asset)
     :buttons buttons
     :images images
     :resume-state resume-state
+    :render-loop render-loop
   }
 )
 
 (defn pause-menu-loop [dev res state]
-  (generic/generic-render-loop dev res (state :resume-state))
+  ((state :render-loop) dev res (state :resume-state))
   (cond
     (-> dev :keyboard input/escape-up) (state :resume-state)
     :else (menu-loop-base dev res state)
@@ -75,6 +77,7 @@
       ["Покинуть сражение" (fn [dev res state] (-> res :world-setup (apply [dev res])))]
       ["Выйти в меню" (fn [dev res state] (menu-setup dev res))]
     ]
+    generic/generic-render-loop
     resume-state
   )
 )
@@ -84,6 +87,7 @@
       ["Продолжить" (fn [dev res state] (state :resume-state))]
       ["Выйти в меню" (fn [dev res state] (menu-setup dev res))]
     ]
+    world/world-render-loop
     resume-state
   )
 )

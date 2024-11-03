@@ -875,15 +875,12 @@
       )
 
       playerpos (player :pos)
-      camsub (mapv - campos playerpos)
-      camsub (update camsub 1 (constantly 0))
-      camsub (if (zero? (mat/length camsub)) [0 0 -1] (mat/normalise camsub))
-
-      [cx cy cz] (mapv - camsub)
-      camrot [camrotx+ (math/clock cx cz) 0]
+      [lx ly lz] (player :look)
+      camrot-xy (get state :camrot-xy [0 (math/clock lx lz)])
       [arrows-x arrows-y] (input/arrows keyboard)
-      arrows-rot [(-> arrows-y - (* Math/PI 1/4)) (* arrows-x Math/PI 10 delta-time) 0]
-      camrot (mapv + camrot arrows-rot)
+      [cx cy] camrot-xy
+      camrot-xy [(-> arrows-y - (* Math/PI 1/4) (+ camrotx+)) (-> arrows-x (* Math/PI delta-time) (+ cy)) 0]
+      camrot camrot-xy
       cammat (apply math/rotation camrot)
       campiv (mapv + playerpos [0 cam+ 0])
       camdir (->> camdist - (math/vec3f 0 0) (.transformVector cammat) math/floats-from-vec3f)
@@ -899,6 +896,7 @@
         :action action
         :campos (mat/lerp (state :campos) campos (* 5 delta-time))
         :camrot (math/lerpv-angle (state :camrot) camrot (* 10 delta-time))
+        :camrot-xy camrot-xy
         :movement movement
         :player player
         :items items

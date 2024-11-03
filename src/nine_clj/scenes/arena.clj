@@ -11,7 +11,7 @@
     [
       { :keys [arena-pause-menu-setup] } res
     ]
-    (generic/generic-setup dev res arena-loop arena-pause-menu-setup :arena)
+    (generic/generic-setup dev res arena-loop generic/generic-render-loop arena-pause-menu-setup :arena)
   )
 )
 
