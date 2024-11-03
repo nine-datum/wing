@@ -58,7 +58,7 @@
   )
 )
 
-(defn clock [x y]
+(defn clock "returns an angle for [x y] if it would be a clock arrow" [x y]
   (let [
       len (mat/length [x y])
       [y x] (if (zero? len) [1 0] (mat/normalise [x y]))
@@ -67,7 +67,7 @@
   )
 )
 
-(defn clock-xy [a]
+(defn clock-xy "rotates clockwise vector [0 1] by an angle a" [a]
   [(Math/sin a) (Math/cos a)]
 )
 

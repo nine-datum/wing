@@ -90,7 +90,9 @@
 (defn load-unit [phys-world horse-preset rider-preset rider-color pos look]
   {
     :pos pos
+    :phys-world phys-world
     :look look
+    :up [0 1 0]
     :body (doto
       (phys/capsule phys-world pos [0 0 0] 0.5 1.5 100)
       (phys/set-rotation-enabled false)
@@ -103,27 +105,36 @@
     :update (fn [ch in time]
       (->> in :movement (mapv * (repeat 18)) (phys/move-char (ch :body)))
     )
-    :next (fn [ch in time]
+    :next (fn [ch in time delta-time]
       (let [
-          { :keys [pos look body] } ch
+          { :keys [pos look up body phys-world] } ch
           anim (-> in :movement mat/length zero? (if :idle :walk))
           look (in :look)
           pos (->> body phys/get-position (mapv + [0 -1 0]))
+          ray-origin (mapv + pos [0 1 0])
+          { :keys [has-hit normal] } (phys/ray-check phys-world ray-origin [0 -1 0] 100)
+          up (if has-hit (->> delta-time (* 5) (math/lerpv up normal)) up)
         ]
-        (assoc ch :anim anim :look look :pos pos)
+        (assoc ch :anim anim :look look :pos pos :up up)
       )
     )
     :render (fn [ch time]
       (let [
-          { :keys [pos look rider-preset rider-materials] } ch
+          { :keys [pos look up rider-preset rider-materials] } ch
           [lx ly lz] look
+          [ux uy uz] up
+          up-proj (mat/dot up look)
+          rot-x (Math/sin up-proj)
           rot-y (math/clock lx lz)
           anims (ch :anims)
           { :keys [anim obj-anim speed] } (-> ch :anim anims)
           [anim obj-anim] (mapv #(graph/animate % (* time speed)) [anim obj-anim])
         ]
         (graph/push-matrix)
-        (graph/apply-matrix (math/transform pos [0 (+ rot-y Math/PI) 0] [1 1 1]))
+        (apply graph/translate pos)
+        (graph/rotate 0 rot-y 0)
+        (graph/rotate rot-x 0 0)
+        (graph/rotate 0 Math/PI 0)
         (-> ch :model (graph/animated-model anim obj-anim))
         (graph/apply-matrix (.transform anim "rider"))
         (-> Math/PI (/ 2) (math/rotation 0 0) graph/apply-matrix)
@@ -179,8 +190,8 @@
       campos (->> camdir math/normalize (mapv * (repeat camdist)) (mapv + campiv))
 
       in (dat/ch-move-in player delta-time (dat/cam-rel-movement keyboard camrot))
-      player (--> player :next (player in time))
-      non-players (mapv #(--> % :next (% (dat/ch-move-in % delta-time [0 0 0]) time)) non-players)
+      player (--> player :next (player in time delta-time))
+      non-players (mapv #(--> % :next (% (dat/ch-move-in % delta-time [0 0 0]) time delta-time)) non-players)
     ]
     (assoc state
       :campos (math/lerpv (state :campos) campos (* delta-time 5))

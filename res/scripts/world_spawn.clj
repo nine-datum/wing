@@ -7,12 +7,12 @@
 (fn [phys-world presets]
   (let [
       horse-preset (presets :horse)
-      rider-presets (mapv presets [:fighter :ninja :mage :archer])
+      rider-presets (mapv presets [:archer :ninja :mage :fighter])
       players (mapv
         #(world/load-unit phys-world horse-preset %1 %3 [%2 2 0] [0 0 1])
         rider-presets
         (range)
-	[[1 0 0 1] [0 1 0 1] [0 0 1 1] [1 1 0 1]]
+	[[1/2 1/2 1 1] [0 1 0 1] [0 0 1 1] [1 1 0 1]]
       )
     ]
     players
