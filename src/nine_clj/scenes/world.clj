@@ -107,36 +107,25 @@
     :phys-world phys-world
     :look look
     :up [0 1 0]
-    :body (doto
-      (phys/capsule phys-world pos [0 0 0] 0.5 1.5 100)
-      (phys/set-rotation-enabled false)
-    )
     :model (horse-preset :model)
     :anims (horse-preset :anims)
     :rider-preset rider-preset
     :rider-materials (dat/load-char-materials rider-preset rider-color)
     :anim :idle
-    :update (fn [ch in time]
-      (let [
-          { :keys [body swimming? up] } ch
-          movement (in :movement)
-          speed (if swimming? 8 18)
-        ]
-        (->> movement (mapv * (repeat speed)) (phys/move-unit body up))
-      )
-    )
+    :update (fn [ch in time] ())
     :next (fn [ch in time delta-time]
       (let [
-          { :keys [pos look up body phys-world] } ch
-          anim (-> in :movement mat/length zero? (if :idle :walk))
-          look (in :look)
-          pos (->> body phys/get-position (mapv + [0 (- unit-body-offset) 0]))
+          { :keys [pos up phys-world swimming?] } ch
+          { :keys [movement look] } in
+          anim (-> movement mat/length zero? (if :idle :walk))
+          pos (->> movement (mapv (partial * (if swimming? 8 18) delta-time)) (mapv + pos))
+          ray-origin (mapv + pos [0 10 0])
+          { :keys [has-hit normal point] } (phys/ray-check phys-world ray-origin [0 -1 0] 100)
+          [rx ry rz] point
+          swimming? (and has-hit (< (+ unit-body-offset ry) water-level))
+          pos (update pos 1 #(if swimming? (- water-level unit-body-offset) %))
           [px py pz] pos
-          swimming? (< (+ unit-body-offset py) water-level)
-          py (if swimming? (- water-level unit-body-offset) py)
-          pos [px py pz]
-          ray-origin (mapv + pos [0 1 0])
-          { :keys [has-hit normal] } (phys/ray-check phys-world ray-origin [0 -1 0] 100)
+          pos (cond (and has-hit (not swimming?)) [px ry pz] :else pos)
           up (if has-hit (->> delta-time (* 5) (math/lerpv up normal)) up)
           up (if swimming? [0 1 0] up)
         ]

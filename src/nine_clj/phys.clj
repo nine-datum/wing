@@ -272,20 +272,6 @@
   )
 )
 
-(defn move-unit [body up vel]
-  (let [
-      up (math/normalize up)
-      l (mat/length vel)
-      vel (mapv - vel (map * up (repeat (mat/dot vel up))))
-      vel (->> vel math/normalize (mapv * (repeat l)))
-      [vx vy vz] vel
-      [cx cy cz] (get-velocity body)
-      vy (if (<= vy 0) (min cy vy) vy)
-    ]
-    (set-velocity body [vx vy vz])
-  )
-)
-
 (defn get-all-contacts [world]
   (let [
       d (.getDispatcher world)
