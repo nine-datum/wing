@@ -77,7 +77,7 @@
   )
 )
 
-(defn load-unit-preset [dev diffuse-shader skin-shader geom-file idle-file walk-file]
+(defn load-animated-preset [dev diffuse-shader skin-shader geom-file idle-file walk-file]
   (let
     [
       { :keys [gl storage ] } dev
@@ -98,12 +98,27 @@
   )
 )
 
+(defn load-static-preset [dev diffuse-shader geom-file]
+  (let [
+      { :keys [gl storage] } dev
+      graphics (graph/load-graphics gl storage diffuse-shader diffuse-shader)
+      model (graph/load-model graphics geom-file)
+    ]
+    {
+      :model model
+    }
+  )
+)
+
 (defn load-presets [dev diffuse-shader skin-shader]
   {
-    :horse (load-unit-preset dev diffuse-shader skin-shader
+    :horse (load-animated-preset dev diffuse-shader skin-shader
       "res/world/horse/horse_run.dae"
       "res/world/horse/horse_idle.dae"
       "res/world/horse/horse_run.dae"
+    )
+    :ship (load-static-preset dev diffuse-shader
+      "res/world/ship/ship.dae"
     )
   }
 )
@@ -111,7 +126,13 @@
 (def unit-body-offset 1)
 (def water-level 189)
 
-(defn load-unit [phys-world horse-preset rider-preset rider-color pos look]
+(declare load-ship)
+
+(defn move-pos [pos movement speed delta-time]
+  (->> movement (mapv (partial * speed delta-time)) (mapv + pos))
+)
+
+(defn load-horse [phys-world horse-preset rider-preset ship-preset rider-color pos look]
   {
     :pos pos
     :phys-world phys-world
@@ -122,24 +143,24 @@
     :rider-preset rider-preset
     :rider-materials (dat/load-char-materials rider-preset rider-color)
     :anim :idle
-    :update (fn [ch in time] ())
     :next (fn [ch in time delta-time]
       (let [
           { :keys [pos up phys-world swimming?] } ch
           { :keys [movement look] } in
           anim (-> movement mat/length zero? (if :idle :walk))
-          pos (->> movement (mapv (partial * (if swimming? 8 18) delta-time)) (mapv + pos))
+          pos (move-pos pos movement 18 delta-time)
           ray-origin (mapv + pos [0 10 0])
           { :keys [has-hit normal point] } (phys/ray-check phys-world ray-origin [0 -1 0] 100)
           [rx ry rz] point
           swimming? (and has-hit (< (+ unit-body-offset ry) water-level))
-          pos (update pos 1 #(if swimming? (- water-level unit-body-offset) %))
           [px py pz] pos
-          pos (cond (and has-hit (not swimming?)) [px ry pz] :else pos)
+          pos (cond has-hit [px ry pz] :else pos)
           up (if has-hit (->> delta-time (* 5) (math/lerpv up normal)) up)
-          up (if swimming? [0 1 0] up)
         ]
-        (assoc ch :anim anim :look look :pos pos :up up :swimming? swimming?)
+        (cond
+          swimming? (load-ship phys-world horse-preset rider-preset ship-preset rider-color pos look)
+          :else (assoc ch :anim anim :look look :pos pos :up up :swimming? swimming?)
+        )
       )
     )
     :render (fn [ch time]
@@ -164,6 +185,47 @@
         (-> Math/PI (/ 2) (math/rotation 0 0) graph/apply-matrix)
         (graph/translate 0 0.1 0)
         (dat/render-preset rider-preset rider-materials "armature|riding" time)
+        (graph/pop-matrix)
+      )
+    )
+  }
+)
+
+(defn load-ship [phys-world horse-preset rider-preset ship-preset rider-color pos look]
+  {
+    :pos pos
+    :look look
+    :rider-materials (dat/load-char-materials rider-preset rider-color)
+    :next (fn [ch in time delta-time]
+      (let [
+          { :keys [pos] } ch
+          { :keys [look movement] } in
+          pos (move-pos pos movement 20 delta-time)
+          pos (update pos 1 (constantly water-level))
+          ray-origin (mapv + [0 10 0] pos)
+          { :keys [has-hit point] } (phys/ray-check phys-world ray-origin [0 -1 0] 100)
+          [rx ry rz] point
+          swimming? (or (not has-hit) (-> water-level (- unit-body-offset) (> ry)))
+        ]
+        (cond
+          swimming? (assoc ch :pos pos :look look)
+          :else (load-horse phys-world horse-preset rider-preset ship-preset rider-color pos look)
+        )
+      )
+    )
+    :render (fn [ch time]
+      (let [
+          { :keys [pos look rider-materials] } ch
+          [lx ly lz] look
+          rot-y (math/clock lx lz)
+          pos (mapv + pos [0 1 0])
+        ]
+        (graph/push-matrix)
+        (apply graph/translate pos)
+        (graph/rotate 0 rot-y 0)
+        (-> ship-preset :model graph/model)
+        (graph/translate 0 0.2 -2.7)
+        (dat/render-preset rider-preset rider-materials "armature|riding_boat" time)
         (graph/pop-matrix)
       )
     )
