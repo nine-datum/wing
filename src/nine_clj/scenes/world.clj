@@ -148,8 +148,11 @@
   (dat/real-move-in unit (unit :move-torq) delta-time mov)
 )
 
-(defn load-horse [phys-world horse-preset rider-preset ship-preset rider-color pos look]
+(defn load-horse [phys-world horse-preset rider-preset ship-preset rider-color side pos look]
   {
+    :preset rider-preset
+    :color rider-color
+    :side side
     :move-torq 2
     :pos pos
     :phys-world phys-world
@@ -208,8 +211,11 @@
   }
 )
 
-(defn load-ship [phys-world horse-preset rider-preset ship-preset rider-color pos look]
+(defn load-ship [phys-world horse-preset rider-preset ship-preset rider-color side pos look]
   {
+    :preset rider-preset
+    :color rider-color
+    :side side
     :move-torq 2/3
     :pos pos
     :look look
@@ -271,10 +277,11 @@
   )
 )
 
-(defn next-world-state [dev state]
+(defn next-world-state [dev res state]
   (let [
       { :keys [keyboard] } dev
       { :keys [player non-players campos camrot time delta-time] } state
+      { :keys [world-locations location-setup] } res
       in (unit-move-in player delta-time (dat/cam-rel-movement keyboard camrot))
       player (--> player :next (player in time delta-time))
       non-players (mapv #(--> % :next (% (unit-move-in % delta-time [0 0 0]) time delta-time)) non-players)
@@ -302,14 +309,23 @@
       camrot [cx cy 0]
       campiv (->> player :pos (mapv + [0 3 0]))
       campos (->> camdir math/normalize (mapv * (repeat camdist)) (mapv + campiv))
+
+      state (assoc state
+        :campos (math/lerpv (state :campos) campos (* delta-time 5))
+        :camrot (math/lerpv (state :camrot) camrot (* delta-time 10))
+        :camrot-xy camrot-xy
+        :camdist camdist
+        :player player
+        :non-players non-players
+      )
+
+      close-locations (->> world-locations (filter #(->> % :pos (mapv - (player :pos)) mat/length (> 100))))
+      location-close? (-> close-locations empty? not)
+      location (first close-locations)
     ]
-    (assoc state
-      :campos (math/lerpv (state :campos) campos (* delta-time 5))
-      :camrot (math/lerpv (state :camrot) camrot (* delta-time 10))
-      :camrot-xy camrot-xy
-      :camdist camdist
-      :player player
-      :non-players non-players
+    (cond
+      location-close? (location-setup dev res player location state)
+      :else state
     )
   )
 )

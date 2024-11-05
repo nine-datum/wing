@@ -1,25 +1,40 @@
 (ns nine-clj.scenes.location
   [:require
-    [nine-clj.generic :as generic]
+    [nine-clj.scenes.generic :as generic]
     [nine-clj.datum :as dat]
+    [nine-clj.phys :as phys]
+    [nine-clj.graph :as graph]
+    [nine-clj.math :as math]
   ]
 )
 
 (declare location-render-loop)
 
-(defn location-setup [dev res player level-preset world-state]
+(defn location-setup [dev res player location world-state]
   (let [
       { :keys [preset pos look color side] } player
+      level-preset (location :preset)
+      loc-pos (location :pos)
+      loc-rot (location :rot)
+      loc-entry (location :entry)
+      [dx dy dz] (mapv - pos loc-pos)
+      exit-pos (->> [dx 0 dz] math/normalize (map * (repeat 10)) (mapv + pos))
+      world-state (update world-state :player #(assoc % :pos exit-pos))
       pause-menu (res :location-pause-menu-setup)
       level (assoc level-preset
         :presets preset
-        :update-state generic/generic-update
+        :shapes (concat (level-preset :shapes) (-> res :world :shapes))
+        :pos loc-pos
+        :rot loc-rot
+        :update-state dat/update-game-state
         :update-phys phys/update-world
         :next-state dat/next-game-state
-        :spawn (fn [phys-world preset] (dat/load-char phys-world preset pos look color side 0))
+        :spawn (fn [phys-world preset] [(dat/load-char phys-world preset loc-entry look color side 0)])
       )
     ]
-    (generic/generic-setup dev res generic/generic-loop generic/render-loop pause-menu)
+    (assoc (generic/generic-setup dev res generic/generic-loop location-render-loop pause-menu level)
+      :world-state world-state
+    )
   )
 )
 

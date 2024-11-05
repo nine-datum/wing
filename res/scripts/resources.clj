@@ -12,6 +12,7 @@
   '[nine-clj.scenes.arena :as arena]
   '[nine-clj.scenes.world :as world]
   '[nine-clj.scenes.menu :as menu]
+  '[nine-clj.scenes.location :as location]
 )
 (use 'nine-clj.core)
 
@@ -78,6 +79,7 @@
       :arena-pause-menu-setup menu/arena-pause-menu-setup
       :world-pause-menu-setup menu/world-pause-menu-setup
       :location-pause-menu-setup menu/location-pause-menu-setup
+      :location-setup location/location-setup
     }
   )
 )

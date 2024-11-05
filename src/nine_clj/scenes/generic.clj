@@ -104,7 +104,7 @@
         (prof/profile :update-state (update-state dev state))
         (assoc state :time time :last-real-time real-time :delta-time pdt)
       )
-      state (prof/profile :next-state (next-state dev state))
+      state (prof/profile :next-state (next-state dev res state))
     ]
     (render-loop dev res state)
     (cond (-> dev :keyboard input/escape-up) ((state :pause-menu) dev res state) :else state)

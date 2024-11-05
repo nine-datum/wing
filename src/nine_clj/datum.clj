@@ -834,7 +834,7 @@
   )
 )
 
-(defn next-game-state [dev state]
+(defn next-game-state [dev res state]
   (let [
       { :keys [camrot campos player non-players items phys-world time delta-time] } state
       { :keys [keyboard mouse] } dev
