@@ -424,7 +424,7 @@
  { :movement [0 0 0] :action a :look l }
 )
 
-(defn real-look-in [ch delta-time look]
+(defn real-look-in [ch torq delta-time look]
   (cond
     (-> look mat/length zero?) (-> ch :look look-in)
     :else
@@ -435,13 +435,12 @@
         l-angle (math/clock lx lz)
         delta (math/angle- l-angle c-angle)
         eps (* Math/PI 1/30)
-        spd 2
         dir (cond
           (> delta eps) 1
           (< delta (- eps)) -1
           :else (/ delta eps)
         )
-        m (* dir Math/PI spd delta-time)
+        m (* dir Math/PI torq delta-time)
         [lx lz] (math/clock-xy (+ c-angle m))
       ]
       (look-in (math/normalize [lx ly lz]))
@@ -449,14 +448,15 @@
   )
 )
 
-(defn real-move-in [ch delta-time mov]
+(defn real-move-in [ch torq delta-time mov]
   (let [
       mnorm (math/normalize mov)
-      look (->> mnorm (real-look-in ch delta-time) :look)
+      look (->> mnorm (real-look-in ch torq delta-time) :look)
       d (mat/dot mnorm look)
       d (if (> d 0) d 0)
     ]
-    (assoc (move-in (mapv * (repeat d) mov)) :look look)
+    ;(assoc (move-in (mapv * (repeat d) mov)) :look look)
+    (assoc (->> look (mapv * (repeat (mat/length mov))) (move-in)) :look look)
   )
 )
 

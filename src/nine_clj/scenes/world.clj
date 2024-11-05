@@ -132,8 +132,13 @@
   (->> movement (mapv (partial * speed delta-time)) (mapv + pos))
 )
 
+(defn unit-move-in [unit delta-time mov]
+  (dat/real-move-in unit (unit :move-torq) delta-time mov)
+)
+
 (defn load-horse [phys-world horse-preset rider-preset ship-preset rider-color pos look]
   {
+    :move-torq 2
     :pos pos
     :phys-world phys-world
     :look look
@@ -193,6 +198,7 @@
 
 (defn load-ship [phys-world horse-preset rider-preset ship-preset rider-color pos look]
   {
+    :move-torq 2/3
     :pos pos
     :look look
     :rider-materials (dat/load-char-materials rider-preset rider-color)
@@ -245,9 +251,9 @@
   (let [
       { :keys [keyboard] } dev
       { :keys [player non-players campos camrot time delta-time] } state
-      in (dat/real-move-in player delta-time (dat/cam-rel-movement keyboard camrot))
+      in (unit-move-in player delta-time (dat/cam-rel-movement keyboard camrot))
       player (--> player :next (player in time delta-time))
-      non-players (mapv #(--> % :next (% (dat/ch-move-in % delta-time [0 0 0]) time delta-time)) non-players)
+      non-players (mapv #(--> % :next (% (unit-move-in % delta-time [0 0 0]) time delta-time)) non-players)
 
       camrot-xy (get state :camrot-xy [0 0])
       camdist (get state :camdist 8)
