@@ -274,8 +274,8 @@
       campos (->> camdir math/normalize (mapv * (repeat camdist)) (mapv + campiv))
     ]
     (assoc state
-      :campos campos;(math/lerpv (state :campos) campos (* delta-time 5))
-      :camrot camrot;(math/lerpv (state :camrot) camrot (* delta-time 10))
+      :campos (math/lerpv (state :campos) campos (* delta-time 5))
+      :camrot (math/lerpv (state :camrot) camrot (* delta-time 10))
       :camrot-xy camrot-xy
       :camdist camdist
       :player player
