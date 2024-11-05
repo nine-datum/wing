@@ -120,6 +120,7 @@
     :ship (load-static-preset dev diffuse-shader
       "res/world/ship/ship.dae"
     )
+    :castle (load-static-preset dev diffuse-shader "res/world/castle/castle.dae")
   }
 )
 
@@ -244,7 +245,19 @@
 
 (defn world-render-loop [dev res state]
   (generic/generic-render-loop dev res state)
-  (-> res :world-water graph/model)
+  (let [
+      { :keys [world-water world-locations] } res
+    ]
+    (doseq [l world-locations]
+      (graph/push-matrix)
+      (apply graph/translate (l :pos))
+      (apply graph/rotate (l :rot))
+      (apply graph/scale (l :scale))
+      (-> l :model graph/model)
+      (graph/pop-matrix)
+    )
+    (graph/model world-water)
+  )
 )
 
 (defn next-world-state [dev state]

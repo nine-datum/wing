@@ -5,21 +5,31 @@
       <author>Blender User</author>
       <authoring_tool>Blender 3.3.21 commit date:2024-07-15, commit time:08:57, hash:e016c21db151</authoring_tool>
     </contributor>
-    <created>2024-11-05T19:40:55</created>
-    <modified>2024-11-05T19:40:55</modified>
+    <created>2024-11-05T20:22:36</created>
+    <modified>2024-11-05T20:22:36</modified>
     <unit name="meter" meter="1"/>
     <up_axis>Z_UP</up_axis>
   </asset>
   <library_effects>
     <effect id="Grass-effect">
       <profile_COMMON>
+        <newparam sid="grass_png-surface">
+          <surface type="2D">
+            <init_from>grass_png</init_from>
+          </surface>
+        </newparam>
+        <newparam sid="grass_png-sampler">
+          <sampler2D>
+            <source>grass_png-surface</source>
+          </sampler2D>
+        </newparam>
         <technique sid="common">
           <lambert>
             <emission>
               <color sid="emission">0 0 0 1</color>
             </emission>
             <diffuse>
-              <color sid="diffuse">0.8 0.8 0.8 1</color>
+              <texture texture="grass_png-sampler" texcoord="UVMap"/>
             </diffuse>
             <index_of_refraction>
               <float sid="ior">1.45</float>
@@ -187,6 +197,9 @@
     </image>
     <image id="dark-wood_png" name="dark-wood_png">
       <init_from>dark-wood.png</init_from>
+    </image>
+    <image id="grass_png" name="grass_png">
+      <init_from>grass.png</init_from>
     </image>
     <image id="sand_png" name="sand_png">
       <init_from>sand.png</init_from>
