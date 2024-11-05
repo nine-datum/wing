@@ -245,6 +245,10 @@
   (let [
       { :keys [keyboard] } dev
       { :keys [player non-players campos camrot time delta-time] } state
+      in (dat/real-move-in player delta-time (dat/cam-rel-movement keyboard camrot))
+      player (--> player :next (player in time delta-time))
+      non-players (mapv #(--> % :next (% (dat/ch-move-in % delta-time [0 0 0]) time delta-time)) non-players)
+
       camrot-xy (get state :camrot-xy [0 0])
       camdist (get state :camdist 8)
       camdist (->
@@ -268,14 +272,10 @@
       camrot [cx cy 0]
       campiv (->> player :pos (mapv + [0 3 0]))
       campos (->> camdir math/normalize (mapv * (repeat camdist)) (mapv + campiv))
-
-      in (dat/ch-move-in player delta-time (dat/cam-rel-movement keyboard camrot))
-      player (--> player :next (player in time delta-time))
-      non-players (mapv #(--> % :next (% (dat/ch-move-in % delta-time [0 0 0]) time delta-time)) non-players)
     ]
     (assoc state
-      :campos (math/lerpv (state :campos) campos (* delta-time 5))
-      :camrot (math/lerpv (state :camrot) camrot (* delta-time 10))
+      :campos campos;(math/lerpv (state :campos) campos (* delta-time 5))
+      :camrot camrot;(math/lerpv (state :camrot) camrot (* delta-time 10))
       :camrot-xy camrot-xy
       :camdist camdist
       :player player

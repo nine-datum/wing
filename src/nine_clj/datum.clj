@@ -434,13 +434,14 @@
         c-angle (math/clock cx cz)
         l-angle (math/clock lx lz)
         delta (math/angle- l-angle c-angle)
-        eps (/ Math/PI 30)
+        eps (* Math/PI 1/30)
+        spd 2
         dir (cond
           (> delta eps) 1
           (< delta (- eps)) -1
-          :else delta
+          :else (/ delta eps)
         )
-        m (* dir Math/PI 4 delta-time)
+        m (* dir Math/PI spd delta-time)
         [lx lz] (math/clock-xy (+ c-angle m))
       ]
       (look-in (math/normalize [lx ly lz]))
