@@ -56,6 +56,8 @@
         :update-state dat/update-game-state
         :update-phys phys/update-world
         :next-state dat/next-game-state
+        :pos [0 0 0]
+        :rot [0 0 0]
       )
       :world (assoc world
         :presets all-presets
@@ -63,6 +65,8 @@
         :update-state (constantly ())
         :update-phys phys/update-world
         :next-state world/next-world-state
+        :pos [0 0 0]
+        :rot [0 0 0]
       )
       :world-locations world-locations
       :world-water world-water
@@ -73,6 +77,7 @@
       :menu-setup menu/menu-setup
       :arena-pause-menu-setup menu/arena-pause-menu-setup
       :world-pause-menu-setup menu/world-pause-menu-setup
+      :location-pause-menu-setup menu/location-pause-menu-setup
     }
   )
 )

@@ -91,3 +91,14 @@
     resume-state
   )
 )
+
+(defn location-pause-menu-setup [world-state dev res resume-state]
+  (pause-menu-setup dev res [] [
+      ["Продолжить" (fn [dev res state] (state :resume-state))]
+      ["Выйти из города" (fn [dev res state] world-state)]
+      ["Выйти в меню" (fn [dev res state] (menu-setup dev res))]
+    ]
+    generic/generic-render-loop
+    resume-state
+  )
+)

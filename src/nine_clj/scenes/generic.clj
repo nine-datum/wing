@@ -17,9 +17,9 @@
   (let
     [
       { :keys [gui-asset] } res
-      { :keys [presets model shapes spawn update-state update-phys next-state] } (res level)
+      { :keys [presets model pos rot shapes spawn update-state update-phys next-state] } level
       phys-world (phys/dynamics-world)
-      arena-body (mapv #(phys/add-rigid-body phys-world % [0 0 0] [0 0 0] 0) shapes)
+      scene-body (mapv #(phys/add-rigid-body phys-world % pos rot 0) shapes)
 
       players (spawn phys-world presets)
       player (first players)
@@ -31,12 +31,12 @@
       :player player
       :non-players non-players
       :items ()
-      :scene model
+      :scene { :model model :pos pos :rot rot }
       :gui-asset gui-asset
       :campos campos
       :camrot camrot
       :movement [0 0 0]
-      :time (--> dev :get-time ())
+      :time 0
       :loop loop
       :render-loop render-loop
       :update-state update-state
@@ -72,7 +72,11 @@
       (graph/projection (math/perspective (width) (height) (math/radians 60) 0.3 20000))
       (graph/camera (math/first-person-camera campos camrot))
 
-      (graph/model scene)
+      (graph/push-matrix)
+      (apply graph/translate (scene :pos))
+      (apply graph/rotate (scene :rot))
+      (graph/model (scene :model))
+      (graph/pop-matrix)
 
       (doseq [n (concat [player] non-players items)] (dat/render-char n time))
     ))

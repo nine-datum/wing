@@ -2,6 +2,7 @@
   [:require
     [nine-clj.scenes.generic :as generic]
     [nine-clj.graph :as graph]
+    [nine-clj.geom :as geom]
     [nine-clj.math :as math]
     [clojure.core.matrix :as mat]
     [nine-clj.input :as input]
@@ -20,9 +21,9 @@
 
 (defn world-setup [dev res]
   (let [
-      { :keys [world-pause-menu-setup] } res
+      { :keys [world world-pause-menu-setup] } res
     ]
-    (generic/generic-setup dev res world-loop world-render-loop world-pause-menu-setup :world)
+    (generic/generic-setup dev res world-loop world-render-loop world-pause-menu-setup world)
   )
 )
 
@@ -110,6 +111,16 @@
   )
 )
 
+(defn load-location-preset [dev diffuse-shader file]
+  (assoc (load-static-preset dev diffuse-shader file)
+    :shapes (->> file
+      (geom/read-geom (dev :storage))
+      (map #(map % [:vertex :root]))
+      (mapv (partial apply phys/geom-shape))
+    )
+  )
+)
+
 (defn load-presets [dev diffuse-shader skin-shader]
   {
     :horse (load-animated-preset dev diffuse-shader skin-shader
@@ -120,7 +131,7 @@
     :ship (load-static-preset dev diffuse-shader
       "res/world/ship/ship.dae"
     )
-    :castle (load-static-preset dev diffuse-shader "res/world/castle/castle.dae")
+    :castle (load-location-preset dev diffuse-shader "res/world/castle/castle.dae")
   }
 )
 
