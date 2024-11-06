@@ -34,6 +34,14 @@
   )
 )
 
+(defn text [asset layout label x y w h color]
+  (let [
+      [x y w h] (layout asset x y w h)
+    ]
+    (graph/text (asset :text-asset) (asset :text-shader) label x y w h color)
+  )
+)
+
 (defn button [asset layout label x y w h]
   (let [
       mouse (asset :mouse)

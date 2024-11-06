@@ -17,9 +17,6 @@
       loc-pos (location :pos)
       loc-rot (location :rot)
       loc-entry (location :entry)
-      [dx dy dz] (mapv - pos loc-pos)
-      exit-pos (->> [dx 0 dz] math/normalize (map * (repeat 10)) (mapv + pos))
-      world-state (update world-state :player #(assoc % :pos exit-pos))
       pause-menu (res :location-pause-menu-setup)
       level (assoc level-preset
         :presets preset

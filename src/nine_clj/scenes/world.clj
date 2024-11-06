@@ -257,7 +257,29 @@
 )
 
 (defn world-loop [dev res state]
-  (generic/generic-loop dev res state)
+  (let [
+      { :keys [world-locations location-setup location-enter-menu-setup] } res
+      { :keys [player] } state
+      pos (player :pos)
+      look (player :look)
+      close-locations (->> world-locations (filter #(->> % :pos (mapv - pos) mat/length (> 100))))
+      location-close? (-> close-locations empty? not)
+    ]
+    (cond
+      location-close? (let [
+          location (first close-locations)
+          exit-pos (->> (mapv - pos (location :pos)) math/normalize (mapv * (repeat 10)) (mapv + pos))
+          exit-state (update state :player #(assoc % :pos exit-pos :look (mapv - look)))
+        ]
+        (location-enter-menu-setup dev res
+          (location-setup dev res player location exit-state)
+          exit-state
+          state
+        )
+      )
+      :else (generic/generic-loop dev res state)
+    )
+  )
 )
 
 (defn world-render-loop [dev res state]
@@ -281,7 +303,6 @@
   (let [
       { :keys [keyboard] } dev
       { :keys [player non-players campos camrot time delta-time] } state
-      { :keys [world-locations location-setup] } res
       in (unit-move-in player delta-time (dat/cam-rel-movement keyboard camrot))
       player (--> player :next (player in time delta-time))
       non-players (mapv #(--> % :next (% (unit-move-in % delta-time [0 0 0]) time delta-time)) non-players)
@@ -318,14 +339,7 @@
         :player player
         :non-players non-players
       )
-
-      close-locations (->> world-locations (filter #(->> % :pos (mapv - (player :pos)) mat/length (> 100))))
-      location-close? (-> close-locations empty? not)
-      location (first close-locations)
     ]
-    (cond
-      location-close? (location-setup dev res player location state)
-      :else state
-    )
+    state
   )
 )

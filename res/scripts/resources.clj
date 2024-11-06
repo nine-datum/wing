@@ -80,6 +80,7 @@
       :world-pause-menu-setup menu/world-pause-menu-setup
       :location-pause-menu-setup menu/location-pause-menu-setup
       :location-setup location/location-setup
+      :location-enter-menu-setup menu/location-enter-menu-setup
     }
   )
 )
