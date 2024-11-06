@@ -165,7 +165,7 @@
     :anim :idle
     :next (fn [ch in time delta-time]
       (let [
-          { :keys [pos up phys-world swimming?] } ch
+          { :keys [pos up phys-world side] } ch
           { :keys [movement look] } in
           anim (-> movement mat/length zero? (if :idle :walk))
           pos (move-pos pos movement 18 delta-time)
@@ -178,8 +178,8 @@
           up (if has-hit (->> delta-time (* 5) (math/lerpv up normal)) up)
         ]
         (cond
-          swimming? (load-ship phys-world horse-preset rider-preset ship-preset rider-color pos look)
-          :else (assoc ch :anim anim :look look :pos pos :up up :swimming? swimming?)
+          swimming? (load-ship phys-world horse-preset rider-preset ship-preset rider-color side pos look)
+          :else (assoc ch :anim anim :look look :pos pos :up up)
         )
       )
     )
@@ -222,7 +222,7 @@
     :rider-materials (dat/load-char-materials rider-preset rider-color)
     :next (fn [ch in time delta-time]
       (let [
-          { :keys [pos] } ch
+          { :keys [pos side] } ch
           { :keys [look movement] } in
           pos (move-pos pos movement 20 delta-time)
           pos (update pos 1 (constantly water-level))
@@ -233,7 +233,7 @@
         ]
         (cond
           swimming? (assoc ch :pos pos :look look)
-          :else (load-horse phys-world horse-preset rider-preset ship-preset rider-color pos look)
+          :else (load-horse phys-world horse-preset rider-preset ship-preset rider-color side pos look)
         )
       )
     )
