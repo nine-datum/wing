@@ -611,6 +611,33 @@
   ) :speed (fn [ch] (-> ch (get-char-stat :walk-anim-speed))))
 )
 
+
+(defn walk-pass-state [time]
+  (assoc
+    (walk-state time)
+    :anim "walk_pass"
+    :next (fn [s ch in time]
+      (cond
+        (-> in :movement math/zero-len?) (map-state ch :idle-pass time)
+        :else (next-char-mov ch in)
+      )
+    )
+  )
+)
+
+(defn idle-pass-state [time]
+  (assoc (idle-state time)
+    :anim "idle_pass"
+    :next (fn [s ch in time]
+      (cond
+        (-> in :movement math/zero-len?) (next-char-mov ch in)
+        :else (map-state ch :walk-pass time)
+      )
+    )
+  )
+)
+
+
 (defn attack-state [attack-anims time]
   (let [
       anim (attack-anims (rand-int (count attack-anims)))
@@ -709,6 +736,8 @@
 (def base-state {
     :idle (wrap-mortal idle-state)
     :walk (wrap-mortal walk-state)
+    :idle-pass idle-pass-state
+    :walk-pass walk-pass-state
     :death death-state
     :dead dead-state
   }
@@ -742,7 +771,7 @@
   ((preset :materials-loader) (-> preset :model :materials) color)
 )
 
-(defn load-char [world preset pos look color side time]
+(defn load-char [world preset pos look color side entry time]
   {
     :target ()
     :side side
@@ -758,7 +787,7 @@
     )
     :pos pos
     :look look
-    :state (class-state (preset :name) :idle time)
+    :state (class-state (preset :name) entry time)
     :next (fn [ch in time]
       (let [
           state (ch :state)

@@ -26,7 +26,7 @@
         :update-state dat/update-game-state
         :update-phys phys/update-world
         :next-state dat/next-game-state
-        :spawn (fn [phys-world preset] [(dat/load-char phys-world preset loc-entry look color side 0)])
+        :spawn (fn [phys-world preset] [(dat/load-char phys-world preset loc-entry look color side :idle-pass 0)])
       )
     ]
     (assoc (generic/generic-setup dev res generic/generic-loop location-render-loop pause-menu level)
