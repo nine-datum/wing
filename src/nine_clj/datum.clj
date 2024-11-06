@@ -894,8 +894,9 @@
       ray-len (mat/length camdir)
       { :keys [has-hit dist normal] } (phys/ray-check phys-world ray-origin camdir ray-len)
       camdist (if has-hit dist ray-len)
+      normal (if has-hit normal [0 0 0])
       camdir (mapv (partial * camdist) (math/normalize camdir))
-      campos (mapv + campiv camdir)
+      campos (mapv + campiv camdir (mapv * normal (repeat 0.5)))
 
       state (global-effect (assoc state
         :action action
