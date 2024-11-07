@@ -267,15 +267,17 @@
           { :keys [pos look rider-materials] } ch
           [lx ly lz] look
           rot-y (math/clock lx lz)
-          pos (mapv + pos [0 0.5 0])
+          pos (mapv + pos [0 0.7 0])
           [px _ pz] pos
           up (water-normal px pz time)
+          [rx rz] (-> Math/PI (/ 2) (+ rot-y) math/clock-xy)
           rot-x (-> up (mat/dot look) Math/sin -)
+          rot-z (-> up (mat/dot [rx 0 rz]) Math/sin)
         ]
         (graph/push-matrix)
         (apply graph/translate pos)
         (graph/rotate 0 rot-y 0)
-        (graph/rotate rot-x 0 0)
+        (graph/rotate rot-x 0 rot-z)
         (-> ship-preset :model graph/model)
         (graph/translate 0 0.2 -2.7)
         (dat/render-preset rider-preset rider-materials "armature|riding_boat" time)
