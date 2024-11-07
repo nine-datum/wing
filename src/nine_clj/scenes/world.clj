@@ -63,18 +63,22 @@
       { :keys [gl storage get-time] } dev
       shader (graph/load-shader gl storage "res/shaders/diffuse_vertex.glsl" "res/shaders/water_fragment.glsl")
       graphics (graph/load-graphics gl storage shader shader)
-      uniform (-> shader .player .uniforms (.uniformVector  "time"))
-      uniform-load (proxy [Drawing] [] (draw [] (->> (get-time) (repeat 3) (apply math/vec3f) (.load uniform))))
+      uniforms (-> shader .player .uniforms)
+      time-uniform (.uniformVector uniforms  "time")
       model (graph/load-model graphics file)
-      model-geom (model :model)
-      geom (proxy [TransformedDrawing] []
-        (transform [proj light root mats]
-          (.draw (.play (.player shader) uniform-load))
-          (.transform model-geom proj light root mats)
+    ]
+    (fn [time]
+      (.draw
+        (.play (.player shader)
+          (proxy [Drawing] []
+            (draw []
+              (->> time (repeat 3) (apply math/vec3f) (.load time-uniform))
+            )
+          )
         )
       )
-    ]
-    (assoc model :model geom)
+      (graph/model model)
+    )
   )
 )
 
@@ -286,6 +290,7 @@
   (generic/generic-render-loop dev res state)
   (let [
       { :keys [world-water world-locations] } res
+      { :keys [time] } state
     ]
     (doseq [l world-locations]
       (graph/push-matrix)
@@ -295,7 +300,7 @@
       (-> l :model graph/model)
       (graph/pop-matrix)
     )
-    (graph/model world-water)
+    (world-water time)
   )
 )
 
