@@ -2,7 +2,7 @@
   (let [
       location (fn [sym pos entry rot scale] {
         :preset (all-presets sym)
-        :model (-> sym all-presets :model)
+        :models (-> sym all-presets :models)
         :entry entry
         :pos pos
         :rot rot

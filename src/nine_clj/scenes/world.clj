@@ -116,7 +116,8 @@
 )
 
 (defn load-location-preset [dev diffuse-shader file]
-  (assoc (load-static-preset dev diffuse-shader file)
+  (hash-map
+    :models (->> file (load-static-preset dev diffuse-shader) :model vector)
     :shapes (->> file
       (geom/read-geom (dev :storage))
       (map #(map % [:vertex :root]))
@@ -325,7 +326,7 @@
       (apply graph/translate (l :pos))
       (apply graph/rotate (l :rot))
       (apply graph/scale (l :scale))
-      (-> l :model graph/model)
+      (->> l :models (map graph/model) dorun)
       (graph/pop-matrix)
     )
     (graph/push-matrix)

@@ -39,5 +39,5 @@
 
 (defn location-render-loop [dev res state]
   (generic/generic-render-loop dev res state)
-  (-> res :world :model graph/model)
+  (->> res :world :models (map graph/model) dorun)
 )
