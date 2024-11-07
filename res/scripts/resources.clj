@@ -27,7 +27,7 @@
       all-presets (merge arena-presets world-presets)
       load-scene (fn [load-model-fn file]
         (hash-map
-          :model (load-model-fn file)
+          :models (-> file load-model-fn vector)
           :shapes (->> file
             (geom/read-geom storage)
             (map #(map % [:vertex :root]))
@@ -41,7 +41,8 @@
       arena (load-scene (partial graph/load-model graphics) "res/datum/scene/arena.dae")
       world (load-scene (partial world/load-world-model dev) "res/datum/scene/world/world.dae")
       world-locations (-> "res/scripts/locations.clj" script-load-func (apply [dev all-presets]))
-      world-water (world/load-water-model dev "res/datum/scene/world/water.dae")
+      world-water (graph/load-model graphics "res/datum/scene/world/water.dae")
+      world-water-effect (world/load-water-model dev "res/datum/scene/world/water_effect.dae")
       arena-spawn (script-load-func "res/scripts/arena_spawn.clj")
       world-spawn (script-load-func "res/scripts/world_spawn.clj")
       gui-asset (gui/gui-asset (assoc dev :mouse (input/viewport-mouse mouse width height)))
@@ -62,6 +63,7 @@
       )
       :world (assoc world
         :presets all-presets
+        :models (->> world :models (cons world-water))
         :spawn world-spawn
         :update-state (constantly ())
         :update-phys phys/update-world
@@ -70,7 +72,7 @@
         :rot [0 0 0]
       )
       :world-locations world-locations
-      :world-water world-water
+      :world-water-effect world-water-effect
       :gui-asset gui-asset
       :menu-image menu-image
       :arena-setup arena/arena-setup

@@ -61,7 +61,7 @@
 (defn load-water-model [dev file]
   (let [
       { :keys [gl storage get-time] } dev
-      shader (graph/load-shader gl storage "res/shaders/diffuse_vertex.glsl" "res/shaders/water_fragment.glsl")
+      shader (graph/load-shader gl storage "res/shaders/water_vertex.glsl" "res/shaders/water_fragment.glsl")
       graphics (graph/load-graphics gl storage shader shader)
       uniforms (-> shader .player .uniforms)
       time-uniform (.uniformVector uniforms  "time")
@@ -141,6 +141,11 @@
 
 (def unit-body-offset 1)
 (def water-level 189)
+(def water-effect-level 190.1)
+
+(defn water-peek [x z time]
+  (-> x (* 0.25) (+ time) Math/sin inc (+ water-effect-level))
+)
 
 (declare load-ship)
 
@@ -176,7 +181,7 @@
           ray-origin (mapv + pos [0 10 0])
           { :keys [has-hit normal point] } (phys/ray-check phys-world ray-origin [0 -1 0] 100)
           [rx ry rz] point
-          swimming? (and has-hit (< (+ unit-body-offset ry) water-level))
+          swimming? (and has-hit (< (+ unit-body-offset ry) water-effect-level))
           [px py pz] pos
           pos (cond has-hit [px ry pz] :else pos)
           up (if has-hit (->> delta-time (* 5) (math/lerpv up normal)) up)
@@ -229,11 +234,12 @@
           { :keys [pos side] } ch
           { :keys [look movement] } in
           pos (move-pos pos movement 20 delta-time)
-          pos (update pos 1 (constantly water-level))
+          [px _ pz] pos
+          pos (assoc pos 1 (water-peek px pz time))
           ray-origin (mapv + [0 10 0] pos)
           { :keys [has-hit point] } (phys/ray-check phys-world ray-origin [0 -1 0] 100)
           [rx ry rz] point
-          swimming? (or (not has-hit) (-> water-level (- unit-body-offset) (> ry)))
+          swimming? (or (not has-hit) (-> water-effect-level (- unit-body-offset) (> ry)))
         ]
         (cond
           swimming? (assoc ch :pos pos :look look)
@@ -289,8 +295,9 @@
 (defn world-render-loop [dev res state]
   (generic/generic-render-loop dev res state)
   (let [
-      { :keys [world-water world-locations] } res
-      { :keys [time] } state
+      { :keys [world-water-effect world-locations] } res
+      { :keys [time campos] } state
+      [cx cy cz] (map #(->> 500/51 (mod %) (- %)) campos)
     ]
     (doseq [l world-locations]
       (graph/push-matrix)
@@ -300,7 +307,10 @@
       (-> l :model graph/model)
       (graph/pop-matrix)
     )
-    (world-water time)
+    (graph/push-matrix)
+    (graph/translate cx water-effect-level cz)
+    (world-water-effect time)
+    (graph/pop-matrix)
   )
 )
 

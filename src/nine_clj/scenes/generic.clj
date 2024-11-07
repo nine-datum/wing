@@ -17,7 +17,7 @@
   (let
     [
       { :keys [gui-asset] } res
-      { :keys [presets model pos rot shapes spawn update-state update-phys next-state] } level
+      { :keys [presets models pos rot shapes spawn update-state update-phys next-state] } level
       phys-world (phys/dynamics-world)
       scene-body (mapv #(phys/add-rigid-body phys-world % pos rot 0) shapes)
 
@@ -31,7 +31,7 @@
       :player player
       :non-players non-players
       :items ()
-      :scene { :model model :pos pos :rot rot }
+      :scene { :models models :pos pos :rot rot }
       :gui-asset gui-asset
       :campos campos
       :camrot camrot
@@ -75,7 +75,7 @@
       (graph/push-matrix)
       (apply graph/translate (scene :pos))
       (apply graph/rotate (scene :rot))
-      (graph/model (scene :model))
+      (doseq [m (scene :models)] (graph/model m))
       (graph/pop-matrix)
 
       (doseq [n (concat [player] non-players items)] (dat/render-char n time))
