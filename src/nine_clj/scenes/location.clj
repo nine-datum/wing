@@ -17,7 +17,7 @@
       loc-pos (location :pos)
       loc-rot (location :rot)
       loc-entry (location :entry)
-      presets [preset]
+      presets (-> res :arena :presets vals)
       pause-menu (res :location-pause-menu-setup)
       make-char (fn [phys-world preset] (dat/load-char phys-world preset loc-entry look color side :idle-pass 0))
       level (assoc level-preset
