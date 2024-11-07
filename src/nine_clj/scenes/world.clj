@@ -147,6 +147,22 @@
   (-> x (* 0.25) (+ time) Math/sin inc (+ water-effect-level))
 )
 
+(defn water-normal [x z time]
+  (let [
+      a (water-peek x z time)
+      b (water-peek (inc x) z time)
+      c (water-peek x (inc z) time)
+      a [x a z]
+      b [(inc x) b z]
+      c [x c (inc z)]
+      db (mapv - b a)
+      dc (mapv - c a)
+      n (mat/cross db dc)
+    ]
+    (math/normalize n)
+  )
+)
+
 (declare load-ship)
 
 (defn move-pos [pos movement speed delta-time]
@@ -198,7 +214,7 @@
           [lx ly lz] look
           [ux uy uz] up
           up-proj (mat/dot up look)
-          rot-x (Math/sin up-proj)
+          rot-x (-> up-proj Math/sin -)
           rot-y (math/clock lx lz)
           anims (ch :anims)
           { :keys [anim obj-anim speed] } (-> ch :anim anims)
@@ -206,9 +222,8 @@
         ]
         (graph/push-matrix)
         (apply graph/translate pos)
-        (graph/rotate 0 rot-y 0)
+        (graph/rotate 0 (+ Math/PI rot-y) 0)
         (graph/rotate rot-x 0 0)
-        (graph/rotate 0 Math/PI 0)
         (-> ch :model (graph/animated-model anim obj-anim))
         (graph/apply-matrix (.transform anim "rider"))
         (-> Math/PI (/ 2) (math/rotation 0 0) graph/apply-matrix)
@@ -252,11 +267,15 @@
           { :keys [pos look rider-materials] } ch
           [lx ly lz] look
           rot-y (math/clock lx lz)
-          pos (mapv + pos [0 1 0])
+          pos (mapv + pos [0 0.5 0])
+          [px _ pz] pos
+          up (water-normal px pz time)
+          rot-x (-> up (mat/dot look) Math/sin -)
         ]
         (graph/push-matrix)
         (apply graph/translate pos)
         (graph/rotate 0 rot-y 0)
+        (graph/rotate rot-x 0 0)
         (-> ship-preset :model graph/model)
         (graph/translate 0 0.2 -2.7)
         (dat/render-preset rider-preset rider-materials "armature|riding_boat" time)
