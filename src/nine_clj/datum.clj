@@ -557,7 +557,11 @@
   ) ch chs body-to-char delta-time)
 )
 
-(defn ai-next [chs body-to-char ch time delta-time]
+(defn passive-ai-next [chs body-to-char ch time delta-time]
+  (char-call ch :next (ch-move-in ch delta-time [0 0 0]) time)
+)
+
+(defn combat-ai-next [chs body-to-char ch time delta-time]
   (let [ next (char-call ch :next (ai-in ch chs body-to-char delta-time) time) ]
     (cond
       (-> ch :target (= ()))
@@ -865,7 +869,7 @@
 
 (defn next-game-state [dev res state]
   (let [
-      { :keys [camrot campos player non-players items phys-world time delta-time] } state
+      { :keys [ai-next camrot campos player non-players items phys-world time delta-time] } state
       { :keys [keyboard mouse] } dev
 
       movement (cam-rel-movement keyboard camrot)

@@ -10,6 +10,8 @@
       ColladaBasicGeometryParser
       ColladaBasicVisualSceneParser
       ColladaNode
+      NodeReader
+      StringReader
       BuffersReader
       ColladaVisualSceneReader
       BufferMapping
@@ -95,4 +97,38 @@
 
 (defn scale-geom [verts scale]
   (mapv (fn [f i] (* f (scale (mod i 3)))) verts (range))
+)
+
+(defmacro node-reader [n & exprs]
+  `(proxy [NodeReader] [] (read [~n] ~@exprs))
+)
+
+(defmacro string-reader [n & exprs]
+  `(proxy [StringReader] [] (read [~n] ~@exprs))
+)
+
+(defn geom-markers [storage file]
+  (let [
+      root (->> file (.open storage) ColladaNode/fromFile)
+      res (atom ())
+    ]
+    (.children root "COLLADA" (node-reader cld
+    (.children cld "library_visual_scenes" (node-reader scenes
+    (.children scenes "visual_scene" (node-reader scene
+    (.children scene "node" (node-reader node
+    (.attribute node "name" (string-reader name
+    (.children node "matrix" (node-reader matrix
+    (.content matrix (string-reader nums (swap! res #(cons [name nums] %))))))))))))))))
+    (mapv (fn [[name nums]] [name
+      (as-> nums n
+        (clojure.string/split n #" ")
+        (mapv #(Float/valueOf %) n)
+        (Buffer/of n)
+        (Matrix4f/from_COLLADA_Buffer n 0)
+      )]) @res)
+  )
+)
+
+(defn geom-markers-map [storage file]
+  (->> (geom-markers storage file) (apply concat) (apply hash-map))
 )

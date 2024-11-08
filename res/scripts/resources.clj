@@ -60,6 +60,7 @@
         :next-state dat/next-game-state
         :pos [0 0 0]
         :rot [0 0 0]
+        :ai-next dat/combat-ai-next
       )
       :world (assoc world
         :presets all-presets
@@ -70,6 +71,7 @@
         :next-state world/next-world-state
         :pos [0 0 0]
         :rot [0 0 0]
+        :ai-next dat/passive-ai-next
       )
       :world-locations world-locations
       :world-water-effect world-water-effect

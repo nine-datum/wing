@@ -14,21 +14,28 @@
   (let [
       { :keys [preset pos look color side] } player
       level-preset (location :preset)
+      spawn (location :spawn)
       loc-pos (location :pos)
       loc-rot (location :rot)
-      loc-entry (location :entry)
-      presets (-> res :arena :presets vals)
+      loc-entry-pos (location :entry-pos)
+      loc-entry-look (location :entry-look)
       pause-menu (res :location-pause-menu-setup)
-      make-char (fn [phys-world preset] (dat/load-char phys-world preset loc-entry look color side :idle-pass 0))
+      make-char (fn [phys-world preset pos look color side] (dat/load-char phys-world preset pos look color side :idle-pass 0))
       level (assoc level-preset
-        :presets presets
+        :presets (-> res :arena :presets)
         :shapes (concat (level-preset :shapes) (-> res :world :shapes))
+        :ai-next dat/passive-ai-next
         :pos loc-pos
         :rot loc-rot
         :update-state dat/update-game-state
         :update-phys phys/update-world
         :next-state dat/next-game-state
-        :spawn (fn [phys-world presets] (mapv make-char (repeat phys-world) presets))
+        :spawn (fn [phys-world presets]
+          (->
+            (make-char phys-world preset loc-entry-pos loc-entry-look color side)
+            (cons (spawn (fn [kind color side pos look] (make-char phys-world (presets kind) pos look color side))))
+          )
+        )
       )
     ]
     (assoc (generic/generic-setup dev res generic/generic-loop location-render-loop pause-menu level)

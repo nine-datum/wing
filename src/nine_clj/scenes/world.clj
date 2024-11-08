@@ -123,6 +123,7 @@
       (map #(map % [:vertex :root]))
       (mapv (partial apply phys/geom-shape))
     )
+    :markers (geom/geom-markers-map (dev :storage) file)
   )
 )
 
