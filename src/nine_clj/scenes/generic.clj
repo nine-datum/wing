@@ -17,7 +17,7 @@
   (let
     [
       { :keys [gui-asset] } res
-      { :keys [presets models pos rot shapes spawn update-state update-phys next-state ai-next] } level
+      { :keys [presets models pos rot shapes spawn update-state update-phys next-state ai-next ai-in] } level
       phys-world (phys/dynamics-world)
       scene-body (mapv #(phys/add-rigid-body phys-world % pos rot 0) shapes)
 
@@ -28,6 +28,7 @@
     ]
     {
       :ai-next ai-next
+      :ai-in ai-in
       :phys-world phys-world
       :player player
       :non-players non-players

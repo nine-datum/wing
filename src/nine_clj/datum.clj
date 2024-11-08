@@ -548,7 +548,7 @@
   )
 )
 
-(defn ai-in [ch chs body-to-char delta-time]
+(defn combat-ai-in [ch chs body-to-char delta-time]
   ((case (ch :name)
     :fighter ai-in-fighter
     :ninja ai-in-fighter
@@ -557,12 +557,34 @@
   ) ch chs body-to-char delta-time)
 )
 
+(defn passive-ai-in [ch chs body-to-char delta-time]
+  (let [
+      { :keys [pos look] } ch
+      target-pos (get ch :target-pos pos)
+      target-look (get ch :target-look look)
+      mov (mapv - target-pos pos)
+      mov (assoc mov 1 0)
+      in (cond
+        (< (mat/length mov) 1) (ch-look-in ch delta-time target-look)
+        :else (ch-move-in ch delta-time (math/normalize mov))
+      )
+    ]
+    in
+  )
+)
+
 (defn passive-ai-next [chs body-to-char ch time delta-time]
-  (char-call ch :next (ch-move-in ch delta-time [0 0 0]) time)
+  (let [
+      target-pos (get ch :target-pos (ch :pos))
+      target-look (get ch :target-look (ch :look))
+      next (char-call ch :next (passive-ai-in ch chs body-to-char delta-time) time)
+    ]
+    (assoc next :target-pos target-pos :target-look target-look)
+  )
 )
 
 (defn combat-ai-next [chs body-to-char ch time delta-time]
-  (let [ next (char-call ch :next (ai-in ch chs body-to-char delta-time) time) ]
+  (let [ next (char-call ch :next (combat-ai-in ch chs body-to-char delta-time) time) ]
     (cond
       (-> ch :target (= ()))
         (assoc next :target (ai-target ch chs))
@@ -826,7 +848,7 @@
 
 (defn update-game-state [dev state]
   (let [
-      { :keys [player non-players movement action time delta-time] } state
+      { :keys [ai-in player non-players movement action time delta-time] } state
       all (cons player non-players)
       body-to-char (zipmap (map :body all) all)
     ]

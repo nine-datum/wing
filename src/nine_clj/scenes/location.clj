@@ -25,6 +25,7 @@
         :presets (-> res :arena :presets)
         :shapes (concat (level-preset :shapes) (-> res :world :shapes))
         :ai-next dat/passive-ai-next
+        :ai-in dat/passive-ai-in
         :pos loc-pos
         :rot loc-rot
         :update-state dat/update-game-state

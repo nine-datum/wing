@@ -61,6 +61,7 @@
         :pos [0 0 0]
         :rot [0 0 0]
         :ai-next dat/combat-ai-next
+        :ai-in dat/combat-ai-in
       )
       :world (assoc world
         :presets all-presets
@@ -72,6 +73,7 @@
         :pos [0 0 0]
         :rot [0 0 0]
         :ai-next dat/passive-ai-next
+        :ai-in dat/passive-ai-in
       )
       :world-locations world-locations
       :world-water-effect world-water-effect
