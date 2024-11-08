@@ -76,8 +76,8 @@
       "dead"
       "idle_pass"
       "walk_pass"
-      "armature|riding"
-      "armature|riding_boat"
+      "riding"
+      "riding_boat"
     )
     :fighter (preset "fighter" "Cube_002-mesh" []
       {}
@@ -91,8 +91,8 @@
       "dead"
       "idle_pass"
       "walk_pass"
-      "armature|riding"
-      "armature|riding_boat"
+      "riding"
+      "riding_boat"
     )
     :mage (preset "mage" "Cube_002-mesh" ["res/datum/fireball.dae"]
       {}
@@ -106,8 +106,8 @@
       "dead"
       "idle_pass"
       "walk_pass"
-      "armature|riding"
-      "armature|riding_boat"
+      "riding"
+      "riding_boat"
     )
     :ninja (preset "ninja" "Cube_003-mesh" []
       {}
@@ -121,8 +121,8 @@
       "dead"
       "idle_pass"
       "walk_pass"
-      "armature|riding"
-      "armature|riding_boat"
+      "riding"
+      "riding_boat"
     )
   }
 )
