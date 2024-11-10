@@ -25,39 +25,38 @@
       g (ColladaBasicGeometryParser.)
       vs (ColladaBasicVisualSceneParser.)
       res (atom (list))
-    ]
-    (.read g node
-      (proxy [BuffersReader] []
-        (read [s m floats ints]
-          (let [
-              v (.map floats "VERTEX")
-              i (.map ints "INDEX")
-              v (.fromRightToLeftHanded v)
-              rv (-> v .toList vec)
-              ri (-> i .toList vec)
-            ]
-            (swap! res (partial cons { :source (str "#" s) :vertex rv :index ri :root (. Matrix4f identity) }))
+      _ (.read g node
+        (proxy [BuffersReader] []
+          (read [s m floats ints]
+            (let [
+                v (.map floats "VERTEX")
+                i (.map ints "INDEX")
+                v (.fromRightToLeftHanded v)
+                rv (-> v .toList vec)
+                ri (-> i .toList vec)
+              ]
+              (swap! res (partial cons { :source (str "#" s) :vertex rv :index ri :root (. Matrix4f identity) }))
+            )
           )
         )
       )
-    )
-    (swap! res (partial group-by :source))
+      sources (group-by :source @res)
+      lst (atom ())
+    ]
     (.read vs node
       (proxy [ColladaVisualSceneReader] []
         (read [id root]
           (cond
-            (contains? @res id) (swap! res
-              #(update % id
-                (fn [geoms]
-                  (mapv (fn [geom] (assoc geom :root root)) geoms)
-                )
+            (contains? sources id) (swap! lst
+              #(concat %
+                (map (fn [geom] (assoc geom :root root)) (sources id))
               )
             )
           )
         )
       )
     )
-    (->> @res vals (apply concat))
+    @lst
   )
 )
 
