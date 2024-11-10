@@ -63,7 +63,7 @@
   )
 )
 
-(defn new-gl [] (LWJGL_OpenGL. nine-profiler))
+(defn new-gl [] (LWJGL_OpenGL.))
 
 (def matrix-stack (atom (list (math/mat-identity))))
 (def projection-matrix (atom (math/mat-identity)))
