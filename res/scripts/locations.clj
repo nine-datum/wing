@@ -54,7 +54,7 @@
         :pos [38 200 655]
         :rot [0 (-> Math/PI (/ 2) -) 0]
         :scale [1 1 1]
-        :spawn (partial guard-spawn [:fighter "guard_0" :fighter "guard_1"])
+        :spawn (partial guard-spawn [:fighter "guard_0" :fighter "guard_1" :archer "guard_2" :archer "guard_3" :mage "guard_4"])
       )
     ]
   )
