@@ -3,6 +3,8 @@
     [nine-clj.math :as math]
     [nine-clj.text :as text]
     [nine-clj.prof :as prof]
+    [nine-clj.mac :as mac]
+    [nine-clj.part :as part]
   ]
   [:import
     [nine.lwjgl
@@ -161,6 +163,37 @@
   ()
 )
 
+(defn load-uniform [shader name kind val & args]
+  (let [
+      p (.player shader)
+      us (.uniforms p)
+      u (case kind
+        :color (.uniformColor us name)
+        :vec3 (.uniformVector us name)
+        :mat4 (.uniformMatrix us name)
+        :texture (.uniformTexture us name (first args))
+      )
+    ]
+    (->> (mac/impl Drawing draw [] (.load u val)) (.play p) .draw)
+  )
+)
+
+(defn load-uniform-color [shader name [r g b a]]
+  (load-uniform shader name :color (Color/floats r g b a))
+)
+
+(defn load-uniform-vec3 [shader name [x y z]]
+  (load-uniform shader name :vec3 (math/vec3f x y z))
+)
+
+(defn load-uniform-mat4 [shader name mat]
+  (load-uniform shader name :mat4 mat)
+)
+
+(defn load-uniform-texture [shader name tex index]
+  (load-uniform shader name :texture tex index)
+)
+
 (defn image [img shader x y w h color]
   (let
     [
@@ -211,6 +244,24 @@
     (.dispose geom)
   )
 )
+
+(defn load-particles [gl image num]
+  { :image image :geom (part/part-geom gl num) }
+)
+
+(defn play-particles [gl particles shader time]
+  (let [
+      { :keys [geom image] } particles
+      t [time time time]
+      tex (image :tex)
+      p (.player shader)
+    ]
+    (load-uniform-vec3 shader "time" t)
+    (->> geom (.bind tex) (.play p) .draw)
+  )
+)
+
+(defn unload-particles [geom] (.dispose geom))
 
 (defn condition-func [func] (proxy [Condition] [] (match [t] (func t))))
 (defn condition-equality [item] (. Condition equality item))

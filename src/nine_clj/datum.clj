@@ -244,7 +244,7 @@
 ; state scheme
 ; {
 ;   :update (self in -> ())
-;   :effect (self in physics -> [effects])
+;   :effect (self res in physics -> [effects])
 ;   :next (self in effect -> next-state)
 ;   :render (self -> ())
 ; }
@@ -332,7 +332,7 @@
     :render (partial render-item [1/4 1/4 1/4])
     :next (fn [s time] s)
     :hit-check (once-hit-check)
-    :effect (fn [item in phys time]
+    :effect (fn [item res in phys time]
       (let [
           c (get (phys :contacts) (item :body) ())
         ]
@@ -355,7 +355,7 @@
     )
     :next (fn [s time] s)
     :render (partial render-item [1/2 1/2 1/2])
-    :effect (fn [item in phys time]
+    :effect (fn [item res in phys time]
       (let [c (get (phys :contacts) (item :body) ())]
         (cond
           (= c owner) []
@@ -684,7 +684,7 @@
   (let [
       atk (attack-state [attack-anim] time)
       effect-fn
-      (fn [s ch in phys time]
+      (fn [s ch res in phys time]
         (cond
           (or (-> s :has-arrow deref true?) (-> s (state-age time) (< spawn-time))) []
           :else (let [
@@ -709,7 +709,7 @@
 (defn melee-attack-state [anims time]
   (let [
       atk (attack-state anims time)
-      eff-fn (fn [s ch in phys time]
+      eff-fn (fn [s ch res in phys time]
         (let [
             { :keys [pos look body] } ch
             { :keys [hit-check] } s
@@ -840,8 +840,8 @@
         ()
       )
     )
-    :effect (fn [ch in phys time]
-      (-> ch :state (char-call :effect ch in phys time))
+    :effect (fn [ch res in phys time]
+      (-> ch :state (char-call :effect ch res in phys time))
     )
   }
 )
@@ -906,7 +906,7 @@
       body-to-char (zipmap (map :body all-players) all-players)
       phys { :contacts contacts :body-to-char body-to-char }
       in (ch-move-action-in player delta-time movement action)
-      effects (apply concat (char-list-call (concat [player] non-players items) :effect in phys time))
+      effects (apply concat (char-list-call (concat [player] non-players items) :effect res in phys time))
       [effect global-effect] (multi-effect effects)
       player (next-char player in time)
       player (effect player)
