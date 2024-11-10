@@ -245,19 +245,28 @@
   )
 )
 
-(defn load-particles [gl image num]
-  { :image image :geom (part/part-geom gl num) }
+(defn load-particles [gl image shader num]
+  { :image image :shader shader :gl gl :geom (part/part-geom gl num) }
 )
 
-(defn play-particles [gl particles shader time]
+(defn play-particles [particles pos rot scale time]
   (let [
-      { :keys [geom image] } particles
+      { :keys [geom image shader gl] } particles
       t [time time time]
       tex (image :tex)
       p (.player shader)
+      m (math/transform pos rot scale)
+      proj (.mul
+        (get-projection)
+        (get-camera)
+      )
     ]
     (load-uniform-vec3 shader "time" t)
-    (->> geom (.bind tex) (.play p) .draw)
+    (load-uniform-mat4 shader "transform" m)
+    (load-uniform-mat4 shader "projection" proj)
+    (load-uniform-color shader "color" [1 1 1 1])
+    (load-uniform shader "worldLight" :vec3 (get-world-light))
+    (->> geom (.depthOn gl) (.apply tex) (.play p) .draw)
   )
 )
 

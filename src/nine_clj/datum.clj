@@ -243,10 +243,10 @@
 
 ; state scheme
 ; {
-;   :update (self in -> ())
-;   :effect (self res in physics -> [effects])
-;   :next (self in effect -> next-state)
-;   :render (self -> ())
+;   :update (self in time -> ())
+;   :effect (self res in physics time -> [effects])
+;   :next (self in effect time -> next-state)
+;   :render (self time -> ())
 ; }
 
 (defn new-state
@@ -365,6 +365,32 @@
       )
     )
   }
+)
+
+(defn blood [particles pos rot time] (println "blood!")
+  {
+    :render (fn [item time]
+      (graph/play-particles particles pos rot [1 1 1] time)
+    )
+    :next (fn [item time] item)
+    :effect (fn [item res in phys time]
+      []
+    )
+  }
+)
+
+(defn blood-damage-effect [body hit-check damage blood-particles blood-check pos rot time]
+  (cond @blood-check
+    (do
+      (reset! blood-check false)
+      (multi-effect [
+        (damage-effect body hit-check damage)
+        (spawn-item-effect (blood blood-particles pos rot time))
+      ])
+    )
+    :else
+    (damage-effect body hit-check damage)
+  )
 )
 
 (defn state-age [s time]
@@ -712,16 +738,18 @@
       eff-fn (fn [s ch res in phys time]
         (let [
             { :keys [pos look body] } ch
-            { :keys [hit-check] } s
+            { :keys [hit-check blood-check] } s
+            { :keys [blood-particles] } res
             ctr (mapv + pos [0 1 0])
             cs (phys/sphere-check (ch :world) ctr (mapv + ctr (mapv (partial * 2) look)) 0.5)
             cs (disj (set cs) body)
+            dmg (get-char-stat ch :attack-damage)
           ]
-          (mapv damage-effect cs (repeat hit-check) (repeat 20))
+          (mapv #(blood-damage-effect %1 hit-check 20 blood-particles blood-check pos [0 0 0] time) cs)
         )
       )
     ]
-    (assoc atk :effect eff-fn :hit-check (once-hit-check))
+    (assoc atk :effect eff-fn :hit-check (once-hit-check) :blood-check (atom true))
   )
 )
 

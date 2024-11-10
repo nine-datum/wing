@@ -13,6 +13,14 @@
   (let [
       bv [
         [0 0 0]
+        [0 1 0]
+        [1 1 0]
+
+        [1 1 0]
+        [1 0 0]
+        [0 0 0]
+
+        [0 0 0]
         [1 0 0]
         [1 1 0]
 
@@ -22,6 +30,14 @@
       ]
       buv [
         [0 0]
+        [0 1]
+        [1 1]
+
+        [1 1]
+        [1 0]
+        [0 0]
+
+        [0 0]
         [1 0]
         [1 1]
 
@@ -29,10 +45,27 @@
         [0 1]
         [0 0]
       ]
-      r (* num 6)
-      vs (->> bv cycle (mapv #(mapv + [0 0 (quot %1 6)] %2) (range r)))
+      bn [
+        [0 0 1]
+        [0 0 1]
+        [0 0 1]
+
+        [0 0 1]
+        [0 0 1]
+        [0 0 1]
+
+        [0 0 -1]
+        [0 0 -1]
+        [0 0 -1]
+
+        [0 0 -1]
+        [0 0 -1]
+        [0 0 -1]
+      ]
+      r (* num 12)
+      vs (->> bv cycle (mapv #(mapv + [0 0 (quot %1 12)] %2) (range r)))
       uvs (->> buv cycle (take r))
-      nrs (->> [0 0 1] repeat (take r) vec)
+      nrs (->> bn cycle (take r))
       to-float (partial map float)
       buf (comp vec to-float (partial apply concat))
       geom (-> gl
