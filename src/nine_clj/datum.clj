@@ -369,8 +369,9 @@
 
 (defn blood [particles pos rot time] (println "blood!")
   {
+    :start time
     :render (fn [item time]
-      (graph/play-particles particles pos rot [1 1 1] time)
+      (graph/play-particles particles pos rot [1 1 1] (-> item :start (- time)))
     )
     :next (fn [item time] item)
     :effect (fn [item res in phys time]

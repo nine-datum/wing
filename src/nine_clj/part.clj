@@ -2,7 +2,6 @@
   [:require
     [nine-clj.math :as math]
     [clojure.core.matrix :as mat]
-    [nine-clj.graph :as graph]
   ]
   [:import
     [nine.buffer Buffer]

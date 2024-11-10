@@ -9,5 +9,7 @@ uniform vec4 color;
 
 void main (void)
 {	
-	out_Color = vec4(color.rgb * texture(texture2d, uv).rgb * (dot(worldNormal, -worldLight) + 1) * 0.5, 1);
+  vec4 c = texture(texture2d, uv);
+  if(c.a < 0.5) { discard; }
+	out_Color = vec4(color.rgb * c.rgb * (dot(worldNormal, -worldLight) + 1) * 0.5, 1);
 }
