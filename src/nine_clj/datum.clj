@@ -339,11 +339,17 @@
   (graph/pop-matrix)
 )
 
+(def projectile-group (short 2))
+(def projectile-mask (-> projectile-group bit-not short))
+
 (defn arrow [time phys-world owner pos rot model]
   {
     :start time
     :model model
-    :body (phys/capsule phys-world pos (mapv + [(/ Math/PI -2) 0 0] rot) 0.2 1.2 1)
+    :body (doto
+      (phys/capsule phys-world pos (mapv + [(/ Math/PI -2) 0 0] rot) 0.2 1.2 1)
+      (phys/set-group phys-world projectile-group projectile-mask)
+    )
     :render (partial render-item [1/4 1/4 1/4])
     :next (fn [s time] s)
     :hit-check (once-hit-check)
@@ -370,6 +376,7 @@
     :model model
     :body (doto
       (phys/sphere phys-world pos rot 0.5 1)
+      (phys/set-group phys-world projectile-group projectile-mask)
       (phys/set-gravity [0 0 0])
     )
     :next (fn [s time] s)

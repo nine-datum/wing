@@ -93,6 +93,12 @@
   )
 )
 
+(defn set-group [body world group mask]
+  (.removeRigidBody world body)
+  (.addRigidBody world body group mask)
+  body
+)
+
 (defn extract-vec3 [v]
   [(.x v) (.y v) (.z v)]
 )
