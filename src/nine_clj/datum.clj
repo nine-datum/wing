@@ -331,6 +331,37 @@
   ]
 )
 
+(defn blood [particles pos rot time]
+  {
+    :id (java.util.UUID/randomUUID)
+    :start time
+    :render (fn [item time]
+      (graph/play-particles particles pos rot [1 1 1] (-> item :start (- time)))
+    )
+    :next (fn [item time] item)
+    :effect (fn [item res in phys time]
+      (cond
+        (->> item :start (- time) (< 1)) [(remove-item-by-id-effect (item :id))]
+        :else []
+      )
+    )
+  }
+)
+
+(defn blood-damage-effect [body hit-check damage blood-particles blood-check pos rot time]
+  (cond @blood-check
+    (do
+      (reset! blood-check false)
+      (multi-effect [
+        (damage-effect body hit-check damage)
+        (spawn-item-effect (blood blood-particles pos rot time))
+      ])
+    )
+    :else
+    (damage-effect body hit-check damage)
+  )
+)
+
 (defn render-item [size item time]
   (graph/push-matrix)
   (graph/apply-matrix (-> :body item phys/get-matrix math/mat4f))
@@ -391,37 +422,6 @@
       )
     )
   }
-)
-
-(defn blood [particles pos rot time]
-  {
-    :id (java.util.UUID/randomUUID)
-    :start time
-    :render (fn [item time]
-      (graph/play-particles particles pos rot [1 1 1] (-> item :start (- time)))
-    )
-    :next (fn [item time] item)
-    :effect (fn [item res in phys time]
-      (cond
-        (->> item :start (- time) (< 1)) [(remove-item-by-id-effect (item :id))]
-        :else []
-      )
-    )
-  }
-)
-
-(defn blood-damage-effect [body hit-check damage blood-particles blood-check pos rot time]
-  (cond @blood-check
-    (do
-      (reset! blood-check false)
-      (multi-effect [
-        (damage-effect body hit-check damage)
-        (spawn-item-effect (blood blood-particles pos rot time))
-      ])
-    )
-    :else
-    (damage-effect body hit-check damage)
-  )
 )
 
 (defn state-age [s time]
