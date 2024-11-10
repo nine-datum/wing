@@ -350,11 +350,15 @@
     :effect (fn [item res in phys time]
       (let [
           c (get (phys :contacts) (item :body) ())
+          dmg (get-char-stat (--> phys :body-to-char owner) :attack-damage)
+          blood-particles (res :blood-particles)
+          blood-pos (-> item :body phys/get-position)
+          blood-rot [0 0 0]
         ]
         (cond
           (->> item :start (- time) (< 2)) [ (remove-item-effect item) ]
           (or (-> phys :body-to-char (contains? c) false?) (= c ()) (= c owner)) []
-          :else [ (remove-item-effect item) (damage-effect c (item :hit-check) 50) ]
+          :else [ (remove-item-effect item) (blood-damage-effect c (item :hit-check) dmg blood-particles (atom true) blood-pos blood-rot time) ]
         )
       )
     )
