@@ -22,7 +22,7 @@
       skin-shader (graph/load-shader gl storage "res/shaders/diffuse_skin_vertex.glsl" "res/shaders/diffuse_fragment.glsl")
       diffuse-shader (graph/load-shader gl storage "res/shaders/diffuse_vertex.glsl" "res/shaders/diffuse_fragment.glsl")
       particles-shader (graph/load-shader gl storage "res/shaders/particle_vertex.glsl" "res/shaders/particle_fragment.glsl")
-      blood-particles (graph/load-particles gl (graph/load-image gl storage "res/images/blood.png") particles-shader 50)
+      blood-particles (graph/load-particles gl (graph/load-image gl storage "res/images/blood.png") particles-shader 10)
       graphics (graph/load-graphics gl storage diffuse-shader skin-shader)
       arena-presets (dat/load-presets gl storage diffuse-shader skin-shader)
       world-presets (world/load-presets dev diffuse-shader skin-shader)

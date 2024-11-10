@@ -7,6 +7,7 @@
     [nine-clj.phys :as phys]
     [nine-clj.input :as input]
     [nine-clj.prof :as prof]
+    [nine-clj.mac :refer [-->]]
     [clojure.core.matrix :as mat]
   ]
   [:import
@@ -316,6 +317,20 @@
   ]
 )
 
+(defn remove-item-by-id-effect [id]
+  [
+    identity
+    (fn [state]
+      (->> state
+        :items
+        (filter #(-> % :id (= id) not))
+        list*
+        (assoc state :items)
+      )
+    )
+  ]
+)
+
 (defn render-item [size item time]
   (graph/push-matrix)
   (graph/apply-matrix (-> :body item phys/get-matrix math/mat4f))
@@ -369,13 +384,17 @@
 
 (defn blood [particles pos rot time]
   {
+    :id (java.util.UUID/randomUUID)
     :start time
     :render (fn [item time]
       (graph/play-particles particles pos rot [1 1 1] (-> item :start (- time)))
     )
     :next (fn [item time] item)
     :effect (fn [item res in phys time]
-      []
+      (cond
+        (->> item :start (- time) (< 1)) [(remove-item-by-id-effect (item :id))]
+        :else []
+      )
     )
   }
 )
@@ -745,8 +764,11 @@
             cs (phys/sphere-check (ch :world) ctr (mapv + ctr (mapv (partial * 2) look)) 0.5)
             cs (disj (set cs) body)
             dmg (get-char-stat ch :attack-damage)
+            body-to-char (phys :body-to-char)
           ]
-          (mapv #(blood-damage-effect %1 hit-check 20 blood-particles blood-check pos [0 0 0] time) cs)
+          (mapv #(blood-damage-effect % hit-check 20 blood-particles blood-check (-> % body-to-char :pos) (repeatedly 3 rand) time)
+            (filter #(-> % body-to-char nil? not) cs)
+          )
         )
       )
     ]
