@@ -367,7 +367,7 @@
   }
 )
 
-(defn blood [particles pos rot time] (println "blood!")
+(defn blood [particles pos rot time]
   {
     :start time
     :render (fn [item time]
