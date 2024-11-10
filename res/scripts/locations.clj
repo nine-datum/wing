@@ -51,7 +51,7 @@
         :name :castle
         :side :red
         :color [1 0 0 1]
-        :pos [38 200 655]
+        :pos [38 200 625]
         :rot [0 (-> Math/PI (/ 2) -) 0]
         :scale [1 1 1]
         :spawn (partial guard-spawn [
