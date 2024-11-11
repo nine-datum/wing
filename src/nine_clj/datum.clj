@@ -999,7 +999,8 @@
       playerpos (player :pos)
       [lx ly lz] (player :look)
       camrot-xy (get state :camrot-xy [0 (math/clock lx lz)])
-      [arrows-x arrows-y] (input/arrows keyboard)
+      arrows (input/arrows keyboard)
+      [arrows-x arrows-y] (cond (input/shift-down keyboard) (mapv * arrows (repeat 1/6)) :else arrows)
       [cx cy] camrot-xy
       camrot-xy [(-> arrows-y - (* Math/PI 1/4) (+ camrotx+)) (-> arrows-x (* Math/PI delta-time) (+ cy)) 0]
       camrot camrot-xy
