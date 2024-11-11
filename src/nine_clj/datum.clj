@@ -251,10 +251,11 @@
 ; }
 
 (defn new-state
-  ([anim time next] (new-state anim time next (constantly ())))
-  ([anim time next update] (new-state anim time next update (constantly [])))
-  ([anim time next update effect]
+  ([name anim time next] (new-state name anim time next (constantly ())))
+  ([name anim time next update] (new-state name anim time next update (constantly [])))
+  ([name anim time next update effect]
     {
+      :name name
       :anim anim
       :start time
       :next next
@@ -616,11 +617,13 @@
   (let [
       target (ch :target)
       tdir (target-dir ch body-to-char)
+      dist (mat/length tdir)
       [mx my mz] (math/normalize tdir)
     ]
     (cond
       (= target ()) (ch-move-in ch delta-time [0 0 0])
-      (-> tdir mat/length (< 20)) (ch-look-action-in ch delta-time tdir :attack)
+      (and (< dist 20) (-> ch :state :name (= :attack) not)) (ch-move-in ch delta-time (mapv - [mx 0 mz]))
+      (< dist 40) (ch-look-action-in ch delta-time tdir :attack)
       :else (ch-move-in ch delta-time [mx 0 mz])
     )
   )
@@ -677,7 +680,7 @@
 (declare class-state)
 
 (defn idle-state [time]
-  (new-state "idle" time (fn [s ch in time]
+  (new-state :idle "idle" time (fn [s ch in time]
       (let [
           { :keys [movement action] } in
         ]
@@ -693,7 +696,7 @@
 )
 
 (defn walk-state [time]
-  (assoc (new-state "walk" time (fn [s ch in time]
+  (assoc (new-state :walk "walk" time (fn [s ch in time]
       (let [
           { :keys [movement action] } in
         ]
@@ -746,7 +749,7 @@
   (let [
       anim (attack-anims (rand-int (count attack-anims)))
     ]
-    (new-state anim time
+    (new-state :attack anim time
       (fn [s ch in time]
         (cond
           (< (char-anim-length ch anim) (state-age s time)) (map-state ch :idle time)
@@ -809,7 +812,7 @@
 )
 
 (defn death-state [time]
-  (assoc (new-state "death" time (fn [s ch in time]
+  (assoc (new-state :death "death" time (fn [s ch in time]
       (cond
         (>= (state-age s time) (- (char-anim-length ch "death") 0.1)) (map-state ch :dead time)
         :else (next-char-idle ch)
@@ -824,7 +827,7 @@
   ) :disposed (atom false))
 )
 (defn dead-state [time]
-  (new-state "dead" time (fn [s ch in time] (next-char-idle ch)))
+  (new-state :dead "dead" time (fn [s ch in time] (next-char-idle ch)))
 )
 
 (defn wrap-mortal [factory]
