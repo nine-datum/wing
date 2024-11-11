@@ -173,10 +173,10 @@
   )
 )
 
-(defmacro load-resources-let [root-name pairs expr]
+(defmacro load-resources-let [pairs expr]
   (let [
       pairs (partition 2 pairs)
-      names (cons root-name (mapv first pairs))
+      names (mapv first pairs)
       func-template (fn [[n e]]
         `(fn [lets#] (let [
             { :keys [~@names] } lets#
@@ -193,6 +193,6 @@
         )
       )
     ]
-    (list funcs expr-func)
+    (list list funcs expr-func)
   )
 )

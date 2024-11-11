@@ -17,7 +17,7 @@
 (use 'nine-clj.core)
 
 (fn [dev]
-  (menu/load-resources-let dev [
+  (menu/load-resources-let [
       gl (dev :gl)
       storage (dev :storage)
       mouse (dev :mouse)
