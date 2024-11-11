@@ -2,16 +2,19 @@
   '[nine-clj.datum :as dat]
   '[nine-clj.math :as math]
 )
-(fn [dev all-presets]
+(fn [dev world-markers all-presets]
   (let [
       marker (fn [loc marker-name]
         (.mul (loc :mat) (-> loc :name all-presets :markers (get marker-name)))
       )
-      marker-pos (fn [loc marker-name]
-        (-> (marker loc marker-name) (.transformPoint (math/vec3f 0 0 0)) math/floats-from-vec3f)
+      marker-pos (fn [m]
+        (-> m (.transformPoint (math/vec3f 0 0 0)) math/floats-from-vec3f)
       )
-      marker-look (fn [loc marker-name]
-        (-> (marker loc marker-name) (.transformVector (math/vec3f 0 0 1)) math/floats-from-vec3f math/normalize)
+      marker-look (fn [m]
+        (-> m (.transformVector (math/vec3f 0 0 1)) math/floats-from-vec3f math/normalize)
+      )
+      marker-rot-y (fn [m]
+        (as-> m v (marker-look v) (map v [0 2]) (apply math/clock v))
       )
       location (fn [& args]
         (let [
@@ -25,8 +28,8 @@
             :name name
             :preset (all-presets name)
             :models (-> name all-presets :models)
-            :entry-pos (marker-pos h entry)
-            :entry-look (marker-look h entry)
+            :entry-pos (-> h (marker entry) marker-pos)
+            :entry-look (-> h (marker entry) marker-look)
             :pos pos
             :rot rot
             :scale scale
@@ -38,7 +41,9 @@
         (let [
             { :keys [color side] } loc
             ps (partition 2 info)
-            ps (mapv (fn [[kind mark]] (vector kind color side (marker-pos loc mark) (marker-look loc mark))) ps)
+            posf #(->> % (marker loc) marker-pos)
+            lookf #(->> % (marker loc) marker-look)
+            ps (mapv (fn [[kind mark]] (vector kind color side (posf mark) (lookf mark))) ps)
           ]
           (fn [spawn-fn]
             (mapv #(apply spawn-fn %) ps)
@@ -51,8 +56,8 @@
         :name :castle
         :side :red
         :color [1 0 0 1]
-        :pos [38 200 625]
-        :rot [0 (-> Math/PI (/ 2) -) 0]
+        :pos (-> "castle_red" world-markers marker-pos)
+        :rot [0 (-> "castle_red" world-markers marker-rot-y) 0]
         :scale [1 1 1]
         :spawn (partial guard-spawn [
           :fighter "guard_0"
