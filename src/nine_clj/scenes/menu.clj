@@ -130,6 +130,7 @@
       { :keys [gl storage mouse width height] } dev
       gui-asset (gui/gui-asset (assoc dev :mouse (input/viewport-mouse mouse width height)))
       menu-image (graph/load-image gl storage "res/images/menu.png")
+      [load-funcs res-func]  (-> "res/scripts/resources.clj" scripting/read-file (apply [dev]))
     ]
     (swap! res-atom #(assoc % :gui-asset gui-asset :menu-image menu-image))
     {
@@ -142,6 +143,12 @@
       ]
       :buttons []
       :gui-asset gui-asset
+      :res-atom res-atom
+      :load-atom (atom {})
+      :load-funcs load-funcs
+      :res-func res-func
+      :progress 0
+      :max-progress (count load-funcs)
     }
   )
 )
@@ -150,8 +157,42 @@
   (let [
       state (menu-loop dev res state)
       { :keys [gui-asset] } res
+      { :keys [res-atom load-atom res-func load-funcs load-atom progress max-progress] } state
     ]
-    (gui/text gui-asset gui/aspect-fit-layout "0%" -0.5 -0.3 1 0.2 [1 1 1 1])
-    state
+    (gui/text gui-asset gui/aspect-fit-layout (-> progress (/ max-progress) (* 100) int (str "%")) -0.5 -0.3 1 0.2 [1 1 1 1])
+    (cond
+      (empty? load-funcs) (menu-setup dev (reset! res-atom (res-func @load-atom)))
+      :else (do
+        (swap! load-atom (first load-funcs))
+        (assoc state
+          :progress (inc progress)
+          :load-funcs (rest load-funcs)
+        )
+      )
+    )
+  )
+)
+
+(defmacro load-resources-let [root-name pairs expr]
+  (let [
+      pairs (partition 2 pairs)
+      names (cons root-name (mapv first pairs))
+      func-template (fn [[n e]]
+        `(fn [lets#] (let [
+            { :keys [~@names] } lets#
+          ]
+          (assoc lets# (keyword (name '~n)) ~e)
+        ))
+      )
+      funcs (mapv func-template pairs)
+      expr-func `(fn [lets#]
+        (let [
+            { :keys [~@names] } lets#
+          ]
+          ~expr
+        )
+      )
+    ]
+    (list funcs expr-func)
   )
 )

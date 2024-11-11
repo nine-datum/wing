@@ -17,8 +17,10 @@
 (use 'nine-clj.core)
 
 (fn [dev]
-  (let [
-      { :keys [gl storage mouse] } dev
+  (menu/load-resources-let dev [
+      gl (dev :gl)
+      storage (dev :storage)
+      mouse (dev :mouse)
       skin-shader (graph/load-shader gl storage "res/shaders/diffuse_skin_vertex.glsl" "res/shaders/diffuse_fragment.glsl")
       diffuse-shader (graph/load-shader gl storage "res/shaders/diffuse_vertex.glsl" "res/shaders/diffuse_fragment.glsl")
       particles-shader (graph/load-shader gl storage "res/shaders/particle_vertex.glsl" "res/shaders/particle_fragment.glsl")
