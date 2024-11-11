@@ -63,6 +63,7 @@
         ]
       } state
       { :keys [ width height ] } dev
+      fov (get state :fov 60)
     ]
     (prof/profile :rendering (do
       (doto (dev :gl)
@@ -71,7 +72,7 @@
       )
       (graph/world-light [0 -1 0])
 
-      (graph/projection (math/perspective (width) (height) (math/radians 60) 0.3 20000))
+      (graph/projection (math/perspective (width) (height) (math/radians fov) 0.3 20000))
       (graph/camera (math/first-person-camera campos camrot))
 
       (graph/push-matrix)

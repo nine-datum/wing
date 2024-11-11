@@ -1023,11 +1023,15 @@
 
       playerpos (player :pos)
       [lx ly lz] (player :look)
-      camrot-xy (get state :camrot-xy [0 (math/clock lx lz)])
+      camrot-xy (get state :camrot-xy [camrotx+ (math/clock lx lz)])
       arrows (input/arrows keyboard)
-      [arrows-x arrows-y] (cond (input/shift-down keyboard) (mapv * arrows (repeat 1/6)) :else arrows)
+      aim? (input/shift-down keyboard)
+      fov (if aim? 20 60)
+      cam+ (if aim? (inc cam+) cam+)
+      [arrows-x arrows-y] (cond aim? (mapv * arrows (repeat 1/6)) :else arrows)
       [cx cy] camrot-xy
-      camrot-xy [(-> arrows-y - (* Math/PI 1/4) (+ camrotx+)) (-> arrows-x (* Math/PI delta-time) (+ cy)) 0]
+      camrot-xy [(-> arrows-y - (* Math/PI delta-time) (+ cx)) (-> arrows-x (* Math/PI delta-time) (+ cy)) 0]
+      camrot-xy (update camrot-xy 0 #(-> % (min (* Math/PI 1/3)) (max (* Math/PI 1/3 -1))))
       camrot camrot-xy
       cammat (apply math/rotation camrot)
       campiv (mapv + playerpos [0 cam+ 0])
@@ -1046,6 +1050,7 @@
         :campos (mat/lerp (state :campos) campos (* 5 delta-time))
         :camrot (math/lerpv-angle (state :camrot) camrot (* 10 delta-time))
         :camrot-xy camrot-xy
+        :fov fov
         :movement movement
         :player player
         :items items
