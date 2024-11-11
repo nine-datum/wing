@@ -24,9 +24,9 @@
   ]
 )
 
-(defn floats-from-mat4f [m] ((comp vec map) #(.at m %) (range 16)))
-(defn floats-from-vec2f [v] [(.x v) (.y v)])
-(defn floats-from-vec3f [v] [(.x v) (.y v) (.z v)])
+(defn floats-from-mat4f [^Matrix4f m] ((comp vec map) #(.at m %) (range 16)))
+(defn floats-from-vec2f [^Vector2f v] [(.x v) (.y v)])
+(defn floats-from-vec3f [^Vector3f v] [(.x v) (.y v) (.z v)])
 
 (defn vec2f [x y] (. Vector2f newXY x y))
 
@@ -102,7 +102,7 @@
   )))
 )
 
-(defn get-column-3 [mat n]
+(defn get-column-3 [^Matrix4f mat n]
   (let [
       p (* n 4)
     ]

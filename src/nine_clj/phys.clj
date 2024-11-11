@@ -99,13 +99,13 @@
   body
 )
 
-(defn extract-vec3 [v]
+(defn extract-vec3 [^Vector3f v]
   [(.x v) (.y v) (.z v)]
 )
 
 (defn transform-position [t pos]
   (let [
-      m (.getMatrix t (Matrix4f.))
+      ^Matrix4f m (.getMatrix t (Matrix4f.))
       [x y z] (mapv float pos)
       m (do (.setColumn m 3 x y z 1) m)
     ]
@@ -138,18 +138,18 @@
   )
 )
 
-(defn set-gravity [body [gx gy gz]]
+(defn set-gravity [^RigidBody body [gx gy gz]]
   (.setGravity body (Vector3f. gx gy gz))
   body
 )
 
-(defn set-velocity [body [vx vy vz]]
+(defn set-velocity [^RigidBody body [vx vy vz]]
   (.activate body)
   (.setLinearVelocity body (Vector3f. vx vy vz))
   body
 )
 
-(defn get-velocity [body]
+(defn get-velocity [^RigidBody body]
   (let [
       v (.getLinearVelocity body (Vector3f.))
     ]
@@ -157,13 +157,13 @@
   )
 )
 
-(defn set-angular-velocity [body [vx vy vz]]
+(defn set-angular-velocity [^RigidBody body [vx vy vz]]
   (.activate body)
   (.setAngularVelocity body (Vector3f. vx vy vz))
   body
 )
 
-(defn get-angular-velocity [body]
+(defn get-angular-velocity [^RigidBody body]
   (let [
       v (.getAngularVelocity body (Vector3f.))
     ]
@@ -171,9 +171,9 @@
   )
 )
 
-(defn set-matrix [body mat]
+(defn set-matrix [^RigidBody body mat]
   (let [
-      m (Matrix4f.)
+      ^Matrix4f m (Matrix4f.)
       cs (partition 4 (map float mat))
       m (do (doseq [[i [x y z w]] (map vector (range) cs)]
         (.setColumn m i x y z w)
@@ -185,12 +185,12 @@
   body
 )
 
-(defn set-rotation-enabled [body v]
+(defn set-rotation-enabled [^RigidBody body v]
   (.setAngularFactor body (if v 1 0))
   body
 )
 
-(defn set-position [body pos]
+(defn set-position [^RigidBody body pos]
   (let [
       t (.getCenterOfMassTransform body (Transform.))
       t (transform-position t pos)
@@ -200,7 +200,7 @@
   body
 )
 
-(defn get-matrix [body]
+(defn get-matrix [^RigidBody body]
   (let [
       t (.getCenterOfMassTransform body (Transform.))
       m (.getMatrix t (Matrix4f.))
@@ -211,7 +211,7 @@
   )
 )
 
-(defn get-position [body]
+(defn get-position [^RigidBody body]
   (let [
       t (.getCenterOfMassTransform body (Transform.))
       m (.getMatrix t (Matrix4f.))
@@ -222,7 +222,7 @@
   )
 )
 
-(defn update-world [world time-step]
+(defn update-world [^DiscreteDynamicsWorld world time-step]
   (.stepSimulation world time-step 1/50)
   world
 )
@@ -278,7 +278,7 @@
   )
 )
 
-(defn get-all-contacts [world]
+(defn get-all-contacts [^DiscreteDynamicsWorld world]
   (let [
       d (.getDispatcher world)
       n (.getNumManifolds d)
@@ -291,7 +291,7 @@
   )
 )
 
-(defn sphere-check [world from to radius]
+(defn sphere-check [^DiscreteDynamicsWorld world from to radius]
   (let [
       ss (SphereShape. radius)
       tf (fn [t c]
@@ -314,7 +314,7 @@
   )
 )
 
-(defn ray-check [world origin dir dist]
+(defn ray-check [^DiscreteDynamicsWorld world origin dir dist]
   (let [
       dir (math/normalize dir)
       [fx fy fz] origin

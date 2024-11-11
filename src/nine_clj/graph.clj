@@ -13,8 +13,18 @@
     [nine.drawing
       Color
     ]
+    [nine.main
+      TransformedDrawing
+    ]
+    [nine.math
+      Matrix4f
+    ]
     [nine.opengl
+      OpenGL
       Shader
+      ShaderPlayer
+      Uniforms
+      Uniform
       Drawing
       Texture
       Profiler
@@ -25,6 +35,7 @@
     ]
     [nine.game
       Graphics
+      AnimatedDrawing
     ]
     [nine.buffer
       Buffer
@@ -92,7 +103,7 @@
 (defn pop-matrix [] (swap! matrix-stack rest))
 (defn peek-matrix [] (first @matrix-stack))
 (defn swap-matrix [f] (swap! matrix-stack #(cons (->> % first f) (rest %))))
-(defn apply-matrix "applies matrix m transformation after the head of the stack" [m] (swap-matrix #(.mul % m)))
+(defn apply-matrix "applies matrix m transformation after the head of the stack" [^Matrix4f m] (swap-matrix #(.mul % m)))
 (defn reset-matrix-stack [] (reset! matrix-stack (list (math/mat-identity))))
 
 (defn translate [x y z]
@@ -163,18 +174,20 @@
   ()
 )
 
-(defn load-uniform [shader name kind val & args]
+(defn load-uniform [^Shader shader name kind val & args]
   (let [
-      p (.player shader)
-      us (.uniforms p)
-      u (case kind
+      ^ShaderPlayer p (.player shader)
+      ^Uniforms us (.uniforms p)
+      ^Uniform u (case kind
         :color (.uniformColor us name)
         :vec3 (.uniformVector us name)
         :mat4 (.uniformMatrix us name)
         :texture (.uniformTexture us name (first args))
       )
+      ^Drawing ud (mac/impl Drawing draw [] (.load u val))
+      ^Drawing pd (.play p ud)
     ]
-    (->> (mac/impl Drawing draw [] (.load u val)) (.play p) .draw)
+    (.draw pd)
   )
 )
 
@@ -194,29 +207,27 @@
   (load-uniform shader name :texture tex index)
 )
 
-(defn image [img shader x y w h color]
+(defn image [img ^Shader shader x y w h color]
   (let
     [
-      player (.player shader)
-      uniforms (.uniforms player)
-      trans (.uniformMatrix uniforms "transform")
-      col (.uniformColor uniforms "color")
+      ^ShaderPlayer player (.player shader)
+      ^Uniforms uniforms (.uniforms player)
+      ^Uniform trans (.uniformMatrix uniforms "transform")
+      ^Uniform col (.uniformColor uniforms "color")
       [cr cg cb ca] color
-    ]
-    (.draw
-      (.play player
-        (proxy [Drawing] []
-          (draw []
-            (.load trans (math/transform [x y 0] [0 0 0] [w h 1]))
-            (.load col (. Color floats cr cg cb ca))
-            (cond
-              (-> img :disposed deref true?) (throw (RuntimeException. "Texture cannot be used, it was disposed"))
-              :else (-> img :drawing .draw)
-            )
+      imgd (proxy [Drawing] []
+        (draw []
+          (.load trans (math/transform [x y 0] [0 0 0] [w h 1]))
+          (.load col (. Color floats cr cg cb ca))
+          (cond
+            (-> img :disposed deref true?) (throw (RuntimeException. "Texture cannot be used, it was disposed"))
+            :else (-> img :drawing .draw)
           )
         )
       )
-    )
+      pd (.play player imgd)
+    ]
+    (.draw pd)
   )
 )
 
@@ -236,8 +247,8 @@
 
 (defn text [asset shader text x y w h color]
   (let [
-      geom (text/text-geom (asset :gl) [w h] (asset :rects) text)
-      tex (asset :tex)
+      ^Drawing geom (text/text-geom (asset :gl) [w h] (asset :rects) text)
+      ^Texture tex (asset :tex)
       drawing (.apply tex geom)
     ]
     (image (assoc asset :geom geom :drawing drawing) shader x y w h color)
@@ -251,13 +262,14 @@
 
 (defn play-particles [particles pos rot scale time]
   (let [
-      { :keys [geom image shader gl] } particles
+      { :keys [^Drawing geom image ^Shader shader ^OpenGL gl] } particles
       t [time time time]
-      tex (image :tex)
-      p (.player shader)
+      ^Texture tex (image :tex)
+      ^ShaderPlayer p (.player shader)
       m (math/transform pos rot scale)
+      ^Matrix4f proj (get-projection)
       proj (.mul
-        (get-projection)
+        proj
         (get-camera)
       )
     ]
@@ -437,37 +449,45 @@
 (defn animated-model
   ([md anim obj-anim] (animated-model md anim obj-anim (md :materials)))
   ([md anim obj-anim mats]
-    (.draw
-      (.animate (md :model)
-        (.mul
-          (get-projection)
-          (get-camera)
+    (let [
+        ^Matrix4f proj (get-projection)
+        ^AnimatedDrawing ad (md :model)
+        ^Drawing d (.animate ad
+          (.mul
+            proj
+            (get-camera)
+          )
+          (get-world-light)
+          (peek-matrix)
+          anim
+          obj-anim
+          mats
         )
-        (get-world-light)
-        (peek-matrix)
-        anim
-        obj-anim
-        mats
-      )
+      ]
+      (.draw d)
     )
   )
 )
 
-(defn animate [anim t] (.animate anim t))
+(defn animate [^AnimatedSkeleton anim ^double t] (.animate anim t))
 
 (defn model
   ([md] (model md (md :materials)))
   ([md mats]
-    (.draw
-      (.transform (md :model)
-        (.mul
-          (get-projection)
-          (get-camera)
+    (let [
+        ^Matrix4f proj (get-projection)
+        ^TransformedDrawing td (md :model)
+        ^Drawing d (.transform td
+          (.mul
+            proj
+            (get-camera)
+          )
+          (get-world-light)
+          (peek-matrix)
+          mats
         )
-        (get-world-light)
-        (peek-matrix)
-        mats
-      )
+      ]
+      (.draw d)
     )
   )
 )
