@@ -413,11 +413,14 @@
     :next (fn [s time] s)
     :render (partial render-item [1/2 1/2 1/2])
     :effect (fn [item res in phys time]
-      (let [c (get (phys :contacts) (item :body) ())]
+      (let [
+          c (get (phys :contacts) (item :body) ())
+          dmg (-> phys :body-to-char (get owner) (get-char-stat :attack-damage))
+        ]
         (cond
           (= c owner) []
           (= c ()) []
-          :else [(remove-item-effect item) (damage-effect c (once-hit-check) 100)]
+          :else [(remove-item-effect item) (damage-effect c (once-hit-check) dmg)]
         )
       )
     )
@@ -577,6 +580,24 @@
   )
 )
 
+(defn ai-in-ninja [ch chs body-to-char delta-time]
+  (let [
+      target (ch :target)
+      tdir (target-dir ch body-to-char)
+      dist (mat/length tdir)
+      ang (-> dist (quot 5) (rem 2) zero? (if 1 -1) (* Math/PI 1/3))
+      [mx my mz] (math/normalize tdir)
+      mang (+ ang (math/clock mx mz))
+      [mx mz] (math/clock-xy mang)
+    ]
+    (cond
+      (= target ()) (ch-move-in ch delta-time [0 0 0])
+      (->> tdir mat/length (> 2)) (ch-look-action-in ch delta-time tdir :attack)
+      :else (ch-move-in ch delta-time [mx 0 mz])
+    )
+  )
+)
+
 (defn ai-in-mage [ch chs body-to-char delta-time]
   (let [
       target (ch :target)
@@ -608,7 +629,7 @@
 (defn combat-ai-in [ch chs body-to-char delta-time]
   ((case (ch :name)
     :fighter ai-in-fighter
-    :ninja ai-in-fighter
+    :ninja ai-in-ninja
     :mage ai-in-mage
     :archer ai-in-archer
   ) ch chs body-to-char delta-time)
