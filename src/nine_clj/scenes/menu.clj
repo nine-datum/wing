@@ -1,10 +1,12 @@
 (ns nine-clj.scenes.menu
   [:require
     [nine-clj.gui :as gui]
+    [nine-clj.graph :as graph]
     [nine-clj.input :as input]
     [nine-clj.scenes.generic :as generic]
     [nine-clj.scenes.world :as world]
     [nine-clj.scenes.location :as location]
+    [nine-clj.scripting :as scripting]
   ]
 )
 
@@ -118,5 +120,38 @@
     ]
     world/world-render-loop
     resume-state
+  )
+)
+
+(declare loading-menu-loop)
+
+(defn loading-menu-setup [dev res-atom setup]
+  (let [
+      { :keys [gl storage mouse width height] } dev
+      gui-asset (gui/gui-asset (assoc dev :mouse (input/viewport-mouse mouse width height)))
+      menu-image (graph/load-image gl storage "res/images/menu.png")
+    ]
+    (swap! res-atom #(assoc % :gui-asset gui-asset :menu-image menu-image))
+    {
+      :loop loading-menu-loop
+      :images [
+        [menu-image gui/aspect-fit-layout [-1.5 -1 3 2]]
+      ]
+      :texts [
+        ["Загрузка..." gui/aspect-fit-layout [1 1 1 1] [-0.5 -0.1 1 0.2]]
+      ]
+      :buttons []
+      :gui-asset gui-asset
+    }
+  )
+)
+
+(defn loading-menu-loop [dev res state]
+  (let [
+      state (menu-loop dev res state)
+      { :keys [gui-asset] } res
+    ]
+    (gui/text gui-asset gui/aspect-fit-layout "0%" -0.5 -0.3 1 0.2 [1 1 1 1])
+    state
   )
 )

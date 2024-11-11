@@ -10,7 +10,7 @@
     [nine-clj.datum :as dat]
     [nine-clj.prof :as prof]
     [nine-clj.gui :as gui]
-    [nine-clj.scripting :as scripting]
+    [nine-clj.scenes.menu :as menu]
   )
   (:import
     [nine.lwjgl
@@ -87,14 +87,13 @@
             :width width
             :height height
           }
-          res (-> "res/scripts/resources.clj" scripting/read-file (.invoke dev))
-          setup (res setup)
+          res-atom (atom {})
         ]
         ((dev :mouse) :update)
         (-> dev :keyboard input/keyboard-update)
-        (reset! state (setup dev res))
+        (reset! state (menu/loading-menu-setup dev res-atom setup))
         ;(org.lwjgl.glfw.GLFW/glfwSwapInterval 0) ; fps unlocker
-        (windowLoop win id dev res)
+        (windowLoop win id dev @res-atom)
       )
     )
   )
