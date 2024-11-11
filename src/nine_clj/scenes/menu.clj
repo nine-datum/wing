@@ -22,7 +22,7 @@
       [(str "nine-clj" (. System getProperty "nine-clj.version")) gui/aspect-fit-layout [0 1 0 1] [-0.5 -0.9 1 0.1]]
     ]
     :buttons [
-      ["Начать игру" (fn [dev res state] ((res :arena-setup) dev res))]
+      ["Начать игру" (fn [dev res state] ((res :world-setup) dev res))]
       ["Настройки" (fn [dev res state] state)]
       ["Выход" (constantly nil)]
     ]
@@ -98,7 +98,7 @@
 (defn location-pause-menu-setup [dev res resume-state]
   (pause-menu-setup dev res [] [] [
       ["Продолжить" (fn [dev res state] (state :resume-state))]
-      ["Выйти из города" (fn [dev res state] (-> state :resume-state :world-state))]
+      ["Выйти из города" (fn [dev res state] (-> state :resume-state :world-state-setup (apply [(state :resume-state)])))]
       ["Выйти в меню" (fn [dev res state] (menu-setup dev res))]
     ]
     location/location-render-loop
@@ -106,14 +106,15 @@
   )
 )
 
-(defn location-enter-menu-setup [dev res location-state exit-state resume-state]
+(defn location-enter-menu-setup [dev res location-state-setup arena-state-setup exit-state-setup resume-state]
   (pause-menu-setup dev res []
     [
-      ["Войти в город?" gui/aspect-fit-layout [1 1 1 1] [-0.5 0.4 1 0.2]]
+      ["Вы приблизились к городу" gui/aspect-fit-layout [1 1 1 1] [-0.5 0.4 1 0.2]]
     ]
     [
-      ["Да" (fn [dev res state] location-state)]
-      ["Нет" (fn [dev res state] exit-state)]
+      ["Войти с миром" (fn [dev res state] (location-state-setup))]
+      ["Напасть" (fn [dev res state] (arena-state-setup))]
+      ["Уйти с миром" (fn [dev res state] (exit-state-setup state))]
     ]
     world/world-render-loop
     resume-state

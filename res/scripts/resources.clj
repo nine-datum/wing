@@ -84,6 +84,8 @@
       :gui-asset gui-asset
       :menu-image menu-image
       :arena-setup arena/arena-setup
+      :arena-level arena/arena-level
+      :arena-spawn arena/arena-spawn
       :world-setup world/world-setup
       :menu-setup menu/menu-setup
       :arena-pause-menu-setup menu/arena-pause-menu-setup

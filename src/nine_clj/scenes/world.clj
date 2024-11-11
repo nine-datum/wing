@@ -291,7 +291,7 @@
 
 (defn world-loop [dev res state]
   (let [
-      { :keys [world-locations location-setup location-enter-menu-setup] } res
+      { :keys [world-locations location-setup arena-setup arena-level arena-spawn location-enter-menu-setup] } res
       { :keys [player] } state
       pos (player :pos)
       look (player :look)
@@ -301,12 +301,23 @@
     (cond
       location-close? (let [
           location (first close-locations)
+          { :keys [side color army] } location
+          player-color (player :color)
+          player-side (player :side)
+          player-army (-> player :preset :name list)
           exit-pos (->> (mapv - pos (location :pos)) math/normalize (mapv * (repeat 10)) (mapv + pos))
           exit-state (update state :player #(assoc % :pos exit-pos :look (mapv - look)))
+          exit-state-setup (fn [loc-state] exit-state)
+          arena-spawn (fn [phys-world presets]
+            (arena-spawn phys-world presets player-color color player-side side player-army army)
+          )
+          arena-level (arena-level dev res arena-spawn)
+          arena-state-setup #(arena-setup dev res arena-level)
         ]
         (location-enter-menu-setup dev res
-          (location-setup dev res player location exit-state)
-          exit-state
+          #(location-setup dev res player location exit-state-setup)
+          arena-state-setup
+          (fn [menu-state] exit-state)
           state
         )
       )

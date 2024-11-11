@@ -1,6 +1,7 @@
 (require
   '[nine-clj.datum :as dat]
   '[nine-clj.math :as math]
+  '[nine-clj.scenes.arena :as arena]
 )
 (fn [dev world-markers all-presets]
   (let [
@@ -19,7 +20,7 @@
       location (fn [& args]
         (let [
             h (apply hash-map args)
-            { :keys [name pos rot scale] } h
+            { :keys [name pos rot scale color side army] } h
             mat (math/transform pos rot scale)
             h (assoc h :mat mat)
             entry (->> (get h :entry "entry"))
@@ -34,6 +35,9 @@
             :rot rot
             :scale scale
             :spawn ((h :spawn) h)
+            :army army
+            :color color
+            :side side
           }
         )
       )
@@ -47,6 +51,18 @@
           ]
           (fn [spawn-fn]
             (mapv #(apply spawn-fn %) ps)
+          )
+        )
+      )
+      army-spawn (fn [info loc]
+        (fn [phys-world presets player-color player-side player-army]
+          (let [
+              { :keys [color side ] } loc
+              ps (partition 2 info)
+              ps (mapv (fn [kind num] (repeat num kind)) ps)
+              army (apply concat ps)
+            ]
+            (arena/arena-spawn phys-world presets player-color color player-side side player-army army)
           )
         )
       )
@@ -69,6 +85,10 @@
           :fighter "guard_6"
           :archer "guard_archer_1"
         ])
+        :army (concat
+          (repeat 10 :fighter)
+          (repeat 10 :archer)
+        )
       )
     ]
   )

@@ -10,7 +10,7 @@
 
 (declare location-render-loop)
 
-(defn location-setup [dev res player location world-state]
+(defn location-setup [dev res player location world-state-setup]
   (let [
       { :keys [preset pos look color side] } player
       level-preset (location :preset)
@@ -40,7 +40,7 @@
       )
     ]
     (assoc (generic/generic-setup dev res generic/generic-loop location-render-loop pause-menu level)
-      :world-state world-state
+      :world-state-setup world-state-setup
     )
   )
 )
