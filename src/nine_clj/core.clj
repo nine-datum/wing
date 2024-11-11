@@ -53,7 +53,7 @@
 
 (def state (atom {}))
 
-(defn windowLoop [win id dev res]
+(defn windowLoop [win id dev res-atom]
   (proxy [WindowLoopAction] []
     (call [w h]
       (cond
@@ -64,7 +64,7 @@
           (reset! window-width w)
           (reset! window-height h)
           (prof/reset)
-          (prof/profile :main-loop (swap! state (partial (@state :loop) dev res)))
+          (prof/profile :main-loop (swap! state (partial (@state :loop) dev @res-atom)))
         )
       )
       ((dev :mouse) :update)
@@ -93,7 +93,7 @@
         (-> dev :keyboard input/keyboard-update)
         (reset! state (menu/loading-menu-setup dev res-atom setup))
         ;(org.lwjgl.glfw.GLFW/glfwSwapInterval 0) ; fps unlocker
-        (windowLoop win id dev @res-atom)
+        (windowLoop win id dev res-atom)
       )
     )
   )
