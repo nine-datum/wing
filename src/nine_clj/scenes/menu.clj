@@ -158,8 +158,10 @@
       state (menu-loop dev res state)
       { :keys [gui-asset] } res
       { :keys [res-atom load-atom res-func load-funcs load-atom progress max-progress] } state
+      prog (/ progress max-progress)
+      prog-col (assoc (->> prog (- 1) (repeat 4) vec) 1 1 3 1)
     ]
-    (gui/text gui-asset gui/aspect-fit-layout (-> progress (/ max-progress) (* 100) int (str "%")) -0.5 -0.3 1 0.2 [1 1 1 1])
+    (gui/text gui-asset gui/aspect-fit-layout (-> prog (* 100) int (str "%")) -0.5 -0.3 1 0.2 prog-col)
     (cond
       (empty? load-funcs) (menu-setup dev (reset! res-atom (res-func @load-atom)))
       :else (do
