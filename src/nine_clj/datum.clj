@@ -940,7 +940,6 @@
       :attack (wrap-mortal (partial melee-attack-state ["attack" "attack_2"]))
       :block block-state
       :idle (partial wrap-fighter-state (base-state :idle))
-      :walk (partial wrap-fighter-state (base-state :walk))
     )
     :mage (assoc base-state
       :attack (wrap-mortal (partial projectile-attack-state "attackspell" fireball 1 10 1.5 1))
