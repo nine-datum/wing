@@ -146,8 +146,8 @@
   }
 )
 
-(defn char-anim-speed [ch]
-  (-> ch :state :speed (apply [ch]))
+(defn char-anim-time [ch time]
+  (-> ch :state :anim-time (apply [ch time]))
 )
 
 (defn get-char-stat [ch stat] (-> ch :name char-stats stat))
@@ -266,7 +266,7 @@
       :next next
       :update update
       :effect effect
-      :speed (constantly 1)
+      :anim-time (fn [ch time] time)
     }
   )
 )
@@ -433,7 +433,7 @@
             (phys/remove-body (item :world) (item :body))
             []
           )
-          (-> c body-to-char (get-char-resistance :arrow) (>= 1)) []
+          (-> c body-to-char :state :name (= :block)) []
           :else [ (remove-item-effect item) (blood-damage-effect c (item :hit-check) dmg blood-particles (atom true) blood-pos blood-rot time) ]
         )
       )
@@ -766,7 +766,7 @@
         ()
       )
     )
-  ) :speed (fn [ch] (-> ch (get-char-stat :walk-anim-speed))))
+  ) :anim-time (fn [ch time] (-> ch (get-char-stat :walk-anim-speed) (* time))))
 )
 
 
@@ -835,6 +835,32 @@
       state (assoc atk :effect effect-fn :has-arrow (atom false))
     ]
     state
+  )
+)
+
+(defn block-state [time]
+  (update
+    (assoc (idle-state time)
+      :name :block
+      :anim "block"
+      :anim-time (constantly 3/8)
+    ) :next #(fn [s ch in time]
+      (cond
+        (-> in :action (= :block)) (% s ch in time)
+        :else (map-state ch :idle time)
+      )
+    )
+  )
+)
+
+(defn wrap-fighter-state [state-fn time]
+  (update (state-fn time)
+    :next #(fn [s ch in time]
+      (cond
+        (-> in :action (= :block)) (map-state ch :block time)
+        :else (% s ch in time)
+      )
+    )
   )
 )
 
@@ -912,6 +938,9 @@
     )
     :fighter (assoc base-state
       :attack (wrap-mortal (partial melee-attack-state ["attack" "attack_2"]))
+      :block block-state
+      :idle (partial wrap-fighter-state (base-state :idle))
+      :walk (partial wrap-fighter-state (base-state :walk))
     )
     :mage (assoc base-state
       :attack (wrap-mortal (partial projectile-attack-state "attackspell" fireball 1 10 1.5 1))
@@ -967,12 +996,12 @@
           { :keys [state look pos materials] } ch
           { :keys [anim start] } state
           [lx ly lz] look
-          anim-speed (char-anim-speed ch)
+          anim-time (partial char-anim-time ch)
         ]
         (graph/push-matrix)
         (apply graph/translate pos)
         (graph/apply-matrix (math/rotation 0 (math/clock lx lz) 0))
-        (render-preset preset materials anim (-> time (- start) (* anim-speed)))
+        (render-preset preset materials anim (-> time (- start) anim-time))
         (graph/pop-matrix)
         ()
       )
@@ -1026,17 +1055,25 @@
   )
 )
 
+(defn player-move-action-in [player keyboard camrot]
+  (let[
+      kind (player :name)
+      movement (cam-rel-movement keyboard camrot)
+      action (cond
+        (input/key-down keyboard \f) :attack
+        (and (= kind :fighter) (input/space-down keyboard)) :block
+        :else :none
+      )
+    ]
+    (move-action-in movement action)
+  )
+)
+
 (defn next-game-state [dev res state]
   (let [
       { :keys [ai-next camrot campos player non-players items phys-world time delta-time] } state
       { :keys [keyboard mouse] } dev
-
-      movement (cam-rel-movement keyboard camrot)
-
-      action (cond
-        (input/key-down keyboard \f) :attack
-        :else :none
-      )
+      { :keys [movement action] } (player-move-action-in player keyboard camrot)
 
       contacts (phys/get-all-contacts phys-world)
       all-players (cons player non-players)
