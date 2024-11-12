@@ -128,20 +128,21 @@
   }
 )
 
-(defn stats [walk-speed walk-anim-speed attack-damage health]
+(defn stats [walk-speed walk-anim-speed attack-damage health resistances]
   {
     :walk-speed walk-speed
     :walk-anim-speed walk-anim-speed
     :attack-damage attack-damage
     :health health
+    :resistances resistances
   }
 )
 
 (def char-stats {
-    :archer (stats 8 1 50 100)
-    :fighter (stats 5 0.75 25 150)
-    :ninja (stats 10 1.2 35 80)
-    :mage (stats 7 1 75 80)
+    :archer (stats 8 1 50 100 {})
+    :fighter (stats 5 0.75 25 150 { :arrow 1 })
+    :ninja (stats 10 1.2 35 80 {})
+    :mage (stats 7 1 75 80 {})
   }
 )
 
@@ -150,6 +151,10 @@
 )
 
 (defn get-char-stat [ch stat] (-> ch :name char-stats stat))
+
+(defn get-char-resistance [ch dmg-kind]
+  (-> ch :name char-stats :resistances (get dmg-kind 0))
+)
 
 (defn read-preset [storage key]
   (let
@@ -387,7 +392,7 @@
     :model model
     :world phys-world
     :body (doto
-      (phys/capsule phys-world pos (mapv + [(/ Math/PI -2) 0 0] rot) 0.2 1.2 1)
+      (phys/capsule phys-world pos (mapv + [(/ Math/PI -2) 0 0] rot) 0.2 1.2 0.1)
       (phys/set-group phys-world projectile-group projectile-mask)
     )
     :render (fn [s time]
@@ -414,19 +419,21 @@
     :hit-check (once-hit-check)
     :effect (fn [item res in phys time]
       (let [
-          c (get (phys :contacts) (item :body) ())
-          dmg (get-char-stat (--> phys :body-to-char owner) :attack-damage)
+          { :keys [contacts body-to-char] } phys
+          c (get contacts (item :body) ())
+          dmg (get-char-stat (body-to-char owner) :attack-damage)
           blood-particles (res :blood-particles)
           blood-pos (-> item :body phys/get-position)
           blood-rot [0 0 0]
         ]
         (cond
           (->> item :start (- time) (< arrow-lifetime)) [ (remove-item-effect item) ]
-          (and
-            (not= c ())
-            (-> phys :body-to-char (contains? c) false?)
-          ) (do (phys/remove-body (item :world) (item :body)) [])
           (or (= c ()) (= c owner)) []
+          (-> body-to-char (contains? c) false?) (do
+            (phys/remove-body (item :world) (item :body))
+            []
+          )
+          (-> c body-to-char (get-char-resistance :arrow) (>= 1)) []
           :else [ (remove-item-effect item) (blood-damage-effect c (item :hit-check) dmg blood-particles (atom true) blood-pos blood-rot time) ]
         )
       )

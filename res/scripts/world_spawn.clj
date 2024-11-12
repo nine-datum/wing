@@ -8,7 +8,7 @@
   (let [
       horse-preset (presets :horse)
       ship-preset (presets :ship)
-      rider-presets (mapv presets [:archer :ninja :mage :fighter])
+      rider-presets (mapv presets [:fighter :ninja :mage :archer])
       players (mapv
         #(world/load-horse phys-world horse-preset %1 ship-preset %3 %4 [(+ %2 38) 190 496] [0 0 1])
         rider-presets
