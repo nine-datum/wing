@@ -320,6 +320,14 @@
   )
 )
 
+(defn replace-materials [gl model map]
+  (as-> gl m
+    (material-provider-colors m map)
+    (material-provider-combine m (keys map) (model :materials))
+    (assoc model :materials m)
+  )
+)
+
 (defn load-model [graphics file]
   {
     :model (.model graphics file)

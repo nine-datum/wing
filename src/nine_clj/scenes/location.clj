@@ -22,6 +22,7 @@
       pause-menu (res :location-pause-menu-setup)
       make-char (fn [phys-world preset pos look color side] (dat/load-char phys-world preset pos look color side :idle-pass 0))
       level (assoc level-preset
+        :models (location :models)
         :presets (-> res :arena :presets)
         :shapes (concat (level-preset :shapes) (-> res :world :shapes))
         :ai-next dat/passive-ai-next

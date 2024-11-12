@@ -2,6 +2,7 @@
   '[nine-clj.datum :as dat]
   '[nine-clj.math :as math]
   '[nine-clj.scenes.arena :as arena]
+  '[nine-clj.graph :as graph]
 )
 (fn [dev world-markers all-presets]
   (let [
@@ -28,7 +29,7 @@
           {
             :name name
             :preset (all-presets name)
-            :models (-> name all-presets :models)
+            :models (->> name all-presets :models (mapv #(graph/replace-materials (dev :gl) % { "Flag-material" color })))
             :entry-pos (-> h (marker entry) marker-pos)
             :entry-look (-> h (marker entry) marker-look)
             :pos pos
@@ -51,18 +52,6 @@
           ]
           (fn [spawn-fn]
             (mapv #(apply spawn-fn %) ps)
-          )
-        )
-      )
-      army-spawn (fn [info loc]
-        (fn [phys-world presets player-color player-side player-army]
-          (let [
-              { :keys [color side ] } loc
-              ps (partition 2 info)
-              ps (mapv (fn [kind num] (repeat num kind)) ps)
-              army (apply concat ps)
-            ]
-            (arena/arena-spawn phys-world presets player-color color player-side side player-army army)
           )
         )
       )
