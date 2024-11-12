@@ -374,6 +374,9 @@
 (def projectile-group (short 2))
 (def projectile-mask (-> projectile-group bit-not short))
 
+(def arrow-initial-speed 20)
+(def arrow-lifetime 5)
+
 (defn arrow [time phys-world owner pos rot model]
   {
     :start time
@@ -394,7 +397,7 @@
           blood-rot [0 0 0]
         ]
         (cond
-          (->> item :start (- time) (< 2)) [ (remove-item-effect item) ]
+          (->> item :start (- time) (< arrow-lifetime)) [ (remove-item-effect item) ]
           (or (-> phys :body-to-char (contains? c) false?) (= c ()) (= c owner)) []
           :else [ (remove-item-effect item) (blood-damage-effect c (item :hit-check) dmg blood-particles (atom true) blood-pos blood-rot time) ]
         )
@@ -620,11 +623,21 @@
       tdir (target-dir ch body-to-char)
       dist (mat/length tdir)
       [mx my mz] (math/normalize tdir)
+      g 9.8
+      n arrow-initial-speed
+      aim-angle (-> g (* 2 dist) (/ 2 n n) Math/asin (/ 2))
+      aim-y (Math/sin aim-angle)
+      aim-l (->> (* aim-y aim-y) (- 1) Math/sqrt)
+      aim (as-> [mx 0 mz] l
+        (math/normalize l)
+        (mapv * l (repeat aim-l))
+        (assoc l 1 aim-y)
+      )
     ]
     (cond
       (= target ()) (ch-move-in ch delta-time [0 0 0])
       (and (< dist 20) (-> ch :state :name (= :attack) not)) (ch-move-in ch delta-time (mapv - [mx 0 mz]))
-      (< dist 40) (ch-look-action-in ch delta-time tdir :attack)
+      (< dist 40) (ch-look-action-in ch delta-time aim :attack)
       :else (ch-move-in ch delta-time [mx 0 mz])
     )
   )
@@ -858,7 +871,7 @@
 
 (def states-map {
     :archer (assoc base-state
-      :attack (wrap-mortal (partial projectile-attack-state "attack" arrow 1.2 40))
+      :attack (wrap-mortal (partial projectile-attack-state "attack" arrow 1.2 arrow-initial-speed))
     )
     :fighter (assoc base-state
       :attack (wrap-mortal (partial melee-attack-state ["attack" "attack_2"]))
