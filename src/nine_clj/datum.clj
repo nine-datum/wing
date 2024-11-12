@@ -306,7 +306,7 @@
 
 (defn remove-item-effect [item]
   [
-    identity
+    (fn [i] (cond (= (i :body) (item :body)) (phys/remove-body (i :world) (i :body))) i)
     (fn [state]
       (->> state
         :items
@@ -371,7 +371,7 @@
   (graph/pop-matrix)
 )
 
-(def projectile-group (short 2))
+(def projectile-group (short 16))
 (def projectile-mask (-> projectile-group bit-not short))
 
 (def arrow-initial-speed 20)
@@ -381,17 +381,19 @@
 
 (defn arrow [time phys-world owner pos rot model]
   {
+    :pos pos
+    :vel [0 0 0]
     :start time
     :model model
+    :world phys-world
     :body (doto
       (phys/capsule phys-world pos (mapv + [(/ Math/PI -2) 0 0] rot) 0.2 1.2 1)
       (phys/set-group phys-world projectile-group projectile-mask)
     )
     :render (fn [s time]
       (let [
-          body (s :body)
-          pos (phys/get-position body)
-          [vx vy vz] (-> body phys/get-velocity math/normalize)
+          { :keys [pos vel] } s
+          [vx vy vz] (math/normalize vel)
           rot-y (math/clock vx vz)
           rot-x (-> vy Math/asin - (+ (/ Math/PI 2)))
         ]
@@ -403,7 +405,12 @@
         (graph/pop-matrix)
       )
     )
-    :next (fn [s time] s)
+    :next (fn [s time]
+      (assoc s
+        :pos (-> s :body phys/get-position)
+        :vel (-> s :body phys/get-velocity)
+      )
+    )
     :hit-check (once-hit-check)
     :effect (fn [item res in phys time]
       (let [
@@ -415,7 +422,11 @@
         ]
         (cond
           (->> item :start (- time) (< arrow-lifetime)) [ (remove-item-effect item) ]
-          (or (-> phys :body-to-char (contains? c) false?) (= c ()) (= c owner)) []
+          (and
+            (not= c ())
+            (-> phys :body-to-char (contains? c) false?)
+          ) (do (phys/remove-body (item :world) (item :body)) [])
+          (or (= c ()) (= c owner)) []
           :else [ (remove-item-effect item) (blood-damage-effect c (item :hit-check) dmg blood-particles (atom true) blood-pos blood-rot time) ]
         )
       )
@@ -426,6 +437,7 @@
 (defn fireball [time phys-world owner pos rot model]
   {
     :model model
+    :world phys-world
     :body (doto
       (phys/sphere phys-world pos rot 0.5 1)
       (phys/set-group phys-world projectile-group projectile-mask)
@@ -852,7 +864,7 @@
     )
     (fn [s ch in time] (when
         (-> s :disposed deref false?)
-        (.removeRigidBody (ch :world) (ch :body))
+        (phys/remove-body (ch :world) (ch :body))
         (-> s :disposed (reset! true))
       )
     )

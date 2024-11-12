@@ -99,6 +99,10 @@
   body
 )
 
+(defn remove-body [^DiscreteDynamicsWorld world body]
+  (.removeRigidBody world body)
+)
+
 (defn extract-vec3 [^Vector3f v]
   [(.x v) (.y v) (.z v)]
 )
