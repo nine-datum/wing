@@ -376,7 +376,7 @@
 
 (def arrow-initial-speed 20)
 (def arrow-lifetime 5)
-(def arrow-y+ 1)
+(def arrow-y+ 1.5)
 (def arrow-z+ 1)
 
 (defn arrow [time phys-world owner pos rot model]
@@ -387,7 +387,22 @@
       (phys/capsule phys-world pos (mapv + [(/ Math/PI -2) 0 0] rot) 0.2 1.2 1)
       (phys/set-group phys-world projectile-group projectile-mask)
     )
-    :render (partial render-item [1/4 1/4 1/4])
+    :render (fn [s time]
+      (let [
+          body (s :body)
+          pos (phys/get-position body)
+          [vx vy vz] (-> body phys/get-velocity math/normalize)
+          rot-y (math/clock vx vz)
+          rot-x (-> vy Math/asin - (+ (/ Math/PI 2)))
+        ]
+        (graph/push-matrix)
+        (apply graph/translate pos)
+        (graph/rotate rot-x rot-y 0)
+        (graph/scale 1/4 1/4 1/4)
+        (-> s :model graph/model)
+        (graph/pop-matrix)
+      )
+    )
     :next (fn [s time] s)
     :hit-check (once-hit-check)
     :effect (fn [item res in phys time]
