@@ -376,6 +376,8 @@
 
 (def arrow-initial-speed 20)
 (def arrow-lifetime 5)
+(def arrow-y+ 1)
+(def arrow-z+ 1)
 
 (defn arrow [time phys-world owner pos rot model]
   {
@@ -625,7 +627,8 @@
       [mx my mz] (math/normalize tdir)
       g 9.8
       n arrow-initial-speed
-      aim-angle (-> g (* 2 dist) (/ 2 n n) Math/asin (/ 2))
+      d (- dist arrow-z+)
+      aim-angle (-> g (* 2 d) (/ 2 n n) Math/asin (/ 2))
       aim-y (Math/sin aim-angle)
       aim-l (->> (* aim-y aim-y) (- 1) Math/sqrt)
       aim (as-> [mx 0 mz] l
@@ -775,7 +778,7 @@
   )
 )
 
-(defn projectile-attack-state [attack-anim projectile-spawn spawn-time spawn-force time]
+(defn projectile-attack-state [attack-anim projectile-spawn spawn-time spawn-force spawn-y+ spawn-z+ time]
   (let [
       atk (attack-state [attack-anim] time)
       effect-fn
@@ -785,7 +788,7 @@
           :else (let [
               { :keys [look pos body world] } ch
               [lx ly lz] look
-              arr-pos (mapv + pos (mapv * look (repeat 2)) [0 1.5 0])
+              arr-pos (mapv + pos (mapv * look (repeat spawn-z+)) [0 spawn-y+ 0])
               arr-rot [0 (math/clock lx lz) 0]
               arr (projectile-spawn time world body arr-pos arr-rot (-> ch :items first))
             ]
@@ -871,13 +874,13 @@
 
 (def states-map {
     :archer (assoc base-state
-      :attack (wrap-mortal (partial projectile-attack-state "attack" arrow 1.2 arrow-initial-speed))
+      :attack (wrap-mortal (partial projectile-attack-state "attack" arrow 1.2 arrow-initial-speed arrow-y+ arrow-z+))
     )
     :fighter (assoc base-state
       :attack (wrap-mortal (partial melee-attack-state ["attack" "attack_2"]))
     )
     :mage (assoc base-state
-      :attack (wrap-mortal (partial projectile-attack-state "attackspell" fireball 1 10))
+      :attack (wrap-mortal (partial projectile-attack-state "attackspell" fireball 1 10 1.5 1))
     )
     :ninja (assoc base-state
       :attack (wrap-mortal (partial melee-attack-state ["attack" "attack_2" "attack_3"]))
