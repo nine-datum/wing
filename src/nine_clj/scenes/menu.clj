@@ -1,6 +1,7 @@
 (ns nine-clj.scenes.menu
   [:require
     [nine-clj.gui :as gui]
+    [nine-clj.datum :as dat]
     [nine-clj.io :as io]
     [nine-clj.graph :as graph]
     [nine-clj.math :as math]
@@ -9,6 +10,7 @@
     [nine-clj.scenes.world :as world]
     [nine-clj.scenes.location :as location]
     [nine-clj.scripting :as scripting]
+    [nine-clj.mac :refer [-->]]
   ]
 )
 
@@ -115,15 +117,18 @@
   )
 )
 
+(declare army-menu-setup)
+
 (defn location-enter-menu-setup [dev res location-state-setup arena-state-setup exit-state-setup resume-state]
   (pause-menu-setup dev res []
     [
       ["Вы приблизились к городу" gui/aspect-fit-layout [1 1 1 1] [-0.5 0.4 1 0.2]]
     ]
     [
-      ["Войти с миром" (fn [dev res state] (location-state-setup))]
+      ["Зайти" (fn [dev res state] (location-state-setup))]
+      ["Нанять воинов" (fn [dev res state] (->> state exit-state-setup (army-menu-setup dev res)))]
       ["Напасть" (fn [dev res state] (arena-state-setup))]
-      ["Уйти с миром" (fn [dev res state] (exit-state-setup state))]
+      ["Уйти" (fn [dev res state] (exit-state-setup state))]
     ]
     world/world-render-loop
     resume-state
@@ -204,5 +209,99 @@
       )
     ]
     (list list funcs expr-func)
+  )
+)
+
+(declare army-menu-loop)
+
+(defn army-menu-setup [dev res world-state]
+  (let [
+      { :keys [gui-asset] } res
+      player (world-state :player)
+      color (player :color)
+      army (-> player world/get-unit-army rest)
+      presets (-> res :arena :presets)
+      materials (update-vals presets #(dat/load-char-materials % color))
+    ]
+    {
+      :presets presets
+      :materials materials
+      :army army
+      :gui-asset gui-asset
+      :world-state world-state
+      :loop army-menu-loop
+    }
+  )
+)
+
+(defn army-menu-loop [dev res state]
+  (doto (dev :gl)
+    (.clearDepth)
+    (.clearColor 1/2 1/2 3/4 1)
+  )
+  (graph/projection
+    (math/perspective
+      (--> dev :width ())
+      (--> dev :height ())
+      (math/radians 60) 0.3 1000
+    )
+  )
+  (graph/camera (math/first-person-camera [0 0 -4] [0 0 0]))
+  (graph/world-light [0 -1 0])
+  (let [
+      player (-> state :world-state :player)
+      asset (state :gui-asset)
+      army (state :army)
+      { :keys [color side] } player
+      { :keys [width height] } dev
+      layout gui/aspect-fit-layout
+      bsx 0.5
+      bsy 0.1
+      xs -1
+      ys -0.5
+      ws 0.5
+      hs 1
+      paint-kind (fn [index kind num x y w h]
+        (graph/push-matrix)
+        (graph/translate (* 1.3 (- index 1.5)) y 1)
+        (graph/rotate 0 Math/PI 0)
+        (dat/render-preset
+          (-> state :presets kind)
+          (-> state :materials kind)
+          "idle"
+          (--> dev :get-time ())
+        )
+        (graph/pop-matrix)
+        (let [
+            minus (when (> num 0) (gui/button asset layout "Отпустить" x y bsx bsy))
+            plus (gui/button asset layout "Нанять" x (+ y bsy bsy) bsx bsy)
+            preset (-> state :presets kind)
+            materials (-> state :materials kind)
+          ]
+          (gui/text asset layout (str num) (- x 1/4) (+ y bsy) 1 bsy [1 1 1 1])
+          (cond
+            minus (dec num)
+            plus (inc num)
+            :else num
+          )
+        )
+      )
+      nums (merge { :fighter 0 :archer 0 :ninja 0 :mage 0 } (frequencies army))
+      pairs (mapv
+        (fn [[kind num] i]
+          [kind (paint-kind i kind num (-> i (* ws) (+ xs)) ys ws hs)]
+        )
+        nums (range)
+      )
+      army (->> pairs (map (fn [[kind num]] (repeat num kind))) (apply concat))
+      cancel (gui/button asset layout "Отмена" -1 -0.9 1 0.1)
+      ok (gui/button asset layout "Принять" 0 -0.9 1 0.1)
+      state (assoc state :army army)
+    ]
+    (cond
+      ok (-> state :world-state (update :player #(assoc % :army army)))
+      cancel (state :world-state)
+      :else state
+    )
   )
 )

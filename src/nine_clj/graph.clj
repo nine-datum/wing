@@ -105,9 +105,9 @@
 (defn swap-matrix [f] (swap! matrix-stack #(cons (->> % first f) (rest %))))
 (defn apply-matrix "applies matrix m transformation after the head of the stack" [^Matrix4f m] (swap-matrix #(.mul % m)))
 (defn reset-matrix-stack [] (reset! matrix-stack (list (math/mat-identity))))
-(defn reset-camera [] (camera math/mat-identity))
+(defn reset-camera [] (camera (math/mat-identity)))
 (defn reset-light [] (world-light [0 0 1]))
-(defn reset-projection [] (projection math/mat-identity))
+(defn reset-projection [] (projection (math/mat-identity)))
 
 (defn translate [x y z]
   (apply-matrix (math/translation x y z))

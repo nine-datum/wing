@@ -678,10 +678,15 @@
         (mapv * l (repeat aim-l))
         (assoc l 1 aim-y)
       )
+      arena-size 58
     ]
     (cond
       (= target ()) (ch-move-in ch delta-time [0 0 0])
-      (and (< dist 20) (-> ch :state :name (= :attack) not)) (ch-move-in ch delta-time (mapv - [mx 0 mz]))
+      (and
+        (< dist 20)
+        (-> ch :state :name (= :attack) not)
+        (-> ch :pos mat/length (< arena-size))
+      ) (ch-move-in ch delta-time (mapv - [mx 0 mz]))
       (< dist 40) (ch-look-action-in ch delta-time aim :attack)
       :else (ch-move-in ch delta-time [mx 0 mz])
     )

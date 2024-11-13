@@ -10,7 +10,7 @@
       ship-preset (presets :ship)
       rider-presets (mapv presets [:fighter :ninja :mage :archer])
       players (mapv
-        #(world/load-horse phys-world horse-preset %1 ship-preset %3 %4 [(+ %2 38) 190 496] [0 0 1])
+        #(world/load-horse phys-world horse-preset %1 ship-preset %3 %4 [(+ %2 38) 195 520] [0 0 1])
         rider-presets
         (range)
         [[1/2 1/2 1 1] [0 1 0 1] [0 0 1 1] [1 1 0 1]]

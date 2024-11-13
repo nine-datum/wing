@@ -16,6 +16,10 @@
   ]
 )
 
+(defn get-unit-army [unit]
+  (cons (-> unit :preset :name) (get unit :army []))
+)
+
 (declare world-load-setup)
 (declare world-loop)
 (declare world-render-loop)
@@ -313,7 +317,7 @@
           { :keys [side color army] } location
           player-color (player :color)
           player-side (player :side)
-          player-army (-> player :preset :name list)
+          player-army (get-unit-army player)
           exit-pos (->> (mapv - pos (location :pos)) math/normalize (mapv * (repeat 10)) (mapv + pos))
           exit-state (update state :player #(assoc % :pos exit-pos :look (mapv - look)))
           exit-state-setup (fn [loc-state] exit-state)

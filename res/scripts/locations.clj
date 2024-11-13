@@ -75,7 +75,7 @@
           :archer "guard_archer_1"
         ])
         :army (concat
-          (repeat 0 :fighter)
+          (repeat 5 :fighter)
           (repeat 10 :archer)
         )
       )
