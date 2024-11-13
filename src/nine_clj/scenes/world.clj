@@ -190,6 +190,8 @@
 
 (defn load-horse [phys-world horse-preset rider-preset ship-preset rider-color side pos look]
   {
+    :horse horse-preset
+    :ship ship-preset
     :preset rider-preset
     :color rider-color
     :side side
@@ -252,6 +254,8 @@
 
 (defn load-ship [phys-world horse-preset rider-preset ship-preset rider-color side pos look]
   {
+    :horse horse-preset
+    :ship ship-preset
     :preset rider-preset
     :color rider-color
     :side side
@@ -325,7 +329,26 @@
             (arena-spawn phys-world presets player-color color player-side side player-army army)
           )
           arena-level (arena-level dev res arena-spawn)
-          arena-state-setup #(arena-setup dev res arena-level)
+          arena-exit-setup (fn [dev res arena-state]
+            (let [
+                { :keys [player phys-world] } exit-state
+                army (->> arena-state :non-players
+                  (cons (arena-state :player))
+                  (filter #(-> % :state :name (not= :dead)))
+                  (filter #(= (% :side) player-side))
+                  (mapv :name)
+                )
+                { :keys [pos look horse ship color side] } player
+                pkind (first army)
+                army (rest army)
+                preset (-> res :arena :presets pkind)
+                player (load-horse phys-world horse preset ship color side pos look)
+                player (assoc player :army army)
+              ]
+              (assoc exit-state :player player)
+            )
+          )
+          arena-state-setup #(arena-setup dev res arena-level arena-exit-setup)
         ]
         (location-enter-menu-setup dev res
           #(location-setup dev res player location exit-state-setup)

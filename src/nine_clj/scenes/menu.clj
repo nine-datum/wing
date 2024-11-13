@@ -84,7 +84,8 @@
 (defn arena-pause-menu-setup [dev res resume-state]
   (pause-menu-setup dev res [] [] [
       ["Продолжить" (fn [dev res state] (state :resume-state))]
-      ["Покинуть сражение" (fn [dev res state] (-> res :world-setup (apply [dev res])))]
+      ["Покинуть сражение" (fn [dev res state] (-> state :resume-state :exit-setup
+        (apply [dev res (state :resume-state)])))]
       ["Выйти в меню" (fn [dev res state] (menu-setup dev res))]
     ]
     generic/generic-render-loop

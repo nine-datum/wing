@@ -12,12 +12,15 @@
   (-> res :arena (assoc :spawn spawn))
 )
 
-(defn arena-setup [dev res level]
+(defn arena-setup [dev res level exit-setup]
   (let
     [
       { :keys [arena-pause-menu-setup] } res
     ]
-    (generic/generic-setup dev res arena-loop arena-render-loop arena-pause-menu-setup level)
+    (assoc
+      (generic/generic-setup dev res arena-loop arena-render-loop arena-pause-menu-setup level)
+      :exit-setup exit-setup
+    )
   )
 )
 
