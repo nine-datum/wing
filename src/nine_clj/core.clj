@@ -61,6 +61,9 @@
         (do
           (update-status proc-refresh-status)
           (graph/reset-matrix-stack)
+          (graph/reset-camera)
+          (graph/reset-light)
+          (graph/reset-projection)
           (reset! window-width w)
           (reset! window-height h)
           (prof/reset)
