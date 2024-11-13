@@ -882,7 +882,7 @@
       atk (attack-state anims time)
       eff-fn (fn [s ch res in phys time]
         (let [
-            { :keys [pos look body] } ch
+            { :keys [pos look body side] } ch
             { :keys [hit-check blood-check] } s
             { :keys [blood-particles] } res
             ctr (mapv + pos [0 1 0])
@@ -892,7 +892,13 @@
             body-to-char (phys :body-to-char)
           ]
           (mapv #(blood-damage-effect % hit-check :melee dmg blood-particles blood-check (-> % body-to-char :pos) (repeatedly 3 rand) time)
-            (filter #(-> % body-to-char nil? not) cs)
+            (->> cs
+              (map body-to-char)
+              (filter (comp not nil?))
+              (filter #(-> % :state :name (not= :block)))
+              (filter #(-> % :side (not= side)))
+              (map :body)
+            )
           )
         )
       )
