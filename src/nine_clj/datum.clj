@@ -7,6 +7,7 @@
     [nine-clj.phys :as phys]
     [nine-clj.input :as input]
     [nine-clj.prof :as prof]
+    [nine-clj.gui :as gui]
     [nine-clj.mac :refer [-->]]
     [clojure.core.matrix :as mat]
   ]
@@ -140,7 +141,7 @@
 
 (def char-stats {
     :archer (stats 8 1 50 100 {})
-    :fighter (stats 5 0.75 25 150 { :arrow 1 })
+    :fighter (stats 5 0.75 25 150 { :arrow 0.9 :melee 0.5 })
     :ninja (stats 10 1.2 35 80 {})
     :mage (stats 7 1 75 80 {})
   }
@@ -284,11 +285,18 @@
   )
 )
 
-(defn damage-effect [body hit-check damage]
+(defn apply-damage [ch kind damage]
+  (cond
+    (-> ch :state :name (= :block)) ch
+    :else (update ch :health #(->> (get-char-resistance ch kind) (- 1) (* damage) (- %)))
+  )
+)
+
+(defn damage-effect [body hit-check kind damage]
   [
     (fn [ch] (cond
       (and (-> ch :body hit-check) (-> ch :body (= body)))
-        (update ch :health #(- % damage))
+        (apply-damage ch kind damage)
       :else ch
     ))
     identity
@@ -354,17 +362,17 @@
   }
 )
 
-(defn blood-damage-effect [body hit-check damage blood-particles blood-check pos rot time]
+(defn blood-damage-effect [body hit-check kind damage blood-particles blood-check pos rot time]
   (cond @blood-check
     (do
       (reset! blood-check false)
       (multi-effect [
-        (damage-effect body hit-check damage)
+        (damage-effect body hit-check kind damage)
         (spawn-item-effect (blood blood-particles pos rot time))
       ])
     )
     :else
-    (damage-effect body hit-check damage)
+    (damage-effect body hit-check kind damage)
   )
 )
 
@@ -434,7 +442,7 @@
             []
           )
           (-> c body-to-char :state :name (= :block)) []
-          :else [ (remove-item-effect item) (blood-damage-effect c (item :hit-check) dmg blood-particles (atom true) blood-pos blood-rot time) ]
+          :else [ (remove-item-effect item) (blood-damage-effect c (item :hit-check) :arrow dmg blood-particles (atom true) blood-pos blood-rot time) ]
         )
       )
     )
@@ -460,7 +468,7 @@
         (cond
           (= c owner) []
           (= c ()) []
-          :else [(remove-item-effect item) (damage-effect c (once-hit-check) dmg)]
+          :else [(remove-item-effect item) (damage-effect c (once-hit-check) :fire dmg)]
         )
       )
     )
@@ -878,7 +886,7 @@
             dmg (get-char-stat ch :attack-damage)
             body-to-char (phys :body-to-char)
           ]
-          (mapv #(blood-damage-effect % hit-check 20 blood-particles blood-check (-> % body-to-char :pos) (repeatedly 3 rand) time)
+          (mapv #(blood-damage-effect % hit-check :melee dmg blood-particles blood-check (-> % body-to-char :pos) (repeatedly 3 rand) time)
             (filter #(-> % body-to-char nil? not) cs)
           )
         )
@@ -1019,6 +1027,20 @@
     ]
     (update-char player (ch-move-action-in player delta-time movement action) time)
     (doseq [n non-players] (update-char n (ai-in n all body-to-char delta-time) time))
+  )
+)
+
+(defn render-game-gui [dev res state]
+  (let [
+      { :keys [gui-asset] } res
+      { :keys [player] } state
+      health (/ (player :health) (get-char-stat player :health))
+    ]
+    (gui/status-bar gui-asset gui/aspect-fit-layout health
+      [0 0 0 1]
+      [2/3 0 0 1]
+      -0.5 -0.9 1 0.06
+    )
   )
 )
 

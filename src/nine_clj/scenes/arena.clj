@@ -6,6 +6,7 @@
 )
 
 (declare arena-loop)
+(declare arena-render-loop)
 
 (defn arena-level [dev res spawn]
   (-> res :arena (assoc :spawn spawn))
@@ -16,8 +17,13 @@
     [
       { :keys [arena-pause-menu-setup] } res
     ]
-    (generic/generic-setup dev res arena-loop generic/generic-render-loop arena-pause-menu-setup level)
+    (generic/generic-setup dev res arena-loop arena-render-loop arena-pause-menu-setup level)
   )
+)
+
+(defn arena-render-loop [dev res state]
+  (generic/generic-render-loop dev res state)
+  (dat/render-game-gui dev res state)
 )
 
 (defn arena-loop [dev res state]
