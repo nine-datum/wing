@@ -2,6 +2,7 @@
   [:require
     [nine-clj.gui :as gui]
     [nine-clj.graph :as graph]
+    [nine-clj.math :as math]
     [nine-clj.input :as input]
     [nine-clj.scenes.generic :as generic]
     [nine-clj.scenes.world :as world]
@@ -159,9 +160,10 @@
       { :keys [gui-asset] } res
       { :keys [res-atom load-atom res-func load-funcs load-atom progress max-progress] } state
       prog (/ progress max-progress)
-      prog-col (assoc (->> prog (- 1) (repeat 4) vec) 1 1 3 1)
+      prog-col (math/lerpv [0 0 1 1] [0 1 0 1] prog)
+      prog-back-col [1/2 1/2 1/2 1]
     ]
-    (gui/text gui-asset gui/aspect-fit-layout (-> prog (* 100) int (str "%")) -0.5 -0.3 1 0.2 prog-col)
+    (gui/status-bar gui-asset gui/aspect-fit-layout prog prog-back-col prog-col -0.5 -0.2 1 0.05)
     (cond
       (empty? load-funcs) (menu-setup dev (reset! res-atom (res-func @load-atom)))
       :else (do

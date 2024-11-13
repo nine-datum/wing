@@ -13,6 +13,7 @@
       text-shader image-shader
       text-asset (graph/load-text-asset gl (text/load-font "res/fonts/ubuntu.ttf" 50))
       button-image (graph/load-image gl storage "res/images/button.png")
+      blank-image (graph/load-image-tex gl (.blankTexture gl))
     ]
     {
       :mouse mouse
@@ -20,6 +21,7 @@
       :text-shader text-shader
       :text-asset text-asset
       :button-image button-image
+      :blank-image blank-image
       :width width
       :height height
     }
@@ -40,6 +42,11 @@
     ]
     (graph/text (asset :text-asset) (asset :text-shader) label x y w h color)
   )
+)
+
+(defn status-bar [asset layout status back-color front-color x y w h]
+  (image asset layout (asset :blank-image) x y w h back-color)
+  (image asset layout (asset :blank-image) x y (* status w) h front-color)
 )
 
 (defn button [asset layout label x y w h]
