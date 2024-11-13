@@ -246,8 +246,9 @@
       (math/radians 60) 0.3 1000
     )
   )
-  (graph/camera (math/first-person-camera [0 0 -4] [0 0 0]))
+  (graph/camera (math/first-person-camera [0 2 -4] [(/ Math/PI 8) 0 0]))
   (graph/world-light [0 -1 0])
+  (->> res :arena :models (map graph/model) dorun)
   (let [
       player (-> state :world-state :player)
       asset (state :gui-asset)
@@ -261,9 +262,10 @@
       ys -0.5
       ws 0.5
       hs 1
+      _ (gui/blank asset layout -1 -0.9 2 0.7 [1/4 1/4 1/4 1])
       paint-kind (fn [index kind num x y w h]
         (graph/push-matrix)
-        (graph/translate (* 1.3 (- index 1.5)) y 1)
+        (graph/translate (* 1.3 (- index 1.5)) 0 1)
         (graph/rotate 0 Math/PI 0)
         (dat/render-preset
           (-> state :presets kind)

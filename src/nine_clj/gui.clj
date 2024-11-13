@@ -36,6 +36,10 @@
   )
 )
 
+(defn blank [asset layout x y w h color]
+  (image asset layout (asset :blank-image) x y w h color)
+)
+
 (defn text [asset layout label x y w h color]
   (let [
       [x y w h] (layout asset x y w h)
