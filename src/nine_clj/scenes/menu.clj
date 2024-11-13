@@ -1,6 +1,7 @@
 (ns nine-clj.scenes.menu
   [:require
     [nine-clj.gui :as gui]
+    [nine-clj.io :as io]
     [nine-clj.graph :as graph]
     [nine-clj.math :as math]
     [nine-clj.input :as input]
@@ -26,6 +27,7 @@
     ]
     :buttons [
       ["Начать игру" (fn [dev res state] ((res :world-setup) dev res))]
+      ["Загрузить игру" (fn [dev res state] (io/load-game dev res "saves/main.save"))]
       ["Настройки" (fn [dev res state] state)]
       ["Выход" (constantly nil)]
     ]
@@ -91,6 +93,10 @@
 (defn world-pause-menu-setup [dev res resume-state]
   (pause-menu-setup dev res [] [] [
       ["Продолжить" (fn [dev res state] (state :resume-state))]
+      ["Сохранить игру" (fn [dev res state] (doto
+        (-> state :resume-state)
+        (io/save-game "saves/main.save")
+      ))]
       ["Выйти в меню" (fn [dev res state] (menu-setup dev res))]
     ]
     world/world-render-loop

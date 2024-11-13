@@ -16,14 +16,23 @@
   ]
 )
 
+(declare world-load-setup)
 (declare world-loop)
 (declare world-render-loop)
 
 (defn world-setup [dev res]
+  (world-load-setup dev res {} (-> res :world :spawn))
+)
+
+(defn world-load-setup [dev res state spawn]
   (let [
       { :keys [world world-pause-menu-setup] } res
+      world (assoc world :spawn spawn)
     ]
-    (generic/generic-setup dev res world-loop world-render-loop world-pause-menu-setup world)
+    (merge
+      (generic/generic-setup dev res world-loop world-render-loop world-pause-menu-setup world)
+      state
+    )
   )
 )
 
