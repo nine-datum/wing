@@ -1152,7 +1152,7 @@
 
       ray-origin campiv
       ray-len (mat/length camdir)
-      { :keys [has-hit dist normal] } (phys/ray-check phys-world ray-origin camdir ray-len)
+      { :keys [has-hit dist normal] } (phys/ray-check phys-world ray-origin camdir ray-len projectile-group)
       camdist (if has-hit dist ray-len)
       normal (if has-hit normal [0 0 0])
       camdir (mapv (partial * camdist) (math/normalize camdir))

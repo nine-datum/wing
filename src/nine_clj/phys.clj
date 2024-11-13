@@ -318,7 +318,7 @@
   )
 )
 
-(defn ray-check [^DiscreteDynamicsWorld world origin dir dist]
+(defn ray-check [^DiscreteDynamicsWorld world origin dir dist & ignore-groups]
   (let [
       dir (math/normalize dir)
       [fx fy fz] origin
@@ -326,7 +326,13 @@
       from (Vector3f. fx fy fz)
       to (Vector3f. tx ty tz)
       callback (CollisionWorld$ClosestRayResultCallback. from to)
+      mask (cond
+        (empty? ignore-groups) -1
+        (-> ignore-groups rest empty?) (-> ignore-groups first bit-not short)
+        :else (-> (apply bit-or ignore-groups) bit-not short)
+      )
     ]
+    (set! (.collisionFilterMask callback) mask)
     (.rayTest world from to callback)
     (let [
         has-hit (.hasHit callback)
