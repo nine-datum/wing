@@ -332,20 +332,30 @@
           arena-exit-setup (fn [dev res arena-state]
             (let [
                 { :keys [player phys-world] } exit-state
-                army (->> arena-state :non-players
+                alive (->> arena-state :non-players
                   (cons (arena-state :player))
                   (filter #(-> % :state :name (not= :dead)))
-                  (filter #(= (% :side) player-side))
-                  (mapv :name)
                 )
+                army-for-side (fn [side cmp]
+                  (->> alive
+                    (filter #(cmp (% :side) side))
+                    (mapv :name)
+                  )
+                )
+                army (army-for-side player-side =)
+                loc-army (army-for-side player-side not=)
                 { :keys [pos look horse ship color side] } player
                 pkind (first army)
                 army (rest army)
                 preset (-> res :arena :presets pkind)
                 player (load-horse phys-world horse preset ship color side pos look)
                 player (assoc player :army army)
+                location (assoc location :army loc-army)
               ]
-              (assoc exit-state :player player)
+              (-> exit-state
+                (assoc :player player)
+                (update :locations #(assoc % (location :id) location))
+              )
             )
           )
           arena-state-setup #(arena-setup dev res arena-level arena-exit-setup)
