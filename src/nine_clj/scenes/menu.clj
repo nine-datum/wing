@@ -120,14 +120,14 @@
 
 (declare army-menu-setup)
 
-(defn location-enter-menu-setup [dev res location-state-setup arena-state-setup exit-state-setup resume-state]
+(defn location-enter-menu-setup [dev res location-id location-state-setup arena-state-setup exit-state-setup resume-state]
   (pause-menu-setup dev res []
     [
       ["Вы приблизились к городу" gui/aspect-fit-layout [1 1 1 1] [-0.5 0.4 1 0.2]]
     ]
     [
       ["Зайти" (fn [dev res state] (location-state-setup))]
-      ["Нанять воинов" (fn [dev res state] (->> state exit-state-setup (army-menu-setup dev res)))]
+      ["Нанять воинов" (fn [dev res state] (->> state exit-state-setup (army-menu-setup dev res location-id)))]
       ["Напасть" (fn [dev res state] (arena-state-setup))]
       ["Уйти" (fn [dev res state] (exit-state-setup state))]
     ]
@@ -215,12 +215,13 @@
 
 (declare army-menu-loop)
 
-(defn army-menu-setup [dev res world-state]
+(defn army-menu-setup [dev res location-id world-state]
   (let [
       { :keys [gui-asset] } res
       player (world-state :player)
       color (player :color)
       army (-> player world/get-unit-army rest)
+      recr (-> world-state :locations location-id :recruits)
       presets (-> res :arena :presets)
       materials (update-vals presets #(dat/load-char-materials % color))
     ]
@@ -228,9 +229,11 @@
       :presets presets
       :materials materials
       :army army
+      :recr recr
       :gui-asset gui-asset
       :world-state world-state
       :loop army-menu-loop
+      :location-id location-id
     }
   )
 )
@@ -253,9 +256,12 @@
   (let [
       player (-> state :world-state :player)
       asset (state :gui-asset)
-      army (state :army)
+      { :keys [army recr location-id] } state
       { :keys [color side] } player
       { :keys [width height] } dev
+      nums-fn #(merge { :fighter 0 :archer 0 :ninja 0 :mage 0 } (frequencies %))
+      nums (nums-fn army)
+      recr-nums (nums-fn recr)
       layout gui/aspect-fit-layout
       bsx 0.5
       bsy 0.1
@@ -264,6 +270,7 @@
       ws 0.5
       hs 1
       _ (gui/blank asset layout -1 -0.9 2 0.7 [1/4 1/4 1/4 1])
+      _ (gui/text asset layout "Доступно для найма :" -0.5 (- ys bsy) 1 bsy [1 1 1 1])
       paint-kind (fn [index kind num x y w h]
         (graph/push-matrix)
         (graph/translate (* 1.3 (- index 1.5)) 0 1)
@@ -271,38 +278,51 @@
         (dat/render-preset
           (-> state :presets kind)
           (-> state :materials kind)
-          "idle"
+          "idle_pass"
           (--> dev :get-time ())
         )
         (graph/pop-matrix)
         (let [
+            rec (recr-nums kind)
             minus (when (> num 0) (gui/button asset layout "Отпустить" x y bsx bsy))
-            plus (gui/button asset layout "Нанять" x (+ y bsy bsy) bsx bsy)
+            plus (when (> rec 0) (gui/button asset layout "Нанять" x (+ y bsy bsy) bsx bsy))
             preset (-> state :presets kind)
             materials (-> state :materials kind)
           ]
           (gui/text asset layout (str num) (- x 1/4) (+ y bsy) 1 bsy [1 1 1 1])
+          (gui/text asset layout (str rec) (- x 1/4) (- y bsy bsy (/ bsy 2)) 1 bsy [1 1 1 1])
           (cond
-            minus (dec num)
-            plus (inc num)
-            :else num
+            minus -1
+            plus 1
+            :else 0
           )
         )
       )
-      nums (merge { :fighter 0 :archer 0 :ninja 0 :mage 0 } (frequencies army))
-      pairs (mapv
+      diff (mapv
         (fn [[kind num] i]
           [kind (paint-kind i kind num (-> i (* ws) (+ xs)) ys ws hs)]
         )
         nums (range)
       )
-      army (->> pairs (map (fn [[kind num]] (repeat num kind))) (apply concat))
+      diff (into {} diff)
+      apply-diff (fn [nums diff]
+        (->> nums
+          (reduce-kv (fn [m k v] (assoc m k (+ v (diff k)))) {})
+          (map (fn [[k v]] (repeat v k)))
+          (apply concat)
+        )
+      )
+      army (apply-diff nums diff)
+      recr (apply-diff recr-nums (update-vals diff -))
       cancel (gui/button asset layout "Отмена" -1 -0.9 1 0.1)
       ok (gui/button asset layout "Принять" 0 -0.9 1 0.1)
-      state (assoc state :army army)
+      state (assoc state :army army :recr recr)
     ]
     (cond
-      ok (-> state :world-state (update :player #(assoc % :army army)))
+      ok (-> state :world-state
+        (update :player #(assoc % :army army))
+        (update :locations #(update % location-id (fn [l] (assoc l :recruits recr))))
+      )
       cancel (state :world-state)
       :else state
     )

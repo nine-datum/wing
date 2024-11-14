@@ -31,13 +31,23 @@
   )
 )
 
+(defn location-to-data [loc]
+  (select-keys [:id :name :army :recruits :color :side])
+)
+
+(defn data-to-location [dev res data]
+  (-> res :world-locations (get (data :id)) (merge data))
+)
+
 (defn state-to-data [state]
   (let [
-      { :keys [player non-players] } state
+      { :keys [player non-players locations] } state
       units (as-> player r (cons r non-players) (map unit-to-data r) (list* r))
+      locs (->> locations (map location-to-data) list*)
     ]
     (assoc (select-keys state [ :campos :camrot :camrot-xy :camdist ])
       :units units
+      :locations locations
     )
   )
 )
@@ -52,6 +62,12 @@
       data (-> file slurp read-string)
       state (select-keys data [:campos :camrot :camrot-xy :camdist])
       spawn (data-to-spawn data)
+      locations (data :locations)
+      locations (cond
+        (empty? locations) (res :world-locations)
+        :else (-> data :locations (update-vals (partial data-to-location dev res)))
+      )
+      state (assoc :locations locations)
     ]
     (world/world-load-setup dev res state spawn)
   )

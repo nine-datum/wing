@@ -387,6 +387,8 @@
 (def projectile-group (short 16))
 (def projectile-mask (-> projectile-group bit-not short))
 
+(def arena-size 58)
+
 (def arrow-initial-speed 20)
 (def arrow-lifetime 5)
 (def arrow-y+ 1.5)
@@ -637,7 +639,10 @@
       ang (-> dist (quot 5) (+ seed) (rem 2) zero? (if 1 -1) (* Math/PI 1/3))
       [mx my mz] (math/normalize tdir)
       mang (+ ang (math/clock mx mz))
-      [mx mz] (math/clock-xy mang)
+      [mx mz] (cond
+         (-> ch :pos mat/length (< arena-size)) (math/clock-xy mang)
+         :else [mx mz]
+      )
     ]
     (cond
       (= target ()) (ch-move-in ch delta-time [0 0 0])
@@ -678,7 +683,6 @@
         (mapv * l (repeat aim-l))
         (assoc l 1 aim-y)
       )
-      arena-size 58
     ]
     (cond
       (= target ()) (ch-move-in ch delta-time [0 0 0])

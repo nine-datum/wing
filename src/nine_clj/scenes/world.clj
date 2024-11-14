@@ -25,7 +25,7 @@
 (declare world-render-loop)
 
 (defn world-setup [dev res]
-  (world-load-setup dev res {} (-> res :world :spawn))
+  (world-load-setup dev res { :locations (res :world-locations) } (-> res :world :spawn))
 )
 
 (defn world-load-setup [dev res state spawn]
@@ -308,11 +308,11 @@
 
 (defn world-loop [dev res state]
   (let [
-      { :keys [world-locations location-setup arena-setup arena-level arena-spawn location-enter-menu-setup] } res
-      { :keys [player] } state
+      { :keys [location-setup arena-setup arena-level arena-spawn location-enter-menu-setup] } res
+      { :keys [player locations] } state
       pos (player :pos)
       look (player :look)
-      close-locations (->> world-locations (filter #(->> % :pos (mapv - pos) mat/length (> 100))))
+      close-locations (->> locations vals (filter #(->> % :pos (mapv - pos) mat/length (> 100))))
       location-close? (-> close-locations empty? not)
     ]
     (cond
@@ -350,7 +350,7 @@
           )
           arena-state-setup #(arena-setup dev res arena-level arena-exit-setup)
         ]
-        (location-enter-menu-setup dev res
+        (location-enter-menu-setup dev res (location :id)
           #(location-setup dev res player location exit-state-setup)
           arena-state-setup
           (fn [menu-state] exit-state)
@@ -365,11 +365,11 @@
 (defn world-render-loop [dev res state]
   (generic/generic-render-loop dev res state)
   (let [
-      { :keys [world-water-effect world-locations] } res
-      { :keys [time campos] } state
+      { :keys [world-water-effect] } res
+      { :keys [time campos locations] } state
       [cx cy cz] (map #(->> 500/51 (mod %) (- %)) campos)
     ]
-    (doseq [l world-locations]
+    (doseq [l (vals locations)]
       (graph/push-matrix)
       (apply graph/translate (l :pos))
       (apply graph/rotate (l :rot))
