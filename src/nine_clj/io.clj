@@ -15,10 +15,12 @@
       ]
       (mapv (fn [unit]
         (let [
-            { :keys [kind pos look color side] } unit
+            { :keys [kind pos look color side army] } unit
             rider (presets kind)
           ]
-          (world/load-horse phys-world horse rider ship color side pos look)
+          (assoc (world/load-horse phys-world horse rider ship color side pos look)
+            :army army
+          )
         )
       ) units)
     )
@@ -26,13 +28,13 @@
 )
 
 (defn unit-to-data [unit]
-  (assoc (select-keys unit [:pos :look :side :color :kind])
+  (assoc (select-keys unit [:pos :look :side :color :kind :army])
     :kind (-> unit :preset :name)
   )
 )
 
 (defn location-to-data [loc]
-  (select-keys [:id :name :army :recruits :color :side])
+  (select-keys loc [:id :name :army :recruits :color :side])
 )
 
 (defn data-to-location [dev res data]
@@ -43,7 +45,7 @@
   (let [
       { :keys [player non-players locations] } state
       units (as-> player r (cons r non-players) (map unit-to-data r) (list* r))
-      locs (->> locations (map location-to-data) list*)
+      locations (-> locations (update-vals location-to-data))
     ]
     (assoc (select-keys state [ :campos :camrot :camrot-xy :camdist ])
       :units units
@@ -67,7 +69,7 @@
         (empty? locations) (res :world-locations)
         :else (-> data :locations (update-vals (partial data-to-location dev res)))
       )
-      state (assoc :locations locations)
+      state (assoc state :locations locations)
     ]
     (world/world-load-setup dev res state spawn)
   )
