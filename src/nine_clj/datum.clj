@@ -539,18 +539,17 @@
     (-> look mat/length zero?) (-> ch :look look-in)
     :else
     (let [
+        dt delta-time
         [cx cy cz] (ch :look)
         [lx ly lz] look
         c-angle (math/clock cx cz)
         l-angle (math/clock lx lz)
         delta (math/angle- l-angle c-angle)
-        eps (* Math/PI 1/30)
-        dir (cond
-          (> delta eps) 1
-          (< delta (- eps)) -1
-          :else (/ delta eps)
+        eps (* Math/PI dt torq)
+        m (cond
+          (> (Math/abs delta) eps) (* (Math/signum delta) Math/PI torq dt)
+          :else delta
         )
-        m (* dir Math/PI torq delta-time)
         [lx lz] (math/clock-xy (+ c-angle m))
       ]
       (look-in (math/normalize [lx ly lz]))
