@@ -19,7 +19,7 @@
       { :keys [gui-asset] } res
       { :keys [presets models pos rot shapes spawn update-state update-phys next-state ai-next ai-in] } level
       phys-world (phys/dynamics-world)
-      scene-body (mapv #(phys/add-rigid-body phys-world % pos rot 0) shapes)
+      scene-body (mapv #(phys/add-rigid-body phys-world (% :shape) (% :pos) (% :rot) 0) shapes)
 
       players (spawn phys-world presets)
       player (first players)

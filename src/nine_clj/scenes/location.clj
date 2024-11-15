@@ -24,7 +24,6 @@
       level (assoc level-preset
         :models (location :models)
         :presets (-> res :arena :presets)
-        :shapes (concat (level-preset :shapes) (-> res :world :shapes))
         :ai-next dat/passive-ai-next
         :ai-in dat/passive-ai-in
         :pos loc-pos
@@ -49,4 +48,13 @@
 (defn location-render-loop [dev res state]
   (generic/generic-render-loop dev res state)
   (->> res :world :models (map graph/model) dorun)
+)
+
+(defn global-location-shapes [location]
+  (let [
+      { :keys [pos rot] } location
+      m (math/transform pos rot [1 1 1])
+    ]
+    (->> location :preset :shapes (mapv #(assoc % :pos pos :rot rot)))
+  )
 )

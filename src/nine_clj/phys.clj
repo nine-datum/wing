@@ -269,7 +269,7 @@
       ibuf (int-byte-buffer i)
       arr (TriangleIndexVertexArray. t ibuf 12 c vbuf 12)
     ]
-    (BvhTriangleMeshShape. arr true)
+    { :pos [0 0 0] :rot [0 0 0] :shape (BvhTriangleMeshShape. arr true) }
   )
 )
 

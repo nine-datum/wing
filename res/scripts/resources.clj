@@ -72,6 +72,10 @@
       :world (assoc world
         :presets all-presets
         :models (->> world :models (cons world-water))
+        :shapes (->> world-locations vals
+          (map location/global-location-shapes)
+          (apply concat (world :shapes))
+        )
         :spawn world-spawn
         :update-state (constantly ())
         :update-phys phys/update-world

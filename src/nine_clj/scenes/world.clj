@@ -184,6 +184,21 @@
   (->> movement (mapv (partial * speed delta-time)) (mapv + pos))
 )
 
+(defn move-phys-pos [phys-world pos movement speed delta-time]
+  (let [
+      rad 3
+      ray-origin (mapv + pos [0 1 0])
+      d (-> movement (assoc 1 0) math/normalize)
+      { :keys [point normal has-hit] } (phys/ray-check phys-world ray-origin d rad)
+      mov (cond
+        has-hit (->> d (mat/dot normal) repeat (mapv * normal) (mapv - d))
+        :else d
+      )
+    ]
+    (->> mov (mapv (partial * speed delta-time)) (mapv + pos))
+  )
+)
+
 (defn unit-move-in [unit delta-time mov]
   (dat/real-move-in unit (unit :move-torq) delta-time mov)
 )
@@ -210,7 +225,7 @@
           { :keys [pos up phys-world side] } ch
           { :keys [movement look] } in
           anim (-> movement mat/length zero? (if :idle :walk))
-          pos (move-pos pos movement 18 delta-time)
+          pos (move-phys-pos phys-world pos movement 18 delta-time)
           ray-origin (mapv + pos [0 10 0])
           { :keys [has-hit normal point] } (phys/ray-check phys-world ray-origin [0 -1 0] 100)
           [rx ry rz] point
@@ -312,7 +327,7 @@
       { :keys [player locations] } state
       pos (player :pos)
       look (player :look)
-      close-locations (->> locations vals (filter #(->> % :pos (mapv - pos) mat/length (> 100))))
+      close-locations (->> locations vals (filter #(->> % :pos (mapv - pos) mat/length (> 1))))
       location-close? (-> close-locations empty? not)
     ]
     (cond

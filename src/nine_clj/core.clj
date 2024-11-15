@@ -52,6 +52,7 @@
 (defn height [] @window-height)
 
 (def state (atom {}))
+(def resources (atom {}))
 
 (defn windowLoop [win id dev res-atom]
   (proxy [WindowLoopAction] []
@@ -90,7 +91,7 @@
             :width width
             :height height
           }
-          res-atom (atom {})
+          res-atom resources
         ]
         ((dev :mouse) :update)
         (-> dev :keyboard input/keyboard-update)
