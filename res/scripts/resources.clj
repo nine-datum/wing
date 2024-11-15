@@ -73,7 +73,7 @@
         :presets all-presets
         :models (->> world :models (cons world-water))
         :shapes (->> world-locations vals
-          (map location/global-location-shapes)
+          (map :shapes)
           (apply concat (world :shapes))
         )
         :spawn world-spawn

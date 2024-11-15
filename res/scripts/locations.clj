@@ -31,6 +31,7 @@
             :name name
             :preset (all-presets name)
             :models (->> name all-presets :models (mapv #(graph/replace-materials (dev :gl) % { "Flag-material" color })))
+            :shapes (->> name all-presets :shapes (mapv #(assoc % :pos pos :rot rot)))
             :entry-pos (-> h (marker entry) marker-pos)
             :entry-look (-> h (marker entry) marker-look)
             :pos pos

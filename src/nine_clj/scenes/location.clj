@@ -13,21 +13,15 @@
 (defn location-setup [dev res player location world-state-setup]
   (let [
       { :keys [preset pos look color side] } player
-      level-preset (location :preset)
       spawn (location :spawn)
-      loc-pos (location :pos)
-      loc-rot (location :rot)
       loc-entry-pos (location :entry-pos)
       loc-entry-look (location :entry-look)
       pause-menu (res :location-pause-menu-setup)
       make-char (fn [phys-world preset pos look color side] (dat/load-char phys-world preset pos look color side :idle-pass 0))
-      level (assoc level-preset
-        :models (location :models)
+      level (assoc (select-keys location [:pos :rot :models :shapes])
         :presets (-> res :arena :presets)
         :ai-next dat/passive-ai-next
         :ai-in dat/passive-ai-in
-        :pos loc-pos
-        :rot loc-rot
         :update-state dat/update-game-state
         :update-phys phys/update-world
         :next-state dat/next-game-state
@@ -48,13 +42,4 @@
 (defn location-render-loop [dev res state]
   (generic/generic-render-loop dev res state)
   (->> res :world :models (map graph/model) dorun)
-)
-
-(defn global-location-shapes [location]
-  (let [
-      { :keys [pos rot] } location
-      m (math/transform pos rot [1 1 1])
-    ]
-    (->> location :preset :shapes (mapv #(assoc % :pos pos :rot rot)))
-  )
 )
