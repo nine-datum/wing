@@ -354,10 +354,10 @@
                 loc-army (army-for-side player-side not=)
                 { :keys [pos look horse ship color side] } player
                 pkind (nth army 0 :fighter)
-                army (rest army)
+                parmy (rest army)
                 preset (-> res :arena :presets pkind)
                 player (load-horse phys-world horse preset ship color side pos look)
-                player (assoc player :army army)
+                player (assoc player :army parmy)
                 location (assoc location :army loc-army)
               ]
               (cond
