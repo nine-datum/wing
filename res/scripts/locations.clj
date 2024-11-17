@@ -110,7 +110,7 @@
       )
       :castle-sand (location
         :id :castle-sand
-        :name :castle
+        :name :castle-desert
         :side :blue
         :color [219/255 154/255 89/255 1]
         :pos (-> "castle_sand" world-markers marker-pos)

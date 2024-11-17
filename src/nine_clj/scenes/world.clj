@@ -151,6 +151,7 @@
       "res/world/ship/ship.dae"
     )
     :castle (load-location-preset dev diffuse-shader "res/world/castle/castle.dae")
+    :castle-desert (load-location-preset dev diffuse-shader "res/world/castle/castle_desert.dae")
   }
 )
 
