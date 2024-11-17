@@ -87,6 +87,27 @@
           (repeat 5 :archer)
         )
       )
+      :castle-blue (location
+        :id :castle-blue
+        :name :castle
+        :side :blue
+        :color [0 0 1 1]
+        :pos (-> "castle_blue" world-markers marker-pos)
+        :rot [0 (-> "castle_blue" world-markers marker-rot-y) 0]
+        :scale [1 1 1]
+        :spawn (partial guard-spawn [
+          :archer "guard_0"
+          :archer "guard_1"
+          :archer "guard_2"
+          :archer "guard_3"
+          :archer "guard_4"
+          :archer "guard_5"
+          :archer "guard_6"
+          :archer "guard_archer_1"
+        ])
+        :army (repeat 30 :archer)
+        :recruits (repeat 10 :archer)
+      )
     }
   )
 )
