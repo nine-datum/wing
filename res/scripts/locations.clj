@@ -108,6 +108,27 @@
         :army (repeat 30 :archer)
         :recruits (repeat 10 :archer)
       )
+      :castle-sand (location
+        :id :castle-sand
+        :name :castle
+        :side :blue
+        :color [219/255 154/255 89/255 1]
+        :pos (-> "castle_sand" world-markers marker-pos)
+        :rot [0 (-> "castle_sand" world-markers marker-rot-y) 0]
+        :scale [1 1 1]
+        :spawn (partial guard-spawn [
+          :ninja "guard_0"
+          :ninja "guard_1"
+          :ninja "guard_2"
+          :ninja "guard_3"
+          :ninja "guard_4"
+          :ninja "guard_5"
+          :ninja "guard_6"
+          :ninja "guard_archer_1"
+        ])
+        :army (repeat 30 :ninja)
+        :recruits (repeat 10 :ninja)
+      )
     }
   )
 )
