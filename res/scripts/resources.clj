@@ -99,6 +99,7 @@
       :location-pause-menu-setup menu/location-pause-menu-setup
       :location-setup location/location-setup
       :location-enter-menu-setup menu/location-enter-menu-setup
+      :game-over-menu-setup menu/game-over-menu-setup
     }
   )
 )

@@ -136,6 +136,20 @@
   )
 )
 
+(defn game-over-menu-setup [dev res]
+  {
+    :gui-asset (res :gui-asset)
+    :loop menu-loop
+    :texts [
+      ["Погиб последний воин из вашего отряда." gui/aspect-fit-layout [1 1 1 1] [-0.5 0.2 1 0.1]]
+      ["Игра окончена." gui/aspect-fit-layout [2/3 1/4 1/4 1] [-0.5 0.1 1 0.1]]
+    ]
+    :buttons [
+      ["Выйти в меню" (fn [dev res state] (menu-setup dev res))]
+    ]
+  }
+)
+
 (declare loading-menu-loop)
 
 (defn loading-menu-setup [dev res-atom setup]
