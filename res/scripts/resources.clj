@@ -23,8 +23,10 @@
       mouse (dev :mouse)
       skin-shader (graph/load-shader gl storage "res/shaders/diffuse_skin_vertex.glsl" "res/shaders/diffuse_fragment.glsl")
       diffuse-shader (graph/load-shader gl storage "res/shaders/diffuse_vertex.glsl" "res/shaders/diffuse_fragment.glsl")
-      particles-shader (graph/load-shader gl storage "res/shaders/particle_vertex.glsl" "res/shaders/particle_fragment.glsl")
-      blood-particles (graph/load-particles gl (graph/load-image gl storage "res/images/blood.png") particles-shader 5)
+      blood-shader (graph/load-shader gl storage "res/shaders/particle_vertex.glsl" "res/shaders/particle_fragment.glsl")
+      rain-shader (graph/load-shader gl storage "res/shaders/rain_vertex.glsl" "res/shaders/rain_fragment.glsl")
+      blood-particles (graph/load-particles gl (graph/load-image gl storage "res/images/blood.png") blood-shader 5)
+      rain-particles (graph/load-particles gl (graph/load-image gl storage "res/images/noise.png") rain-shader 10000)
       graphics (graph/load-graphics gl storage diffuse-shader skin-shader)
       arena-presets (dat/load-presets gl storage diffuse-shader skin-shader)
       world-presets (world/load-presets dev diffuse-shader skin-shader)
@@ -55,6 +57,7 @@
     ]
     {
       :blood-particles blood-particles
+      :rain-particles rain-particles
       :skin-shader skin-shader
       :diffuse-shader diffuse-shader
       :graphics graphics

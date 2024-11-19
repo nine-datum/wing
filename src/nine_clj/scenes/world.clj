@@ -387,8 +387,8 @@
 (defn world-render-loop [dev res state]
   (generic/generic-render-loop dev res state)
   (let [
-      { :keys [world-water-effect] } res
-      { :keys [time campos locations] } state
+      { :keys [world-water-effect rain-particles] } res
+      { :keys [time campos camrot locations player] } state
       [cx cy cz] (map #(->> 500/51 (mod %) (- %)) campos)
     ]
     (doseq [l (vals locations)]
@@ -403,6 +403,7 @@
     (graph/translate cx water-effect-level cz)
     (world-water-effect time)
     (graph/pop-matrix)
+    (graph/play-particles rain-particles (player :pos) (assoc camrot 0 0 2 0) [1 1 1] time)
   )
 )
 
