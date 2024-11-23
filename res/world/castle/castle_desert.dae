@@ -5,8 +5,8 @@
       <author>Blender User</author>
       <authoring_tool>Blender 3.3.21 commit date:2024-07-15, commit time:08:57, hash:e016c21db151</authoring_tool>
     </contributor>
-    <created>2024-11-23T10:23:40</created>
-    <modified>2024-11-23T10:23:40</modified>
+    <created>2024-11-23T14:36:01</created>
+    <modified>2024-11-23T14:36:01</modified>
     <unit name="meter" meter="1"/>
     <up_axis>Z_UP</up_axis>
   </asset>
@@ -1013,6 +1013,39 @@
   </library_geometries>
   <library_visual_scenes>
     <visual_scene id="Scene" name="Scene">
+      <node id="nav_10" name="nav_10" type="NODE">
+        <matrix sid="transform">1 0 0 -2.593872 0 1 0 -10.14246 0 0 1 15.61543 0 0 0 1</matrix>
+      </node>
+      <node id="nav_9" name="nav_9" type="NODE">
+        <matrix sid="transform">1 0 0 0.5717306 0 1 0 9.555504 0 0 1 16.05392 0 0 0 1</matrix>
+      </node>
+      <node id="nav_8" name="nav_8" type="NODE">
+        <matrix sid="transform">1 0 0 -9.163332 0 1 0 25.974 0 0 1 16.7958 0 0 0 1</matrix>
+      </node>
+      <node id="nav_7" name="nav_7" type="NODE">
+        <matrix sid="transform">1 0 0 -10.35418 0 1 0 14.45706 0 0 1 16.59134 0 0 0 1</matrix>
+      </node>
+      <node id="nav_6" name="nav_6" type="NODE">
+        <matrix sid="transform">1 0 0 -13.14587 0 1 0 2.7367 0 0 1 16.23732 0 0 0 1</matrix>
+      </node>
+      <node id="nav_5" name="nav_5" type="NODE">
+        <matrix sid="transform">1 0 0 -14.78132 0 1 0 -10.54894 0 0 1 16.52002 0 0 0 1</matrix>
+      </node>
+      <node id="nav_4" name="nav_4" type="NODE">
+        <matrix sid="transform">1 0 0 -6.474402 0 1 0 -23.40645 0 0 1 15.83092 0 0 0 1</matrix>
+      </node>
+      <node id="nav_3" name="nav_3" type="NODE">
+        <matrix sid="transform">1 0 0 7.415991 0 1 0 -21.08141 0 0 1 14.45827 0 0 0 1</matrix>
+      </node>
+      <node id="nav_2" name="nav_2" type="NODE">
+        <matrix sid="transform">1 0 0 14.35287 0 1 0 -7.888996 0 0 1 14.73359 0 0 0 1</matrix>
+      </node>
+      <node id="nav_1" name="nav_1" type="NODE">
+        <matrix sid="transform">1 0 0 13.02593 0 1 0 9.045099 0 0 1 15.82776 0 0 0 1</matrix>
+      </node>
+      <node id="nav_0" name="nav_0" type="NODE">
+        <matrix sid="transform">1 0 0 8.842325 0 1 0 23.35805 0 0 1 16.89701 0 0 0 1</matrix>
+      </node>
       <node id="Cube_045" name="Cube.045" type="NODE">
         <matrix sid="transform">1.06958 0 0 0.04318577 0 0.0421375 0 -4.559721 0 0 1 23.05311 0 0 0 1</matrix>
         <instance_geometry url="#Cube_013-mesh" name="Cube.045">
