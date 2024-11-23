@@ -20,18 +20,6 @@
   ]
 )
 
-(defn load-offset-animated-model [gl storage diffuse-shader skin-shader file & offset-geom-names]
-  (graph/load-animated-model
-    (graph/load-graphics gl storage diffuse-shader skin-shader
-      (geom/geom-offset-parser (partial contains? (apply hash-set offset-geom-names)) [0 0 1])
-      (ColladaBasicSkinParser.)
-      (ColladaBasicAnimationParser.)
-      (ColladaBasicMaterialParser.)
-    )
-    file
-  )
-)
-
 (defn load-item-model [gl storage diffuse-shader skin-shader file]
   (graph/load-model
     (graph/load-graphics gl storage diffuse-shader skin-shader)
@@ -40,7 +28,10 @@
 )
 
 (defn load-model [gl storage diffuse-shader skin-shader name offset-geom]
-  (load-offset-animated-model gl storage diffuse-shader skin-shader (format "res/datum/%s.dae" name) offset-geom)
+  (graph/load-animated-model
+    (graph/load-graphics gl storage diffuse-shader skin-shader)
+    (format "res/datum/%s.dae" name)
+  )
 )
 
 (defn load-anim [storage model-name anim-name]
