@@ -60,7 +60,7 @@
           (fn [spawn-fn]
             (mapv #(spawn-fn %1 color side %2 [0 0 1]
                 (partial dat/crowd-ai-next pts)
-                (partial dat/crowd-ai-in pts)
+                dat/crowd-ai-in
               )
               recruits
               (cycle pts)

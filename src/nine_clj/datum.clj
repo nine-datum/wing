@@ -8,6 +8,7 @@
     [nine-clj.input :as input]
     [nine-clj.prof :as prof]
     [nine-clj.gui :as gui]
+    [nine-clj.nav :as nav]
     [nine-clj.mac :refer [-->]]
     [clojure.core.matrix :as mat]
   ]
@@ -722,15 +723,29 @@
   )
 )
 
-(defn crowd-ai-in [nav ch chs body-to-char delta-time]
-  (move-in [0 0 0])
+(defn crowd-ai-in [ch chs body-to-char delta-time]
+  (let [
+      path (ch :path)
+    ]
+    (cond
+      (empty? path) (move-in [0 0 0])
+      :else (-> (mapv - (first path) (ch :pos)) (assoc 1 0) math/normalize move-in)
+    )
+  )
 )
 
 (defn crowd-ai-next [nav chs body-to-char ch time delta-time]
   (let [
-      next (char-call ch :next (crowd-ai-in nav ch chs body-to-char delta-time) time)
+      path (ch :path)
+      pos (ch :pos)
+      path (cond
+        (empty? path) (first (nav/path nav pos (-> nav count rand-int nav)))
+        (->> path first (mapv - pos) mat/length (> 1)) (rest path)
+        :else path
+      )
+      next (char-call ch :next (crowd-ai-in ch chs body-to-char delta-time) time)
     ]
-    next
+    (assoc next :path path)
   )
 )
 

@@ -29,7 +29,6 @@
         vec
       )
     ]
-    (-> pts count println)
     pts
   )
 )
@@ -38,14 +37,16 @@
   (defn search [ps way end dst]
     (cond
       (or (empty? ps) (-> way last (= end))) [[ way dst ]]
-      :else (->> ps
-        (map #(search
-          (disj ps %)
-          (conj way %)
+      :else (let [
+          l (last way)
+          p (first (sort-by #(mat/length (mapv - % l)) ps))
+        ]
+        (search
+          (disj ps p)
+          (conj way p)
           end
-          (->> way last (mapv - %) mat/length (+ dst)))
+          (->> way last (mapv - p) mat/length (+ dst))
         )
-        (apply concat)
       )
     )
   )
