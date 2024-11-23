@@ -696,7 +696,7 @@
   ) ch chs body-to-char delta-time)
 )
 
-(defn passive-ai-in [nav ch chs body-to-char delta-time]
+(defn passive-ai-in [ch chs body-to-char delta-time]
   (let [
       { :keys [pos look] } ch
       target-pos (get ch :target-pos pos)
@@ -712,11 +712,11 @@
   )
 )
 
-(defn passive-ai-next [nav chs body-to-char ch time delta-time]
+(defn passive-ai-next [chs body-to-char ch time delta-time]
   (let [
       target-pos (get ch :target-pos (ch :pos))
       target-look (get ch :target-look (ch :look))
-      next (char-call ch :next (passive-ai-in nav ch chs body-to-char delta-time) time)
+      next (char-call ch :next (passive-ai-in ch chs body-to-char delta-time) time)
     ]
     (assoc next :target-pos target-pos :target-look target-look)
   )

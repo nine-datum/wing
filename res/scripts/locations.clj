@@ -51,7 +51,11 @@
             ps (partition 2 info)
             posf #(->> % (marker loc) marker-pos)
             lookf #(->> % (marker loc) marker-look)
-            ps (mapv (fn [[kind mark]] (vector kind color side (posf mark) (lookf mark))) ps)
+            ps (mapv (fn [[kind mark]] (vector kind color side
+              (posf mark)
+              (lookf mark)
+              dat/passive-ai-next
+              dat/passive-ai-in)) ps)
           ]
           (fn [spawn-fn]
             (mapv #(apply spawn-fn %) ps)
