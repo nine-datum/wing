@@ -27,12 +27,16 @@
     :texts [
       [(str "nine-clj" (. System getProperty "nine-clj.version")) gui/aspect-fit-layout [0 1 0 1] [-0.5 -0.9 1 0.1]]
     ]
-    :buttons [
+    :buttons (mapv [
       ["Начать игру" (fn [dev res state] ((res :world-setup) dev res))]
       ["Загрузить игру" (fn [dev res state] (io/load-game dev res "saves/main.save"))]
       ["Настройки" (fn [dev res state] state)]
       ["Выход" (constantly nil)]
-    ]
+    ] (cond
+        (-> "saves/main.save" java.io.File. .exists) [0 1 2 3]
+        :else [0 2 3]
+      )
+    )
   }
 )
 (defn menu-loop-base [dev res state]
