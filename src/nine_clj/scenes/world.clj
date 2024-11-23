@@ -403,7 +403,6 @@
     (graph/translate cx water-effect-level cz)
     (world-water-effect time)
     (graph/pop-matrix)
-    (graph/play-particles rain-particles (player :pos) (assoc camrot 0 0 2 0) [1 1 1] time)
   )
 )
 

@@ -165,9 +165,7 @@
       :images [
         [menu-image gui/aspect-fit-layout [-1.5 -1 3 2]]
       ]
-      :texts [
-        ["Загрузка..." gui/aspect-fit-layout [1 1 1 1] [-0.5 -0.1 1 0.2]]
-      ]
+      :texts []
       :buttons []
       :gui-asset gui-asset
       :res-atom res-atom
@@ -188,12 +186,19 @@
       prog (/ progress max-progress)
       prog-col (math/lerpv [0 0 1 1] [0 1 0 1] prog)
       prog-back-col [1/2 1/2 1/2 1]
+      load-title (-> load-funcs second
+        (get :name "...")
+        name
+        (.replace "-" " ")
+      )
+      load-title (str "Загрузка : " load-title)
     ]
+    (gui/text gui-asset gui/aspect-fit-layout load-title -0.5 -0.1 1 0.1 [1 1 1 1])
     (gui/status-bar gui-asset gui/aspect-fit-layout prog prog-back-col prog-col -0.5 -0.2 1 0.05)
     (cond
-      (empty? load-funcs) (menu-setup dev (reset! res-atom (res-func @load-atom)))
+      (empty? load-funcs) (menu-setup dev (reset! res-atom ((res-func :func) @load-atom)))
       :else (do
-        (swap! load-atom (first load-funcs))
+        (swap! load-atom (-> load-funcs first :func))
         (assoc state
           :progress (inc progress)
           :load-funcs (rest load-funcs)
@@ -207,21 +212,22 @@
   (let [
       pairs (partition 2 pairs)
       names (mapv first pairs)
-      func-template (fn [[n e]]
+      pair (fn [n f] { :name n :func f } )
+      func-template (fn [[n e]] (pair (keyword n)
         `(fn [lets#] (let [
             { :keys [~@names] } lets#
           ]
           (assoc lets# (keyword (name '~n)) ~e)
-        ))
+        )))
       )
       funcs (mapv func-template pairs)
-      expr-func `(fn [lets#]
+      expr-func (pair :final `(fn [lets#]
         (let [
             { :keys [~@names] } lets#
           ]
           ~expr
         )
-      )
+      ))
     ]
     (list list funcs expr-func)
   )
