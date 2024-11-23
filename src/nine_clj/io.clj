@@ -3,6 +3,7 @@
     [nine-clj.datum :as dat]
     [nine-clj.scenes.world :as world]
     [clojure.java.io :refer [make-parents]]
+    [zprint.core :as zprint]
   ]
 )
 
@@ -56,7 +57,7 @@
 
 (defn save-game [state file]
   (make-parents file)
-  (->> state state-to-data (spit file))
+  (->> state state-to-data zprint/zprint-str (spit file))
 )
 
 (defn load-game [dev res file]
