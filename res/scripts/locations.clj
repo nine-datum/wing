@@ -3,37 +3,27 @@
   '[nine-clj.math :as math]
   '[nine-clj.scenes.arena :as arena]
   '[nine-clj.graph :as graph]
+  '[nine-clj.nav :as nav]
 )
 (fn [dev world-markers all-presets]
   (let [
-      marker (fn [loc marker-name]
-        (.mul (loc :mat) (-> loc :name all-presets :markers (get marker-name)))
-      )
-      marker-pos (fn [m]
-        (-> m (.transformPoint (math/vec3f 0 0 0)) math/floats-from-vec3f)
-      )
-      marker-look (fn [m]
-        (-> m (.transformVector (math/vec3f 0 0 1)) math/floats-from-vec3f math/normalize)
-      )
-      marker-rot-y (fn [m]
-        (as-> m v (marker-look v) (map v [0 2]) (apply math/clock v))
-      )
       location (fn [& args]
         (let [
             h (apply hash-map args)
             { :keys [id name pos rot scale color side army recruits] } h
             mat (math/transform pos rot scale)
-            h (assoc h :mat mat)
+            preset (all-presets name)
+            h (assoc h :mat mat :preset preset)
             entry (->> (get h :entry "entry"))
           ]
           {
             :id id
             :name name
-            :preset (all-presets name)
-            :models (->> name all-presets :models (mapv #(graph/replace-materials (dev :gl) % { "Flag-material" color })))
-            :shapes (->> name all-presets :shapes (mapv #(assoc % :pos pos :rot rot)))
-            :entry-pos (-> h (marker entry) marker-pos)
-            :entry-look (-> h (marker entry) marker-look)
+            :preset preset
+            :models (->> preset :models (mapv #(graph/replace-materials (dev :gl) % { "Flag-material" color })))
+            :shapes (->> preset :shapes (mapv #(assoc % :pos pos :rot rot)))
+            :entry-pos (-> h (nav/marker entry) nav/marker-pos)
+            :entry-look (-> h (nav/marker entry) nav/marker-look)
             :pos pos
             :rot rot
             :scale scale
@@ -49,8 +39,8 @@
         (let [
             { :keys [color side] } loc
             ps (partition 2 info)
-            posf #(->> % (marker loc) marker-pos)
-            lookf #(->> % (marker loc) marker-look)
+            posf #(->> % (nav/marker loc) nav/marker-pos)
+            lookf #(->> % (nav/marker loc) nav/marker-look)
             ps (mapv (fn [[kind mark]] (vector kind color side
               (posf mark)
               (lookf mark)
@@ -62,6 +52,30 @@
           )
         )
       )
+      crowd-spawn (fn [loc]
+        (let [
+            { :keys [color side recruits] } loc
+            pts (nav/location-nav loc)
+          ]
+          (fn [spawn-fn]
+            (mapv #(spawn-fn %1 color side %2 [0 0 1]
+                (partial dat/crowd-ai-next pts)
+                (partial dat/crowd-ai-in pts)
+              )
+              recruits
+              (cycle pts)
+            )
+          )
+        )
+      )
+      all-spawn (fn [info loc]
+        (fn [spawn-fn]
+          (concat
+            ((crowd-spawn loc) spawn-fn)
+            ((guard-spawn info loc) spawn-fn)
+          )
+        )
+      )
     ]
     {
       :castle-red (location
@@ -69,10 +83,10 @@
         :name :castle
         :side :red
         :color [1 0 0 1]
-        :pos (-> "castle_red" world-markers marker-pos)
-        :rot [0 (-> "castle_red" world-markers marker-rot-y) 0]
+        :pos (-> "castle_red" world-markers nav/marker-pos)
+        :rot [0 (-> "castle_red" world-markers nav/marker-rot-y) 0]
         :scale [1 1 1]
-        :spawn (partial guard-spawn [
+        :spawn (partial all-spawn [
           :fighter "guard_0"
           :fighter "guard_1"
           :archer "guard_2"
@@ -96,10 +110,10 @@
         :name :castle
         :side :blue
         :color [0 0 1 1]
-        :pos (-> "castle_blue" world-markers marker-pos)
-        :rot [0 (-> "castle_blue" world-markers marker-rot-y) 0]
+        :pos (-> "castle_blue" world-markers nav/marker-pos)
+        :rot [0 (-> "castle_blue" world-markers nav/marker-rot-y) 0]
         :scale [1 1 1]
-        :spawn (partial guard-spawn [
+        :spawn (partial all-spawn [
           :archer "guard_0"
           :archer "guard_1"
           :archer "guard_2"
@@ -117,10 +131,10 @@
         :name :castle-desert
         :side :blue
         :color [219/255 154/255 89/255 1]
-        :pos (-> "castle_sand" world-markers marker-pos)
-        :rot [0 (-> "castle_sand" world-markers marker-rot-y) 0]
+        :pos (-> "castle_sand" world-markers nav/marker-pos)
+        :rot [0 (-> "castle_sand" world-markers nav/marker-rot-y) 0]
         :scale [1 1 1]
-        :spawn (partial guard-spawn [
+        :spawn (partial all-spawn [
           :ninja "guard_0"
           :ninja "guard_1"
           :ninja "guard_2"

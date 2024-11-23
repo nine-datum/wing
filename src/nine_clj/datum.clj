@@ -722,6 +722,18 @@
   )
 )
 
+(defn crowd-ai-in [nav ch chs body-to-char delta-time]
+  (move-in [0 0 0])
+)
+
+(defn crowd-ai-next [nav chs body-to-char ch time delta-time]
+  (let [
+      next (char-call ch :next (crowd-ai-in nav ch chs body-to-char delta-time) time)
+    ]
+    next
+  )
+)
+
 (defn combat-ai-next [chs body-to-char ch time delta-time]
   (let [ next (char-call ch :next (combat-ai-in ch chs body-to-char delta-time) time) ]
     (cond
