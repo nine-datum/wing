@@ -4,6 +4,7 @@
     [nine-clj.core :refer :all]
     [nine-clj.math :as math]
     [clojure.math :as cmath]
+    [nine-clj.nav :as nav]
   )
 )
 
@@ -20,6 +21,15 @@
         (map #(mod % 360))
       )
       (range 360)
+    ))
+  )
+)
+
+(deftest nav-test
+  (testing "Path finding function"
+    (is (=
+      (nav/path [[0 0 0] [-1 0 0] [1 0 0] [0 0 6] [0 0 5]] [0 0 1] [0 0 10])
+      [[[0 0 1] [0 0 10]] 9.0]
     ))
   )
 )
