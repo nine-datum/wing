@@ -89,7 +89,7 @@
     )
     :mage (preset "mage" "Cube_002-mesh" ["res/datum/fireball.dae"]
       {}
-      [ "Odezhda_tsvet_001-material" ]
+      [ "Odezhda_tsvet-material" ]
       "attackspell"
       "spherespell"
       "teleportspell"
@@ -696,7 +696,7 @@
   ) ch chs body-to-char delta-time)
 )
 
-(defn passive-ai-in [ch chs body-to-char delta-time]
+(defn passive-ai-in [nav ch chs body-to-char delta-time]
   (let [
       { :keys [pos look] } ch
       target-pos (get ch :target-pos pos)
@@ -712,11 +712,11 @@
   )
 )
 
-(defn passive-ai-next [chs body-to-char ch time delta-time]
+(defn passive-ai-next [nav chs body-to-char ch time delta-time]
   (let [
       target-pos (get ch :target-pos (ch :pos))
       target-look (get ch :target-look (ch :look))
-      next (char-call ch :next (passive-ai-in ch chs body-to-char delta-time) time)
+      next (char-call ch :next (passive-ai-in nav ch chs body-to-char delta-time) time)
     ]
     (assoc next :target-pos target-pos :target-look target-look)
   )
@@ -975,8 +975,10 @@
   ((preset :materials-loader) (-> preset :model :materials) color)
 )
 
-(defn load-char [world preset pos look color side entry time]
+(defn load-char [world preset pos look color side entry ai-next ai-in time]
   {
+    :ai-next ai-next
+    :ai-in ai-in
     :target ()
     :side side
     :health (-> preset :name char-stats :health)
@@ -1026,12 +1028,12 @@
 
 (defn update-game-state [dev state]
   (let [
-      { :keys [ai-in player non-players movement action time delta-time] } state
+      { :keys [player non-players movement action time delta-time] } state
       all (cons player non-players)
       body-to-char (zipmap (map :body all) all)
     ]
     (update-char player (ch-move-action-in player delta-time movement action) time)
-    (doseq [n non-players] (update-char n (ai-in n all body-to-char delta-time) time))
+    (doseq [n non-players] (update-char n (--> n :ai-in (n all body-to-char delta-time)) time))
   )
 )
 
@@ -1097,7 +1099,7 @@
 
 (defn next-game-state [dev res state]
   (let [
-      { :keys [ai-next camrot campos player non-players items phys-world time delta-time] } state
+      { :keys [camrot campos player non-players items phys-world time delta-time] } state
       { :keys [keyboard mouse] } dev
       { :keys [movement action] } (player-move-action-in player keyboard camrot)
 
@@ -1110,7 +1112,7 @@
       [effect global-effect] (multi-effect effects)
       player (next-char player in time)
       player (effect player)
-      non-players (mapv (partial ai-next all-players body-to-char) non-players (repeat time) (repeat delta-time))
+      non-players (mapv #(--> % :ai-next (all-players body-to-char % time delta-time)) non-players)
       non-players (mapv effect non-players)
       items (char-list-call items :next time)
 

@@ -17,11 +17,9 @@
       loc-entry-pos (location :entry-pos)
       loc-entry-look (location :entry-look)
       pause-menu (res :location-pause-menu-setup)
-      make-char (fn [phys-world preset pos look color side] (dat/load-char phys-world preset pos look color side :idle-pass 0))
+      make-char (fn [phys-world preset pos look color side] (dat/load-char phys-world preset pos look color side :idle-pass dat/passive-ai-next dat/passive-ai-in 0))
       level (assoc (select-keys location [:pos :rot :models :shapes])
         :presets (-> res :arena :presets)
-        :ai-next dat/passive-ai-next
-        :ai-in dat/passive-ai-in
         :update-state dat/update-game-state
         :update-phys phys/update-world
         :next-state dat/next-game-state
