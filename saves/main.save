@@ -1,7 +1,7 @@
-{:camdist 22.965388619999203,
- :campos [-2699.2248409441713 229.09592773072117 -1820.692049423541],
- :camrot [0.015537156006161044 -2.241240152000172 0.0],
- :camrot-xy [0.015537155999986396 -2.241240152000172],
+{:camdist 22.965388619999203
+ :campos [-2699.2248269568745 229.0958951564567 -1820.6920383320548]
+ :camrot [0.015537155999986396 -2.241240152000172 0.0]
+ :camrot-xy [0.015537155999986396 -2.241240152000172]
  :locations
    {:castle-blue {:army (:archer
                           :archer
@@ -18,64 +18,64 @@
                           :archer :archer
                           :archer :archer
                           :archer :archer
-                          :archer :archer),
-                  :color [0 0 1 1],
-                  :id :castle-blue,
-                  :name :castle,
+                          :archer :archer)
+                  :color [0 0 1 1]
+                  :id :castle-blue
+                  :name :castle
                   :recruits (:archer :archer
                                      :archer :archer
                                      :archer :archer
                                      :archer :archer
-                                     :archer :archer),
-                  :side :blue},
+                                     :archer :archer)
+                  :side :blue}
     :castle-red {:army (:fighter :fighter :fighter
                                  :fighter :fighter
                                  :archer :archer
                                  :archer :archer
                                  :archer :archer
                                  :archer :archer
-                                 :archer :archer),
-                 :color [1 0 0 1],
-                 :id :castle-red,
-                 :name :castle,
+                                 :archer :archer)
+                 :color [1 0 0 1]
+                 :id :castle-red
+                 :name :castle
                  :recruits (:fighter :fighter
                                      :fighter :fighter
                                      :fighter :archer
                                      :archer :archer
-                                     :archer :archer),
-                 :side :red},
+                                     :archer :archer)
+                 :side :red}
     :castle-sand
       {:army [:ninja :ninja :ninja :ninja :ninja :ninja :ninja :ninja :ninja
               :ninja :ninja :ninja :ninja :ninja :ninja :ninja :ninja :ninja
               :ninja :ninja :ninja :ninja :ninja :ninja :ninja :ninja :ninja
-              :ninja :ninja :ninja],
-       :color [73/85 154/255 89/255 1],
-       :id :castle-sand,
-       :name :castle-desert,
+              :ninja :ninja :ninja]
+       :color [73/85 154/255 89/255 1]
+       :id :castle-sand
+       :name :castle-desert
        :recruits
-         (:ninja :ninja :ninja :ninja :ninja :ninja :ninja :ninja :ninja),
-       :side :blue}},
- :units ({:army (:archer),
-          :color [1/2 1/2 1 1],
-          :kind :ninja,
-          :look [0.9388798008241943 -0.0 0.3442451446343452],
-          :pos [-2717.2170934870223 225.73914 -1834.9594887803942],
+         (:ninja :ninja :ninja :ninja :ninja :ninja :ninja :ninja :ninja)
+       :side :blue}}
+ :units ({:army (:archer)
+          :color [1/2 1/2 1 1]
+          :kind :ninja
+          :look [0.9388798008241943 -0.0 0.3442451446343452]
+          :pos [-2717.2170934870223 225.73914 -1834.9594887803942]
           :side :sky}
-         {:army nil,
-          :color [0 1 0 1],
-          :kind :ninja,
-          :look [0 0 1],
-          :pos [39.0 190.5644 496.0],
+         {:army nil
+          :color [0 1 0 1]
+          :kind :ninja
+          :look [0 0 1]
+          :pos [39.0 190.56439 496.0]
           :side :green}
-         {:army nil,
-          :color [0 0 1 1],
-          :kind :mage,
-          :look [0 0 1],
-          :pos [40.0 190.84926 496.0],
+         {:army nil
+          :color [0 0 1 1]
+          :kind :mage
+          :look [0 0 1]
+          :pos [40.0 190.84926 496.0]
           :side :blue}
-         {:army nil,
-          :color [1 1 0 1],
-          :kind :archer,
-          :look [0 0 1],
-          :pos [41.0 191.13417 496.0],
+         {:army nil
+          :color [1 1 0 1]
+          :kind :archer
+          :look [0 0 1]
+          :pos [41.0 191.13416 496.0]
           :side :yellow})}

@@ -57,7 +57,7 @@
 
 (defn save-game [state file]
   (make-parents file)
-  (->> state state-to-data zprint/zprint-str (spit file))
+  (as-> state x (state-to-data x) (zprint/zprint-str x { :map { :indent 2 :comma? false :force-nl? true } } ) (spit file x))
 )
 
 (defn load-game [dev res file]
