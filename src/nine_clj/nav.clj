@@ -35,7 +35,7 @@
     )
   )
   (cond
-    (empty? pts) (-> (mapv - to from) (assoc 1 0) math/normalize)
+    (empty? pts) [from to]
     :else (let [
         ways (search (set (conj pts to)) [from] to 0)
         ways (sort-by second ways)
