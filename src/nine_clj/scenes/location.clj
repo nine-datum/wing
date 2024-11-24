@@ -29,7 +29,7 @@
               dat/passive-ai-next
               dat/passive-ai-in
             )
-            (cons (spawn (fn [kind color side pos look ai-next ai-in] (make-char phys-world (presets kind) pos look color side ai-next ai-in))))
+            (cons (spawn location (fn [kind color side pos look ai-next ai-in] (make-char phys-world (presets kind) pos look color side ai-next ai-in))))
           )
         )
       )

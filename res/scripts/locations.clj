@@ -10,32 +10,23 @@
       location (fn [& args]
         (let [
             h (apply hash-map args)
-            { :keys [id name pos rot scale color side army recruits] } h
+            { :keys [id name pos rot scale color side army recruits spawn] } h
             mat (math/transform pos rot scale)
             preset (all-presets name)
-            h (assoc h :mat mat :preset preset)
             entry (->> (get h :entry "entry"))
+            h (assoc h :mat mat :preset preset)
           ]
-          {
-            :id id
-            :name name
+          (assoc h
+            :mat mat
             :preset preset
             :models (->> preset :models (mapv #(graph/replace-materials (dev :gl) % { "Flag-material" color })))
             :shapes (->> preset :shapes (mapv #(assoc % :pos pos :rot rot)))
             :entry-pos (-> h (nav/marker entry) nav/marker-pos)
             :entry-look (-> h (nav/marker entry) nav/marker-look)
-            :pos pos
-            :rot rot
-            :scale scale
-            :spawn ((h :spawn) h)
-            :army army
-            :recruits recruits
-            :color color
-            :side side
-          }
+          )
         )
       )
-      guard-spawn (fn [info loc]
+      guard-spawn (fn [info loc spawn-fn]
         (let [
             { :keys [color side] } loc
             ps (partition 2 info)
@@ -47,33 +38,27 @@
               dat/passive-ai-next
               dat/passive-ai-in)) ps)
           ]
-          (fn [spawn-fn]
-            (mapv #(apply spawn-fn %) ps)
-          )
+          (mapv #(apply spawn-fn %) ps)
         )
       )
-      crowd-spawn (fn [loc]
+      crowd-spawn (fn [loc spawn-fn]
         (let [
             { :keys [color side recruits] } loc
             pts (nav/location-nav loc)
           ]
-          (fn [spawn-fn]
-            (mapv #(spawn-fn %1 color side %2 [0 0 1]
-                (partial dat/crowd-ai-next pts)
-                dat/crowd-ai-in
-              )
-              recruits
-              (cycle pts)
+          (mapv #(spawn-fn %1 color side %2 [0 0 1]
+              (partial dat/crowd-ai-next pts)
+              dat/crowd-ai-in
             )
+            recruits
+            (cycle pts)
           )
         )
       )
-      all-spawn (fn [info loc]
-        (fn [spawn-fn]
-          (concat
-            ((crowd-spawn loc) spawn-fn)
-            ((guard-spawn info loc) spawn-fn)
-          )
+      all-spawn (fn [info loc spawn-fn]
+        (concat
+          (crowd-spawn loc spawn-fn)
+          (guard-spawn info loc spawn-fn)
         )
       )
     ]
