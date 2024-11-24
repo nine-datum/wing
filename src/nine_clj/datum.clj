@@ -487,16 +487,16 @@
   (phys/move-char (ch :body) mvec)
 )
 
-(defn next-char-idle [ch]
+(defn next-char-idle [s ch]
   (let[
       body (ch :body)
       pos (mapv - (phys/get-position body) [0 3/4 0])
     ]
-    (assoc ch :pos pos)
+    (assoc ch :pos pos :state s)
   )
 )
 
-(defn next-char-mov [ch in]
+(defn next-char-mov [s ch in]
   (let [
       look (ch :look)
       in-look (in :look)
@@ -505,7 +505,7 @@
         :else (math/normalize-checked in-look)
       )
     ]
-    (assoc (next-char-idle ch) :look look)
+    (assoc (next-char-idle s ch) :look look)
   )
 )
 
@@ -725,7 +725,7 @@
 
 (defn crowd-ai-in [ch chs body-to-char delta-time]
   (let [
-      path (ch :path)
+      path (-> ch :state :path)
     ]
     (cond
       (empty? path) (move-in [0 0 0])
@@ -734,18 +734,63 @@
   )
 )
 
+(declare crowd-walk-state)
+
+(defn crowd-idle-state [nav time]
+  (->
+    (idle-pass-state time)
+    (assoc
+      :crowd? true
+      :wait-time (-> (rand) (- 1/4) (* 10))
+      :next (fn [s ch in time]
+        (cond
+          (< (state-age s time) (s :wait-time)) (next-char-mov s ch in)
+          :else (assoc ch :state
+            (crowd-walk-state nav
+              (->> nav count rand-int nav (nav/path nav (ch :pos)) first)
+              time
+            )
+          )
+        )
+      )
+    )
+  )
+)
+
+(defn crowd-walk-state [nav path time]
+  (-> (walk-pass-state time)
+    (assoc
+      :crowd? true
+      :path path
+      :next (fn [s ch in time] (let [
+            path (s :path)
+            pos (ch :pos)
+            path (cond
+              (empty? path) path
+              (->> path first (mapv - pos) mat/length (> 1)) (rest path)
+              :else path
+            )
+            next (cond
+              (empty? path) (assoc ch :state (crowd-idle-state nav time))
+              :else (-> s (assoc :path path) (next-char-mov ch in))
+            )
+          ]
+          next
+        )
+      )
+    )
+  )
+)
+
 (defn crowd-ai-next [nav chs body-to-char ch time delta-time]
   (let [
-      path (ch :path)
-      pos (ch :pos)
-      path (cond
-        (empty? path) (first (nav/path nav pos (-> nav count rand-int nav)))
-        (->> path first (mapv - pos) mat/length (> 1)) (rest path)
-        :else path
+      ch (cond
+        (-> ch :state :crowd?) ch
+        :else (assoc ch :state (crowd-idle-state nav time))
       )
       next (char-call ch :next (crowd-ai-in ch chs body-to-char delta-time) time)
     ]
-    (assoc next :path path)
+    next
   )
 )
 
@@ -771,7 +816,7 @@
         ]
         (cond
           (= action :attack) (map-state ch :attack time)
-          (math/zero-len? movement) (next-char-mov ch in)
+          (math/zero-len? movement) (next-char-mov s ch in)
           :else (map-state ch :walk time)
         )
       )
@@ -788,7 +833,7 @@
         (cond
           (= action :attack) (map-state ch :attack time)
           (math/zero-len? movement) (map-state ch :idle time)
-          :else (next-char-mov ch in)
+          :else (next-char-mov s ch in)
         )
       )
     )
@@ -811,7 +856,7 @@
     :next (fn [s ch in time]
       (cond
         (-> in :movement math/zero-len?) (map-state ch :idle-pass time)
-        :else (next-char-mov ch in)
+        :else (next-char-mov s ch in)
       )
     )
   )
@@ -822,7 +867,7 @@
     :anim "idle_pass"
     :next (fn [s ch in time]
       (cond
-        (-> in :movement math/zero-len?) (next-char-mov ch in)
+        (-> in :movement math/zero-len?) (next-char-mov s ch in)
         :else (map-state ch :walk-pass time)
       )
     )
@@ -838,7 +883,7 @@
       (fn [s ch in time]
         (cond
           (< (char-anim-length ch anim) (state-age s time)) (map-state ch :idle time)
-          :else (next-char-mov ch in)
+          :else (next-char-mov s ch in)
         )
       )
       (fn [s ch in time] (move-char ch [0 0 0]))
@@ -932,7 +977,7 @@
   (assoc (new-state :death "death" time (fn [s ch in time]
       (cond
         (>= (state-age s time) (- (char-anim-length ch "death") 0.1)) (map-state ch :dead time)
-        :else (next-char-idle ch)
+        :else (next-char-idle s ch)
       )
     )
     (fn [s ch in time] (when
@@ -944,7 +989,7 @@
   ) :disposed (atom false))
 )
 (defn dead-state [time]
-  (new-state :dead "dead" time (fn [s ch in time] (next-char-idle ch)))
+  (new-state :dead "dead" time (fn [s ch in time] (next-char-idle s ch)))
 )
 
 (defn wrap-mortal [factory]
