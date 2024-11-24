@@ -735,6 +735,8 @@
 )
 
 (declare crowd-walk-state)
+(declare idle-pass-state)
+(declare walk-pass-state)
 
 (defn crowd-idle-state [nav time]
   (->
