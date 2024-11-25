@@ -744,18 +744,18 @@
 (declare idle-pass-state)
 (declare walk-pass-state)
 
-(defn crowd-idle-state [nav time]
+(defn crowd-idle-state [nav spots time]
   (->
     (idle-pass-state time)
     (assoc
       :crowd? true
-      :wait-time (-> (rand) (- 1/4) (* 10))
+      :wait-time (-> (rand) (* 10))
       :next (fn [s ch in time]
         (cond
           (< (state-age s time) (s :wait-time)) (next-char-mov s ch in)
           :else (assoc ch :state
-            (crowd-walk-state nav
-              (->> nav count rand-int nav (nav/path nav (ch :pos)) first)
+            (crowd-walk-state nav spots
+              (->> spots count rand-int spots (nav/path nav (ch :pos)) first)
               time
             )
           )
@@ -765,7 +765,7 @@
   )
 )
 
-(defn crowd-walk-state [nav path time]
+(defn crowd-walk-state [nav spots path time]
   (-> (walk-pass-state time)
     (assoc
       :anim "walk_crowd"
@@ -782,7 +782,7 @@
               :else path
             )
             next (cond
-              (empty? path) (assoc ch :state (crowd-idle-state nav time))
+              (empty? path) (assoc ch :state (crowd-idle-state nav spots time))
               :else (-> s (assoc :path path) (next-char-mov ch in))
             )
           ]
@@ -793,11 +793,11 @@
   )
 )
 
-(defn crowd-ai-next [nav chs body-to-char ch time delta-time]
+(defn crowd-ai-next [nav spots chs body-to-char ch time delta-time]
   (let [
       ch (cond
         (-> ch :state :crowd?) ch
-        :else (assoc ch :state (crowd-idle-state nav time))
+        :else (assoc ch :state (crowd-idle-state nav spots time))
       )
       next (char-call ch :next (crowd-ai-in ch chs body-to-char delta-time) time)
     ]

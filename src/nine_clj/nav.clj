@@ -18,9 +18,9 @@
   (as-> m v (marker-look v) (map v [0 2]) (apply math/clock v))
 )
 
-(defn location-nav [location]
+(defn location-pts [location name]
   (let [
-      names (map #(str "nav_" %) (range))
+      names (map #(str name "_" %) (range))
       markers (-> location :preset :markers)
       pts (->> names
         (take-while #(contains? markers %))
@@ -32,6 +32,9 @@
     pts
   )
 )
+
+(defn location-nav [location] (location-pts location "nav"))
+(defn location-spots [location] (location-pts location "int"))
 
 (defn path [pts from to]
   (defn search [ps way end dst]
