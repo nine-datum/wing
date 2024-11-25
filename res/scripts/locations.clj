@@ -1,6 +1,7 @@
 (require
   '[nine-clj.datum :as dat]
   '[nine-clj.math :as math]
+  '[nine-clj.phys :as phys]
   '[nine-clj.scenes.arena :as arena]
   '[nine-clj.graph :as graph]
   '[nine-clj.nav :as nav]
@@ -41,18 +42,25 @@
           (mapv #(apply spawn-fn %) ps)
         )
       )
+      crowd-group 64
+      crowd-mask (bit-not 64)
       crowd-spawn (fn [loc spawn-fn]
         (let [
             { :keys [color side recruits] } loc
             pts (nav/location-nav loc)
             [lx lz] (-> Math/PI (* 2) rand math/clock-xy)
           ]
-          (mapv #(spawn-fn %1 color side %2 [lx 0 lz]
-              (partial dat/crowd-ai-next pts)
-              dat/crowd-ai-in
+          (->> pts
+            cycle
+            (map #(spawn-fn %1 color side %2 [lx 0 lz]
+                (partial dat/crowd-ai-next pts)
+                dat/crowd-ai-in
+              )
+              recruits
             )
-            recruits
-            (cycle pts)
+            (mapv #(doto %
+              (-> :body (phys/set-group (% :world) crowd-group crowd-mask))
+            ))
           )
         )
       )
