@@ -5,8 +5,8 @@
       <author>Blender User</author>
       <authoring_tool>Blender 3.3.21 commit date:2024-07-15, commit time:08:57, hash:e016c21db151</authoring_tool>
     </contributor>
-    <created>2024-11-25T15:10:24</created>
-    <modified>2024-11-25T15:10:24</modified>
+    <created>2024-11-25T22:47:05</created>
+    <modified>2024-11-25T22:47:05</modified>
     <unit name="meter" meter="1"/>
     <up_axis>Z_UP</up_axis>
   </asset>
@@ -1013,6 +1013,30 @@
   </library_geometries>
   <library_visual_scenes>
     <visual_scene id="Scene" name="Scene">
+      <node id="int_7" name="int_7" type="NODE">
+        <matrix sid="transform">1 0 0 0.2617683 0 1 0 7.734272 0 0 1 15.89471 0 0 0 1</matrix>
+      </node>
+      <node id="int_6" name="int_6" type="NODE">
+        <matrix sid="transform">1 0 0 -8.602581 0 1 0 24.52034 0 0 1 16.88833 0 0 0 1</matrix>
+      </node>
+      <node id="int_5" name="int_5" type="NODE">
+        <matrix sid="transform">1 0 0 -16.06417 0 1 0 4.693142 0 0 1 16.29229 0 0 0 1</matrix>
+      </node>
+      <node id="int_4" name="int_4" type="NODE">
+        <matrix sid="transform">1 0 0 -16.19012 0 1 0 -15.90269 0 0 1 16.65584 0 0 0 1</matrix>
+      </node>
+      <node id="int_3" name="int_3" type="NODE">
+        <matrix sid="transform">1 0 0 0.1396542 0 1 0 -29.05365 0 0 1 14.57432 0 0 0 1</matrix>
+      </node>
+      <node id="int_2" name="int_2" type="NODE">
+        <matrix sid="transform">1 0 0 15.46305 0 1 0 -16.53016 0 0 1 13.93724 0 0 0 1</matrix>
+      </node>
+      <node id="int_1" name="int_1" type="NODE">
+        <matrix sid="transform">1 0 0 16.26317 0 1 0 9.501501 0 0 1 15.74746 0 0 0 1</matrix>
+      </node>
+      <node id="int_0" name="int_0" type="NODE">
+        <matrix sid="transform">1 0 0 13.25049 0 1 0 17.93543 0 0 1 16.41232 0 0 0 1</matrix>
+      </node>
       <node id="nav_21" name="nav_21" type="NODE">
         <matrix sid="transform">1 0 0 -8.101912 0 1 0 3.332739 0 0 1 15.91825 0 0 0 1</matrix>
       </node>
