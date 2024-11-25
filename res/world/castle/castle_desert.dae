@@ -5,8 +5,8 @@
       <author>Blender User</author>
       <authoring_tool>Blender 3.3.21 commit date:2024-07-15, commit time:08:57, hash:e016c21db151</authoring_tool>
     </contributor>
-    <created>2024-11-23T14:36:01</created>
-    <modified>2024-11-23T14:36:01</modified>
+    <created>2024-11-25T15:10:24</created>
+    <modified>2024-11-25T15:10:24</modified>
     <unit name="meter" meter="1"/>
     <up_axis>Z_UP</up_axis>
   </asset>
@@ -1013,8 +1013,44 @@
   </library_geometries>
   <library_visual_scenes>
     <visual_scene id="Scene" name="Scene">
+      <node id="nav_21" name="nav_21" type="NODE">
+        <matrix sid="transform">1 0 0 -8.101912 0 1 0 3.332739 0 0 1 15.91825 0 0 0 1</matrix>
+      </node>
+      <node id="nav_20" name="nav_20" type="NODE">
+        <matrix sid="transform">1 0 0 -7.536376 0 1 0 -4.584763 0 0 1 15.79326 0 0 0 1</matrix>
+      </node>
+      <node id="nav_19" name="nav_19" type="NODE">
+        <matrix sid="transform">1 0 0 0.01519049 0 1 0 -8.842916 0 0 1 15.47319 0 0 0 1</matrix>
+      </node>
+      <node id="nav_22" name="nav_22" type="NODE">
+        <matrix sid="transform">1 0 0 6.701822 0 1 0 -4.584763 0 0 1 15.17248 0 0 0 1</matrix>
+      </node>
+      <node id="nav_18" name="nav_18" type="NODE">
+        <matrix sid="transform">1 0 0 6.967955 0 1 0 2.833737 0 0 1 15.44744 0 0 0 1</matrix>
+      </node>
+      <node id="nav_17" name="nav_17" type="NODE">
+        <matrix sid="transform">1 0 0 3.142271 0 1 0 7.890293 0 0 1 15.84816 0 0 0 1</matrix>
+      </node>
+      <node id="nav_16" name="nav_16" type="NODE">
+        <matrix sid="transform">1 0 0 -2.28022 0 1 0 7.990094 0 0 1 15.94943 0 0 0 1</matrix>
+      </node>
+      <node id="nav_15" name="nav_15" type="NODE">
+        <matrix sid="transform">1 0 0 -9.891475 0 1 0 -1.174753 0 0 1 15.79061 0 0 0 1</matrix>
+      </node>
+      <node id="nav_14" name="nav_14" type="NODE">
+        <matrix sid="transform">1 0 0 4.358075 0 1 0 -8.937759 0 0 1 15.40887 0 0 0 1</matrix>
+      </node>
+      <node id="nav_13" name="nav_13" type="NODE">
+        <matrix sid="transform">1 0 0 8.130178 0 1 0 -0.6612535 0 0 1 15.31583 0 0 0 1</matrix>
+      </node>
+      <node id="nav_12" name="nav_12" type="NODE">
+        <matrix sid="transform">1 0 0 4.62309 0 1 0 5.863211 0 0 1 15.58092 0 0 0 1</matrix>
+      </node>
+      <node id="nav_11" name="nav_11" type="NODE">
+        <matrix sid="transform">1 0 0 -5.862703 0 1 0 6.03918 0 0 1 15.69545 0 0 0 1</matrix>
+      </node>
       <node id="nav_10" name="nav_10" type="NODE">
-        <matrix sid="transform">1 0 0 -2.593872 0 1 0 -10.14246 0 0 1 15.61543 0 0 0 1</matrix>
+        <matrix sid="transform">1 0 0 -4.998171 0 1 0 -8.58674 0 0 1 15.61543 0 0 0 1</matrix>
       </node>
       <node id="nav_9" name="nav_9" type="NODE">
         <matrix sid="transform">1 0 0 0.5717306 0 1 0 9.555504 0 0 1 16.05392 0 0 0 1</matrix>
