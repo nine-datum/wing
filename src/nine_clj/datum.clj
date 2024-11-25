@@ -70,6 +70,7 @@
       "dead"
       "idle_pass"
       "walk_pass"
+      "walk_crowd"
       "riding"
       "riding_boat"
     )
@@ -85,6 +86,7 @@
       "dead"
       "idle_pass"
       "walk_pass"
+      "walk_crowd"
       "riding"
       "riding_boat"
     )
@@ -100,6 +102,7 @@
       "dead"
       "idle_pass"
       "walk_pass"
+      "walk_crowd"
       "riding"
       "riding_boat"
     )
@@ -115,6 +118,7 @@
       "dead"
       "idle_pass"
       "walk_pass"
+      "walk_crowd"
       "riding"
       "riding_boat"
     )
@@ -125,6 +129,8 @@
   {
     :walk-speed walk-speed
     :walk-anim-speed walk-anim-speed
+    :walk-crowd-speed 1.5
+    :walk-crowd-anim-speed 1
     :attack-damage attack-damage
     :health health
     :resistances resistances
@@ -762,6 +768,9 @@
 (defn crowd-walk-state [nav path time]
   (-> (walk-pass-state time)
     (assoc
+      :anim "walk_crowd"
+      :walk-stat :walk-crowd-speed
+      :walk-anim-stat :walk-crowd-anim-speed
       :crowd? true
       :path path
       :next (fn [s ch in time] (let [
@@ -829,25 +838,29 @@
 
 (defn walk-state [time]
   (assoc (new-state :walk "walk" time (fn [s ch in time]
-      (let [
-          { :keys [movement action] } in
-        ]
-        (cond
-          (= action :attack) (map-state ch :attack time)
-          (math/zero-len? movement) (map-state ch :idle time)
-          :else (next-char-mov s ch in)
+        (let [
+            { :keys [movement action] } in
+          ]
+          (cond
+            (= action :attack) (map-state ch :attack time)
+            (math/zero-len? movement) (map-state ch :idle time)
+            :else (next-char-mov s ch in)
+          )
+        )
+      )
+      (fn [s ch in time]
+        (let [
+            { :keys [movement] } in
+          ]
+          (move-char ch (mapv (partial * (get-char-stat ch (s :walk-stat))) movement))
+          ()
         )
       )
     )
-    (fn [s ch in time]
-      (let [
-          { :keys [movement] } in
-        ]
-        (move-char ch (mapv (partial * (get-char-stat ch :walk-speed)) movement))
-        ()
-      )
-    )
-  ) :anim-time (fn [ch time] (-> ch (get-char-stat :walk-anim-speed) (* time))))
+    :walk-stat :walk-speed
+    :walk-anim-stat :walk-anim-speed
+    :anim-time (fn [ch time] (->> ch :state :walk-anim-stat (get-char-stat ch) (* time)))
+  )
 )
 
 
