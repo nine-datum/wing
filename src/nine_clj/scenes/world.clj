@@ -409,7 +409,7 @@
 (defn next-world-state [dev res state]
   (let [
       { :keys [keyboard] } dev
-      { :keys [player non-players campos camrot time delta-time] } state
+      { :keys [player non-players campos camrot time delta-time phys-world] } state
       in (unit-move-in player delta-time (dat/cam-rel-movement keyboard camrot))
       player (--> player :next (player in time delta-time))
       non-players (mapv #(--> % :next (% (unit-move-in % delta-time [0 0 0]) time delta-time)) non-players)
@@ -436,7 +436,12 @@
       camdir [(- cdir-x) cdir-y (- cdir-z)]
       camrot [cx cy 0]
       campiv (->> player :pos (mapv + [0 3 0]))
-      campos (->> camdir math/normalize (mapv * (repeat camdist)) (mapv + campiv))
+      { :keys [dist normal has-hit] } (phys/ray-check phys-world campiv camdir camdist)
+      [phys-dist phys-offset] (cond
+        has-hit [dist (mapv (partial * 0.15) normal)]
+        :else [camdist [0 0 0]]
+      )
+      campos (->> camdir math/normalize (mapv * (repeat phys-dist)) (mapv + campiv phys-offset))
 
       state (assoc state
         :campos (math/lerpv (state :campos) campos (* delta-time 5))
