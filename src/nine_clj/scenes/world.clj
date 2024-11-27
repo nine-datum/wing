@@ -331,8 +331,9 @@
           { :keys [side color army] } location
           player-color (player :color)
           player-side (player :side)
+          location-pos (location :pos)
           player-army (get-unit-army player)
-          exit-pos (->> (mapv - pos (location :pos)) math/normalize (mapv * (repeat 10)) (mapv + pos))
+          exit-pos (->> (mapv - pos location-pos) math/normalize (mapv * (repeat 60)) (mapv + location-pos))
           exit-state (update state :player #(assoc % :pos exit-pos :look (mapv - look)))
           exit-state-setup (fn [loc-state] exit-state)
           arena-spawn (fn [phys-world presets]
