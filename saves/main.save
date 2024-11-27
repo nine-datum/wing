@@ -1,111 +1,113 @@
 {:camdist 22.965388619999203
- :campos [-2857.000359713044 469.0376527146957 -2291.5462430029975]
- :camrot [6.509764077708369E-9 -3.15545674065093 0.0]
+ :campos [-2874.8935718792245 471.98055659875143 -2299.948395055575]
+ :camrot [0.0 -3.154642832000194 0.0]
  :camrot-xy [0.0 -3.154642832000194]
- :locations
-   {:castle-blue {:army (:archer
-                          :archer
-                          :archer :archer
-                          :archer :archer
-                          :archer :archer
-                          :archer :archer
-                          :archer :archer
-                          :archer :archer
-                          :archer :archer
-                          :archer :archer
-                          :archer :archer
-                          :archer :archer
-                          :archer :archer
-                          :archer :archer
-                          :archer :archer
-                          :archer :archer)
-                  :color [0 0 1 1]
-                  :id :castle-blue
-                  :name :castle
-                  :recruits (:archer :archer
-                                     :archer :archer
-                                     :archer :archer
-                                     :archer :archer
-                                     :archer :archer)
-                  :side :blue}
-    :castle-red {:army (:fighter :fighter :fighter
-                                 :fighter :fighter
-                                 :archer :archer
-                                 :archer :archer
-                                 :archer :archer
-                                 :archer :archer
-                                 :archer :archer)
-                 :color [1 0 0 1]
-                 :id :castle-red
-                 :name :castle
-                 :recruits (:fighter :fighter
-                                     :fighter :fighter
-                                     :fighter :archer
-                                     :archer :archer
-                                     :archer :archer)
-                 :side :red}
-    :castle-sand
-      {:army [:ninja :ninja :ninja :ninja :ninja :ninja :ninja :ninja :ninja
-              :ninja :ninja :ninja :ninja :ninja :ninja :ninja :ninja :ninja
-              :ninja :ninja :ninja :ninja :ninja :ninja :ninja :ninja :ninja
-              :ninja :ninja :ninja]
-       :color [73/85 154/255 89/255 1]
-       :id :castle-sand
-       :name :castle-desert
-       :recruits (:fighter :fighter :archer :archer :ninja :ninja :mage :mage)
-       :side :blue}
-    :tower-ruby
-      {:army (:mage :mage
-                    :mage :mage
-                    :mage :mage
-                    :mage :mage
-                    :mage :mage
-                    :mage :mage
-                    :mage :mage
-                    :mage :mage
-                    :mage :mage
-                    :mage :mage
-                    :mage :mage
-                    :mage :mage
-                    :mage :mage
-                    :mage :mage
-                    :mage :mage)
-       :color [224/255 1/15 19/51 1]
-       :id :tower-ruby
-       :name :mage-tower
-       :recruits (:mage :mage :mage :mage :mage :mage :mage :mage :mage :mage)
-       :side :ruby}}
- :units ({:army (:fighter
-                  :fighter :fighter
-                  :fighter :fighter
-                  :fighter :fighter
-                  :fighter :fighter
-                  :fighter :fighter
-                  :archer :archer
-                  :archer :archer
-                  :archer :archer
-                  :archer :archer
-                  :archer :archer
-                  :archer :archer
-                  :ninja :ninja
-                  :ninja :ninja
-                  :ninja :ninja
-                  :ninja :mage
-                  :mage :mage
-                  :mage :mage
-                  :mage :mage
-                  :mage :mage
-                  :mage :mage)
+ :locations {:castle-blue {:army (:archer
+                                   :archer
+                                   :archer :archer
+                                   :archer :archer
+                                   :archer :archer
+                                   :archer :archer
+                                   :archer :archer
+                                   :archer :archer
+                                   :archer :archer
+                                   :archer :archer
+                                   :archer :archer
+                                   :archer :archer
+                                   :archer :archer
+                                   :archer :archer
+                                   :archer :archer
+                                   :archer :archer)
+                           :color [0 0 1 1]
+                           :id :castle-blue
+                           :name :castle
+                           :recruits (:archer :archer
+                                              :archer :archer
+                                              :archer :archer
+                                              :archer :archer
+                                              :archer :archer)
+                           :side :blue}
+             :castle-red {:army (:fighter :fighter :fighter
+                                          :fighter :fighter
+                                          :archer :archer
+                                          :archer :archer
+                                          :archer :archer
+                                          :archer :archer
+                                          :archer :archer)
+                          :color [1 0 0 1]
+                          :id :castle-red
+                          :name :castle
+                          :recruits (:fighter :fighter
+                                              :fighter :fighter
+                                              :fighter :archer
+                                              :archer :archer
+                                              :archer :archer)
+                          :side :red}
+             :castle-sand
+               {:army [:ninja :ninja :ninja :ninja :ninja :ninja :ninja :ninja
+                       :ninja :ninja :ninja :ninja :ninja :ninja :ninja :ninja
+                       :ninja :ninja :ninja :ninja :ninja :ninja :ninja :ninja
+                       :ninja :ninja :ninja :ninja :ninja :ninja]
+                :color [73/85 154/255 89/255 1]
+                :id :castle-sand
+                :name :castle-desert
+                :recruits
+                  (:fighter :fighter :archer :archer :ninja :ninja :mage :mage)
+                :side :blue}
+             :tower-ruby {:army (:mage
+                                  :mage
+                                  :mage :mage
+                                  :mage :mage
+                                  :mage :mage
+                                  :mage :mage
+                                  :mage :mage
+                                  :mage :mage
+                                  :mage :mage
+                                  :mage :mage
+                                  :mage :mage
+                                  :mage :mage
+                                  :mage :mage
+                                  :mage :mage
+                                  :mage :mage
+                                  :mage :mage)
+                          :color [224/255 1/15 19/51 1]
+                          :id :tower-ruby
+                          :name :mage-tower
+                          :recruits (:fighter
+                                      :fighter
+                                      :fighter :fighter
+                                      :fighter :fighter
+                                      :fighter :fighter
+                                      :fighter :fighter
+                                      :fighter :archer
+                                      :archer :archer
+                                      :archer :archer
+                                      :archer :archer
+                                      :archer :archer
+                                      :archer :archer
+                                      :archer :mage
+                                      :mage :mage
+                                      :mage :mage
+                                      :mage :mage
+                                      :mage :mage
+                                      :mage :mage
+                                      :mage :mage
+                                      :mage :mage
+                                      :mage :mage
+                                      :mage :mage
+                                      :mage :mage)
+                          :side :ruby}}
+ :units ({:army (:ninja :ninja :ninja :ninja :ninja :ninja :ninja)
           :color [1/2 1/2 1 1]
           :kind :ninja
-          :look [0.9974995945439581 0.0 0.0706721931500588]
-          :pos [-2856.0259096147706 466.08792 -2314.57699033094]
+          :look [-0.01304980799042217 -0.0 0.9999148476302435]
+          :pos [-2874.6272563257808 468.9512 -2322.726635418485]
           :side :sky}
          {:army nil
           :color [0 1 0 1]
           :kind :ninja
           :look [0 0 1]
-          :pos [39.0 190.5644 496.0]
+          :pos [39.0 190.56439 496.0]
           :side :green}
          {:army nil
           :color [0 0 1 1]

@@ -440,7 +440,7 @@
       campiv (->> player :pos (mapv + [0 3 0]))
       { :keys [dist normal has-hit] } (phys/ray-check phys-world campiv camdir camdist)
       [phys-dist phys-offset] (cond
-        has-hit [dist (mapv (partial * 0.15) normal)]
+        has-hit [dist (mapv (partial * 3/4) normal)]
         :else [camdist [0 0 0]]
       )
       campos (->> camdir math/normalize (mapv * (repeat phys-dist)) (mapv + campiv phys-offset))

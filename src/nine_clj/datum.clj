@@ -290,11 +290,14 @@
   )
 )
 
-(defn damage-effect [body hit-check kind damage]
+(defn damage-effect [body hit-check kind side damage]
   [
     (fn [ch] (cond
-      (and (-> ch :body hit-check) (-> ch :body (= body)))
-        (apply-damage ch kind damage)
+      (and
+        (-> ch :body hit-check)
+        (-> ch :side (not= side))
+        (-> ch :body (= body))
+      ) (apply-damage ch kind damage)
       :else ch
     ))
     identity
@@ -360,17 +363,17 @@
   }
 )
 
-(defn blood-damage-effect [body hit-check kind damage blood-particles blood-check pos rot time]
+(defn blood-damage-effect [body hit-check kind side damage blood-particles blood-check pos rot time]
   (cond @blood-check
     (do
       (reset! blood-check false)
       (multi-effect [
-        (damage-effect body hit-check kind damage)
+        (damage-effect body hit-check kind side damage)
         (spawn-item-effect (blood blood-particles pos rot time))
       ])
     )
     :else
-    (damage-effect body hit-check kind damage)
+    (damage-effect body hit-check kind side damage)
   )
 )
 
@@ -433,6 +436,7 @@
           blood-particles (res :blood-particles)
           blood-pos (-> item :body phys/get-position)
           blood-rot [0 0 0]
+          side (-> owner body-to-char :side)
         ]
         (cond
           (->> item :start (- time) (< arrow-lifetime)) [ (remove-item-effect item) ]
@@ -442,7 +446,7 @@
             []
           )
           (-> c body-to-char :state :name (= :block)) []
-          :else [ (remove-item-effect item) (blood-damage-effect c (item :hit-check) :arrow dmg blood-particles (atom true) blood-pos blood-rot time) ]
+          :else [ (remove-item-effect item) (blood-damage-effect c (item :hit-check) :arrow side dmg blood-particles (atom true) blood-pos blood-rot time) ]
         )
       )
     )
@@ -463,12 +467,15 @@
     :effect (fn [item res in phys time]
       (let [
           c (get (phys :contacts) (item :body) ())
-          dmg (-> phys :body-to-char (get owner) (get-char-stat :attack-damage))
+          btc (phys :body-to-char)
+          owner-char (btc owner)
+          dmg (get-char-stat owner-char :attack-damage)
+          side (owner-char :side)
         ]
         (cond
           (= c owner) []
           (= c ()) []
-          :else [(remove-item-effect item) (damage-effect c (once-hit-check) :fire dmg)]
+          :else [(remove-item-effect item) (damage-effect c (once-hit-check) :fire side dmg)]
         )
       )
     )
@@ -972,7 +979,7 @@
             dmg (get-char-stat ch :attack-damage)
             body-to-char (phys :body-to-char)
           ]
-          (mapv #(blood-damage-effect % hit-check :melee dmg blood-particles blood-check (-> % body-to-char :pos) (repeatedly 3 rand) time)
+          (mapv #(blood-damage-effect % hit-check :melee side dmg blood-particles blood-check (-> % body-to-char :pos) (repeatedly 3 rand) time)
             (->> cs
               (map body-to-char)
               (filter (comp not nil?))
