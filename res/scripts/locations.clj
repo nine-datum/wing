@@ -142,6 +142,22 @@
         :army (repeat 30 :ninja)
         :recruits (repeat 10 :ninja)
       )
+      :tower-ruby (location
+        :id :tower-ruby
+        :name :mage-tower
+        :side :ruby
+        :color [224/255 17/255 95/255 1]
+        :pos (-> "tower_ruby" world-markers nav/marker-pos)
+        :rot [0 (-> "tower_ruby" world-markers nav/marker-rot-y) 0]
+        :scale [1 1 1]
+        :spawn (partial all-spawn [
+          :mage "guard_0"
+          :mage "guard_1"
+          :mage "guard_2"
+        ])
+        :army (repeat 30 :mage)
+        :recruits (repeat 10 :mage)
+      )
     }
   )
 )

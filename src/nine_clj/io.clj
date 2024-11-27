@@ -65,10 +65,11 @@
       data (-> file slurp read-string)
       state (select-keys data [:campos :camrot :camrot-xy :camdist])
       spawn (data-to-spawn data)
+      wlocs (res :world-locations)
       locations (data :locations)
       locations (cond
-        (empty? locations) (res :world-locations)
-        :else (-> data :locations (update-vals (partial data-to-location dev res)))
+        (empty? locations) wlocs
+        :else (merge wlocs (-> data :locations (update-vals (partial data-to-location dev res))))
       )
       state (assoc state :locations locations)
     ]

@@ -152,6 +152,7 @@
     )
     :castle (load-location-preset dev diffuse-shader "res/world/castle/castle.dae")
     :castle-desert (load-location-preset dev diffuse-shader "res/world/castle/castle_desert.dae")
+    :mage-tower (load-location-preset dev diffuse-shader "res/world/castle/mage_tower.dae")
   }
 )
 
@@ -213,7 +214,7 @@
           anim (-> movement mat/length zero? (if :idle :walk))
           pos (move-pos pos movement 18 delta-time)
           ray-origin (mapv + pos [0 10 0])
-          { :keys [has-hit normal point] } (phys/ray-check phys-world ray-origin [0 -1 0] 100)
+          { :keys [has-hit normal point] } (phys/ray-check phys-world ray-origin [0 -1 0] water-level)
           [rx ry rz] point
           swimming? (and has-hit (< (+ unit-body-offset ry) water-effect-level))
           [px py pz] pos
@@ -272,7 +273,7 @@
           [px _ pz] pos
           pos (assoc pos 1 (water-peek px pz time))
           ray-origin (mapv + [0 10 0] pos)
-          { :keys [has-hit point] } (phys/ray-check phys-world ray-origin [0 -1 0] 100)
+          { :keys [has-hit point] } (phys/ray-check phys-world ray-origin [0 -1 0] water-level)
           [rx ry rz] point
           swimming? (or (not has-hit) (-> water-effect-level (- unit-body-offset) (> ry)))
         ]

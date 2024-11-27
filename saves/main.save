@@ -1,7 +1,7 @@
-{:camdist 22.965388619999203
- :campos [-2695.758591424279 228.8137233946556 -1825.2171080134317]
- :camrot [0.015537155999986396 -2.241240152000172 0.0]
- :camrot-xy [0.015537155999986396 -2.241240152000172]
+{:camdist 30
+ :campos [-3437.3068232930327 197.61963645409963 -3837.231781931793]
+ :camrot [0.1509961540000404 -8.32800939799994 0.0]
+ :camrot-xy [0.1509961540000404 -8.32800939799994]
  :locations {:castle-blue {:army (:archer
                                    :archer
                                    :archer :archer
@@ -54,37 +54,16 @@
                 :recruits
                   (:fighter :fighter :archer :archer :ninja :ninja :mage :mage)
                 :side :blue}}
- :units ({:army (:fighter
-                  :fighter :fighter
-                  :fighter :fighter
-                  :fighter :fighter
-                  :fighter :fighter
-                  :fighter :fighter
-                  :archer :archer
-                  :archer :archer
-                  :archer :archer
-                  :archer :archer
-                  :archer :archer
-                  :archer :archer
-                  :ninja :ninja
-                  :ninja :ninja
-                  :ninja :ninja
-                  :ninja :mage
-                  :mage :mage
-                  :mage :mage
-                  :mage :mage
-                  :mage :mage
-                  :mage :mage)
-          :color [1/2 1/2 1 1]
+ :units ({:color [1/2 1/2 1 1]
           :kind :ninja
-          :look [0.7835459794578148 -0.0 0.6213338056757363]
-          :pos [-2713.734311196512 225.43974 -1839.4675004167443]
+          :look [-0.24163385517695882 0.0 -0.9703674974113266]
+          :pos [-3463.7019774254995 190.10498612810883 -3850.77371678992]
           :side :sky}
          {:army nil
           :color [0 1 0 1]
           :kind :ninja
           :look [0 0 1]
-          :pos [39.0 190.56439 496.0]
+          :pos [39.0 190.5644 496.0]
           :side :green}
          {:army nil
           :color [0 0 1 1]
@@ -96,5 +75,5 @@
           :color [1 1 0 1]
           :kind :archer
           :look [0 0 1]
-          :pos [41.0 191.13416 496.0]
+          :pos [41.0 191.13417 496.0]
           :side :yellow})}
