@@ -74,13 +74,14 @@
     :texts texts
     :resume-state resume-state
     :render-loop render-loop
+    :escape-state :resume-state
   }
 )
 
 (defn pause-menu-loop [dev res state]
   ((state :render-loop) dev res (state :resume-state))
   (cond
-    (-> dev :keyboard input/escape-up) (state :resume-state)
+    (-> dev :keyboard input/escape-up) (--> state :escape-state state)
     :else (menu-loop-base dev res state)
   )
 )
@@ -125,9 +126,9 @@
 (declare army-menu-setup)
 
 (defn location-enter-menu-setup [dev res location-id location-state-setup arena-state-setup exit-state-setup resume-state]
-  (pause-menu-setup dev res []
+  (assoc (pause-menu-setup dev res []
     [
-      ["Вы приблизились к городу" gui/aspect-fit-layout [1 1 1 1] [-0.5 0.4 1 0.2]]
+      ["Вы приблизились к городу" gui/aspect-fit-layout [1 1 1 1] [-0.5 0.2 1 0.1]]
     ]
     [
       ["Зайти" (fn [dev res state] (location-state-setup))]
@@ -137,7 +138,7 @@
     ]
     world/world-render-loop
     resume-state
-  )
+  ) :escape-state exit-state-setup)
 )
 
 (defn game-over-menu-setup [dev res]
