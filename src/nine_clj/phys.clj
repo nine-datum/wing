@@ -330,6 +330,7 @@
         (addSingleResult [^CollisionWorld$LocalConvexResult r n]
           (cond (< (.hitFraction r) (proxy-super closestHitFraction))
             (proxy-super addSingleResult r n)
+            :else (proxy-super closestHitFraction)
           )
         )
       )
