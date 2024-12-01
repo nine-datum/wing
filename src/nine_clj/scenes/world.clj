@@ -213,8 +213,9 @@
           { :keys [movement look] } in
           anim (-> movement mat/length zero? (if :idle :walk))
           pos (move-pos pos movement 18 delta-time)
-          ray-origin (mapv + pos [0 10 0])
-          { :keys [has-hit normal point] } (phys/ray-check phys-world ray-origin [0 -1 0] water-level)
+          cast-start (mapv + pos [0 10 0])
+          cast-end (mapv - pos [0 100 0])
+          { :keys [has-hit normal point] } (phys/sphere-cast phys-world cast-start cast-end 1)
           [rx ry rz] point
           swimming? (and has-hit (< (+ unit-body-offset ry) water-effect-level))
           [px py pz] pos

@@ -20,6 +20,7 @@
     (com.bulletphysics.collision.dispatch
       CollisionWorld$ClosestConvexResultCallback
       CollisionWorld$ClosestRayResultCallback
+      CollisionWorld$LocalConvexResult
       CollisionDispatcher
     )
     (com.bulletphysics.collision.dispatch
@@ -315,6 +316,35 @@
     ]
     (.convexSweepTest world ss tfrom tto callback)
     @res
+  )
+)
+
+(defn sphere-cast [^DiscreteDynamicsWorld world from to radius]
+  (let [
+      shape (doto (SphereShape. radius) (.setMargin 0))
+      [fx fy fz] from
+      [tx ty tz] to
+      ft (doto (Transform.) .setIdentity (-> .origin (.set fx fy fz)))
+      tt (doto (Transform.) .setIdentity (-> .origin (.set tx ty tz)))
+      callback (proxy [CollisionWorld$ClosestConvexResultCallback] [(.origin ft) (.origin tt)]
+        (addSingleResult [^CollisionWorld$LocalConvexResult r n]
+          (cond (< (.hitFraction r) (proxy-super closestHitFraction))
+            (proxy-super addSingleResult r n)
+          )
+        )
+      )
+      _ (.convexSweepTest world shape ft tt callback)
+      has-hit (.hasHit callback)
+      point (-> callback .hitPointWorld extract-vec3)
+      normal (-> callback .hitNormalWorld extract-vec3)
+      dist (mat/length (mapv - point from))
+    ]
+    {
+      :has-hit has-hit
+      :point point
+      :normal normal
+      :dist dist
+    }
   )
 )
 
