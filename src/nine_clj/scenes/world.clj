@@ -274,7 +274,7 @@
           [px _ pz] pos
           pos (assoc pos 1 (water-peek px pz time))
           ray-origin (mapv + [0 10 0] pos)
-          { :keys [has-hit? point] } (phys/ray-check phys-world ray-origin [0 -1 0] water-level)
+          { :keys [has-hit? point] } (phys/ray-cast phys-world ray-origin [0 -1 0] water-level)
           [rx ry rz] point
           swimming? (or (not has-hit?) (-> water-effect-level (- unit-body-offset) (> ry)))
         ]
@@ -439,7 +439,7 @@
       camdir [(- cdir-x) cdir-y (- cdir-z)]
       camrot [cx cy 0]
       campiv (->> player :pos (mapv + [0 3 0]))
-      { :keys [dist normal has-hit?] } (phys/ray-check phys-world campiv camdir camdist)
+      { :keys [dist normal has-hit?] } (phys/ray-cast phys-world campiv camdir camdist)
       [phys-dist phys-offset] (cond
         has-hit? [dist (mapv (partial * 3/4) normal)]
         :else [camdist [0 0 0]]
