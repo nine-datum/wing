@@ -111,3 +111,12 @@
     (cond (-> dev :keyboard input/escape-up) ((state :pause-menu) dev res state) :else state)
   )
 )
+
+(defn render-location [location]
+  (graph/push-matrix)
+  (apply graph/translate (location :pos))
+  (apply graph/rotate (location :rot))
+  (apply graph/scale (location :scale))
+  (->> location :models (map graph/model) dorun)
+  (graph/pop-matrix)
+)

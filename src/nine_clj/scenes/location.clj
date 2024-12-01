@@ -10,7 +10,7 @@
 
 (declare location-render-loop)
 
-(defn location-setup [dev res player location world-state-setup]
+(defn location-setup [dev res player location locations world-state-setup]
   (let [
       { :keys [preset pos look color side] } player
       spawn (location :spawn)
@@ -36,6 +36,7 @@
     ]
     (assoc (generic/generic-setup dev res generic/generic-loop location-render-loop pause-menu level)
       :world-state-setup world-state-setup
+      :locations locations
     )
   )
 )
@@ -43,4 +44,5 @@
 (defn location-render-loop [dev res state]
   (generic/generic-render-loop dev res state)
   (->> res :world :models (map graph/model) dorun)
+  (->> state :locations vals (map generic/render-location) dorun)
 )

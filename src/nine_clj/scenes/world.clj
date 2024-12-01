@@ -376,7 +376,7 @@
           arena-state-setup #(arena-setup dev res arena-level arena-exit-setup)
         ]
         (location-enter-menu-setup dev res (location :id)
-          #(location-setup dev res player location exit-state-setup)
+          #(location-setup dev res player location locations exit-state-setup)
           arena-state-setup
           (fn [menu-state] exit-state)
           state
@@ -395,12 +395,7 @@
       [cx cy cz] (map #(->> 500/51 (mod %) (- %)) campos)
     ]
     (doseq [l (vals locations)]
-      (graph/push-matrix)
-      (apply graph/translate (l :pos))
-      (apply graph/rotate (l :rot))
-      (apply graph/scale (l :scale))
-      (->> l :models (map graph/model) dorun)
-      (graph/pop-matrix)
+      (generic/render-location l)
     )
     (graph/push-matrix)
     (graph/translate cx water-effect-level cz)
