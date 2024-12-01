@@ -215,7 +215,7 @@
           pos (move-pos pos movement 18 delta-time)
           cast-start (mapv + pos [0 10 0])
           cast-end (mapv - pos [0 100 0])
-          { :keys [has-hit normal point] } (phys/sphere-cast phys-world cast-start cast-end 1)
+          { :keys [has-hit normal point] } (phys/sphere-cast phys-world cast-start cast-end 1/10)
           [rx ry rz] point
           swimming? (and has-hit (< (+ unit-body-offset ry) water-effect-level))
           [px py pz] pos

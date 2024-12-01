@@ -321,7 +321,7 @@
 
 (defn sphere-cast [^DiscreteDynamicsWorld world from to radius]
   (let [
-      shape (doto (SphereShape. radius) (.setMargin 0))
+      shape (doto (SphereShape. radius))
       [fx fy fz] from
       [tx ty tz] to
       ft (doto (Transform.) .setIdentity (-> .origin (.set fx fy fz)))
