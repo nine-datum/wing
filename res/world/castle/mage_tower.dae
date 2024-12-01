@@ -5,8 +5,8 @@
       <author>Blender User</author>
       <authoring_tool>Blender 3.3.21 commit date:2024-07-15, commit time:08:57, hash:e016c21db151</authoring_tool>
     </contributor>
-    <created>2024-11-27T18:35:40</created>
-    <modified>2024-11-27T18:35:40</modified>
+    <created>2024-12-01T14:50:26</created>
+    <modified>2024-12-01T14:50:26</modified>
     <unit name="meter" meter="1"/>
     <up_axis>Z_UP</up_axis>
   </asset>
@@ -464,58 +464,58 @@
   <library_visual_scenes>
     <visual_scene id="Scene" name="Scene">
       <node id="int_3" name="int_3" type="NODE">
-        <matrix sid="transform">-0.5855447 -0.8106401 0 -15.89121 0.8106401 -0.5855447 0 -20.59962 0 0 1 36.66317 0 0 0 1</matrix>
+        <matrix sid="transform">-0.5855447 -0.8106401 0 -15.89121 0.8106401 -0.5855447 0 -20.59962 0 0 1 16.66317 0 0 0 1</matrix>
       </node>
       <node id="int_2" name="int_2" type="NODE">
-        <matrix sid="transform">-0.143707 -0.9896203 0 -24.58447 0.9896203 -0.143707 0 -2.202288 0 0 1 36.65873 0 0 0 1</matrix>
+        <matrix sid="transform">-0.143707 -0.9896203 0 -24.58447 0.9896203 -0.143707 0 -2.202288 0 0 1 16.65873 0 0 0 1</matrix>
       </node>
       <node id="int_1" name="int_1" type="NODE">
-        <matrix sid="transform">-0.08614143 0.9962829 0 20.52276 -0.9962829 -0.08614143 0 -1.644272 0 0 1 36.66373 0 0 0 1</matrix>
+        <matrix sid="transform">-0.08614143 0.9962829 0 20.52276 -0.9962829 -0.08614143 0 -1.644272 0 0 1 16.66373 0 0 0 1</matrix>
       </node>
       <node id="nav_8" name="nav_8" type="NODE">
-        <matrix sid="transform">1 0 0 -16.15586 0 1 0 -13.95158 0 0 1 36.65858 0 0 0 1</matrix>
+        <matrix sid="transform">1 0 0 -16.15586 0 1 0 -13.95158 0 0 1 16.65858 0 0 0 1</matrix>
       </node>
       <node id="nav_7" name="nav_7" type="NODE">
-        <matrix sid="transform">1 0 0 -11.3918 0 1 0 -22.90838 0 0 1 36.662 0 0 0 1</matrix>
+        <matrix sid="transform">1 0 0 -11.3918 0 1 0 -22.90838 0 0 1 16.662 0 0 0 1</matrix>
       </node>
       <node id="nav_6" name="nav_6" type="NODE">
-        <matrix sid="transform">1 0 0 2.843853 0 1 0 -24.70894 0 0 1 36.65691 0 0 0 1</matrix>
+        <matrix sid="transform">1 0 0 2.843853 0 1 0 -24.70894 0 0 1 16.65691 0 0 0 1</matrix>
       </node>
       <node id="nav_5" name="nav_5" type="NODE">
-        <matrix sid="transform">1 0 0 14.62917 0 1 0 -18.80716 0 0 1 36.6692 0 0 0 1</matrix>
+        <matrix sid="transform">1 0 0 14.62917 0 1 0 -18.80716 0 0 1 16.6692 0 0 0 1</matrix>
       </node>
       <node id="nav_4" name="nav_4" type="NODE">
-        <matrix sid="transform">1 0 0 16.82126 0 1 0 -5.712118 0 0 1 36.6726 0 0 0 1</matrix>
+        <matrix sid="transform">1 0 0 16.82126 0 1 0 -5.712118 0 0 1 16.6726 0 0 0 1</matrix>
       </node>
       <node id="nav_3" name="nav_3" type="NODE">
-        <matrix sid="transform">1 0 0 11.19668 0 1 0 3.387622 0 0 1 36.66374 0 0 0 1</matrix>
+        <matrix sid="transform">1 0 0 11.19668 0 1 0 3.387622 0 0 1 16.66374 0 0 0 1</matrix>
       </node>
       <node id="int_0" name="int_0" type="NODE">
-        <matrix sid="transform">1 0 0 -4.842657 0 1 0 18.93292 0 0 1 36.65649 0 0 0 1</matrix>
+        <matrix sid="transform">1 0 0 -4.842657 0 1 0 18.93292 0 0 1 16.65649 0 0 0 1</matrix>
       </node>
       <node id="nav_2" name="nav_2" type="NODE">
-        <matrix sid="transform">1 0 0 -3.892743 0 1 0 12.91525 0 0 1 36.6542 0 0 0 1</matrix>
+        <matrix sid="transform">1 0 0 -3.892743 0 1 0 12.91525 0 0 1 16.6542 0 0 0 1</matrix>
       </node>
       <node id="nav_1" name="nav_1" type="NODE">
-        <matrix sid="transform">1 0 0 -1.52582 0 1 0 4.853991 0 0 1 36.66022 0 0 0 1</matrix>
+        <matrix sid="transform">1 0 0 -1.52582 0 1 0 4.853991 0 0 1 16.66022 0 0 0 1</matrix>
       </node>
       <node id="nav_0" name="nav_0" type="NODE">
-        <matrix sid="transform">1 0 0 -16.64739 0 1 0 -6.227715 0 0 1 36.65607 0 0 0 1</matrix>
+        <matrix sid="transform">1 0 0 -16.64739 0 1 0 -6.227715 0 0 1 16.65607 0 0 0 1</matrix>
       </node>
       <node id="guard_2" name="guard_2" type="NODE">
-        <matrix sid="transform">-0.2106431 0.977563 0 20.59344 -0.977563 -0.2106431 0 -5.777244 0 0 1 36.66114 0 0 0 1</matrix>
+        <matrix sid="transform">-0.2106431 0.977563 0 20.59344 -0.977563 -0.2106431 0 -5.777244 0 0 1 16.66114 0 0 0 1</matrix>
       </node>
       <node id="guard_1" name="guard_1" type="NODE">
-        <matrix sid="transform">-0.5164698 -0.8563054 0 -6.539038 0.8563054 -0.5164698 0 -12.90136 0 0 1 48.91507 0 0 0 1</matrix>
+        <matrix sid="transform">-0.5164698 -0.8563054 0 -6.539038 0.8563054 -0.5164698 0 -12.90136 0 0 1 28.91507 0 0 0 1</matrix>
       </node>
       <node id="guard_0" name="guard_0" type="NODE">
-        <matrix sid="transform">-0.2856835 -0.958324 0 -23.32961 0.958324 -0.2856835 0 -12.56176 0 0 1 36.6619 0 0 0 1</matrix>
+        <matrix sid="transform">-0.2856835 -0.958324 0 -23.32961 0.958324 -0.2856835 0 -12.56176 0 0 1 16.6619 0 0 0 1</matrix>
       </node>
       <node id="entry" name="entry" type="NODE">
-        <matrix sid="transform">-0.6786208 0.7344888 0 -8.872053 -0.7344888 -0.6786208 0 -20.07066 0 0 1 36.66316 0 0 0 1</matrix>
+        <matrix sid="transform">-0.6786208 0.7344888 0 -8.872053 -0.7344888 -0.6786208 0 -20.07066 0 0 1 16.66316 0 0 0 1</matrix>
       </node>
       <node id="Cube_001" name="Cube.001" type="NODE">
-        <matrix sid="transform">-1.18352 1.01209 0 -4.012186 -1.01209 -1.18352 0 -1.498968 0 0 1.557256 54.89866 0 0 0 1</matrix>
+        <matrix sid="transform">-1.18352 1.01209 0 -4.012186 -1.01209 -1.18352 0 -1.498968 0 0 1.557256 34.89866 0 0 0 1</matrix>
         <instance_geometry url="#Cube_001-mesh" name="Cube.001">
           <bind_material>
             <technique_common>
@@ -530,7 +530,7 @@
         </instance_geometry>
       </node>
       <node id="Cube" name="Cube" type="NODE">
-        <matrix sid="transform">1.528289 0.2989649 0 4.602638 -0.2989649 1.528289 0 7.64579 0 0 1.557256 56.2972 0 0 0 1</matrix>
+        <matrix sid="transform">1.528289 0.2989649 0 4.602638 -0.2989649 1.528289 0 7.64579 0 0 1.557256 36.2972 0 0 0 1</matrix>
         <instance_geometry url="#Cube_001-mesh" name="Cube">
           <bind_material>
             <technique_common>
@@ -545,7 +545,7 @@
         </instance_geometry>
       </node>
       <node id="Cylinder_003" name="Cylinder.003" type="NODE">
-        <matrix sid="transform">6.536831 -0.6999351 0 5.651277 0.6999351 6.536831 0 13.44403 0 0 3.821862 39.86301 0 0 0 1</matrix>
+        <matrix sid="transform">6.536831 -0.6999351 0 5.651277 0.6999351 6.536831 0 13.44403 0 0 3.821862 19.86301 0 0 0 1</matrix>
         <instance_geometry url="#Cylinder_004-mesh" name="Cylinder.003">
           <bind_material>
             <technique_common>
@@ -566,7 +566,7 @@
         </instance_geometry>
       </node>
       <node id="Cylinder_002" name="Cylinder.002" type="NODE">
-        <matrix sid="transform">0.5781108 11.6122 0 2.121059 -11.6122 0.5781108 0 -9.378681 0 0 6.759028 42.15911 0 0 0 1</matrix>
+        <matrix sid="transform">0.5781108 11.6122 0 2.121059 -11.6122 0.5781108 0 -9.378681 0 0 6.759028 22.15911 0 0 0 1</matrix>
         <instance_geometry url="#Cylinder_003-mesh" name="Cylinder.002">
           <bind_material>
             <technique_common>
@@ -587,7 +587,7 @@
         </instance_geometry>
       </node>
       <node id="Cylinder_001" name="Cylinder.001" type="NODE">
-        <matrix sid="transform">8.021361 0 0 -12.94004 0 8.021361 0 8.865208 0 0 4.663161 40.95283 0 0 0 1</matrix>
+        <matrix sid="transform">8.021361 0 0 -12.94004 0 8.021361 0 8.865208 0 0 4.663161 20.95283 0 0 0 1</matrix>
         <instance_geometry url="#Cylinder_001-mesh" name="Cylinder.001">
           <bind_material>
             <technique_common>
@@ -608,7 +608,7 @@
         </instance_geometry>
       </node>
       <node id="Cylinder" name="Cylinder" type="NODE">
-        <matrix sid="transform">27.13147 0 0 -1.926094 0 27.13147 0 -3.3081 0 0 15.77268 20.89068 0 0 0 1</matrix>
+        <matrix sid="transform">27.13147 0 0 -1.926094 0 27.13147 0 -3.3081 0 0 15.77268 0.8906822 0 0 0 1</matrix>
         <instance_geometry url="#Cylinder-mesh" name="Cylinder">
           <bind_material>
             <technique_common>
@@ -626,7 +626,7 @@
         </instance_geometry>
       </node>
       <node id="Plane" name="Plane" type="NODE">
-        <matrix sid="transform">100 0 0 3.658134 0 100 0 -8.870219 0 0 100 -47.89618 0 0 0 1</matrix>
+        <matrix sid="transform">100 0 0 3.658134 0 100 0 -8.870219 0 0 100 -67.89618 0 0 0 1</matrix>
         <instance_geometry url="#Plane-mesh" name="Plane">
           <bind_material>
             <technique_common>
