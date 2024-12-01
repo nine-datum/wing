@@ -215,12 +215,12 @@
           pos (move-pos pos movement 18 delta-time)
           cast-start (mapv + pos [0 10 0])
           cast-end (assoc pos 1 0)
-          { :keys [has-hit normal point] } (phys/sphere-cast phys-world cast-start cast-end 1/10)
+          { :keys [has-hit? normal point] } (phys/sphere-cast phys-world cast-start cast-end 1/10)
           [rx ry rz] point
-          swimming? (and has-hit (< (+ unit-body-offset ry) water-effect-level))
+          swimming? (and has-hit? (< (+ unit-body-offset ry) water-effect-level))
           [px py pz] pos
-          pos (cond has-hit [px ry pz] :else pos)
-          up (if has-hit (->> delta-time (* 5) (math/lerpv up normal)) up)
+          pos (cond has-hit? [px ry pz] :else pos)
+          up (if has-hit? (->> delta-time (* 5) (math/lerpv up normal)) up)
         ]
         (cond
           swimming? (load-ship phys-world horse-preset rider-preset ship-preset rider-color side pos look)
@@ -274,9 +274,9 @@
           [px _ pz] pos
           pos (assoc pos 1 (water-peek px pz time))
           ray-origin (mapv + [0 10 0] pos)
-          { :keys [has-hit point] } (phys/ray-check phys-world ray-origin [0 -1 0] water-level)
+          { :keys [has-hit? point] } (phys/ray-check phys-world ray-origin [0 -1 0] water-level)
           [rx ry rz] point
-          swimming? (or (not has-hit) (-> water-effect-level (- unit-body-offset) (> ry)))
+          swimming? (or (not has-hit?) (-> water-effect-level (- unit-body-offset) (> ry)))
         ]
         (cond
           swimming? (assoc ch :pos pos :look look)
@@ -439,9 +439,9 @@
       camdir [(- cdir-x) cdir-y (- cdir-z)]
       camrot [cx cy 0]
       campiv (->> player :pos (mapv + [0 3 0]))
-      { :keys [dist normal has-hit] } (phys/ray-check phys-world campiv camdir camdist)
+      { :keys [dist normal has-hit?] } (phys/ray-check phys-world campiv camdir camdist)
       [phys-dist phys-offset] (cond
-        has-hit [dist (mapv (partial * 3/4) normal)]
+        has-hit? [dist (mapv (partial * 3/4) normal)]
         :else [camdist [0 0 0]]
       )
       campos (->> camdir math/normalize (mapv * (repeat phys-dist)) (mapv + campiv phys-offset))

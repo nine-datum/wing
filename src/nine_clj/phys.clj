@@ -334,13 +334,13 @@
         )
       )
       _ (.convexSweepTest world shape ft tt callback)
-      has-hit (.hasHit callback)
+      has-hit? (.hasHit callback)
       point (-> callback .hitPointWorld extract-vec3)
       normal (-> callback .hitNormalWorld extract-vec3)
       dist (mat/length (mapv - point from))
     ]
     {
-      :has-hit has-hit
+      :has-hit? has-hit?
       :point point
       :normal normal
       :dist dist
@@ -348,7 +348,7 @@
   )
 )
 
-(defn ray-check [^DiscreteDynamicsWorld world origin dir dist & ignore-groups]
+(defn ray-cast [^DiscreteDynamicsWorld world origin dir dist & ignore-groups]
   (let [
       dir (math/normalize dir)
       [fx fy fz] origin
@@ -365,13 +365,13 @@
     (set! (.collisionFilterMask callback) mask)
     (.rayTest world from to callback)
     (let [
-        has-hit (.hasHit callback)
+        has-hit? (.hasHit callback)
         normal (math/normalize (extract-vec3 (.hitNormalWorld callback)))
         point (extract-vec3 (.hitPointWorld callback))
         dist (mat/length (mapv - point origin))
       ]
       {
-        :has-hit has-hit
+        :has-hit? has-hit?
         :normal normal
         :point point
         :dist dist
