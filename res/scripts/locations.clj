@@ -72,9 +72,8 @@
         )
       )
     ]
-    {
+    (->> {
       :castle-red (location
-        :id :castle-red
         :name :castle
         :side :red
         :color [1 0 0 1]
@@ -101,7 +100,6 @@
         )
       )
       :castle-blue (location
-        :id :castle-blue
         :name :castle
         :side :blue
         :color [0 0 1 1]
@@ -122,7 +120,6 @@
         :recruits (repeat 10 :archer)
       )
       :castle-sand (location
-        :id :castle-sand
         :name :castle-desert
         :side :blue
         :color [219/255 154/255 89/255 1]
@@ -143,7 +140,6 @@
         :recruits (repeat 10 :ninja)
       )
       :tower-ruby (location
-        :id :tower-ruby
         :name :mage-tower
         :side :ruby
         :color [224/255 17/255 95/255 1]
@@ -158,6 +154,53 @@
         :army (repeat 30 :mage)
         :recruits (repeat 10 :mage)
       )
+      :tower-sapp (location
+        :name :mage-tower
+        :side :sapp
+        :color [15/255 182/255 86/255 1]
+        :pos (-> "tower_sapp" world-markers nav/marker-pos)
+        :rot [0 (-> "tower_sapp" world-markers nav/marker-rot-y) 0]
+        :scale [1 1 1]
+        :spawn (partial all-spawn [
+          :mage "guard_0"
+          :mage "guard_1"
+          :mage "guard_2"
+        ])
+        :army (repeat 30 :mage)
+        :recruits (repeat 10 :mage)
+      )
+      :tower-emer (location
+        :name :mage-tower
+        :side :emer
+        :color [0/255 156/255 74/255 1]
+        :pos (-> "tower_emer" world-markers nav/marker-pos)
+        :rot [0 (-> "tower_emer" world-markers nav/marker-rot-y) 0]
+        :scale [1 1 1]
+        :spawn (partial all-spawn [
+          :mage "guard_0"
+          :mage "guard_1"
+          :mage "guard_2"
+        ])
+        :army (repeat 30 :mage)
+        :recruits (repeat 10 :mage)
+      )
+      :tower-ameth (location
+        :name :mage-tower
+        :side :emer
+        :color [153/255 102/255 204/255 1]
+        :pos (-> "tower_ameth" world-markers nav/marker-pos)
+        :rot [0 (-> "tower_ameth" world-markers nav/marker-rot-y) 0]
+        :scale [1 1 1]
+        :spawn (partial all-spawn [
+          :mage "guard_0"
+          :mage "guard_1"
+          :mage "guard_2"
+        ])
+        :army (repeat 30 :mage)
+        :recruits (repeat 10 :mage)
+      )
     }
+    (map (fn [[id l]] [id (assoc l :id id)]))
+    (into {}))
   )
 )
