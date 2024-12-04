@@ -1,20 +1,20 @@
 (require
-  '[nine-clj.datum :as dat]
-  '[nine-clj.core :as core]
-  '[nine-clj.graph :as graph]
-  '[nine-clj.geom :as geom]
-  '[nine-clj.gui :as gui]
-  '[nine-clj.input :as input]
-  '[nine-clj.phys :as phys]
-  '[nine-clj.prof :as prof]
-  '[nine-clj.math :as math]
-  '[nine-clj.scripting :as scripting]
-  '[nine-clj.scenes.arena :as arena]
-  '[nine-clj.scenes.world :as world]
-  '[nine-clj.scenes.menu :as menu]
-  '[nine-clj.scenes.location :as location]
+  '[wing.datum :as dat]
+  '[wing.core :as core]
+  '[wing.graph :as graph]
+  '[wing.geom :as geom]
+  '[wing.gui :as gui]
+  '[wing.input :as input]
+  '[wing.phys :as phys]
+  '[wing.prof :as prof]
+  '[wing.math :as math]
+  '[wing.scripting :as scripting]
+  '[wing.scenes.arena :as arena]
+  '[wing.scenes.world :as world]
+  '[wing.scenes.menu :as menu]
+  '[wing.scenes.location :as location]
 )
-(use 'nine-clj.core)
+(use 'wing.core)
 
 (fn [dev]
   (menu/load-resources-let [

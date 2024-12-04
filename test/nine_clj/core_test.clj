@@ -1,10 +1,10 @@
-(ns nine-clj.core-test
+(ns wing.core-test
   (:require
     [clojure.test :refer :all]
-    [nine-clj.core :refer :all]
-    [nine-clj.math :as math]
+    [wing.core :refer :all]
+    [wing.math :as math]
     [clojure.math :as cmath]
-    [nine-clj.nav :as nav]
+    [wing.nav :as nav]
   )
 )
 

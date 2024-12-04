@@ -4,5 +4,5 @@
         io.github.taqmuraz/nine {:mvn/version "1.2.40"}
         cz.advel.jbullet/jbullet {:mvn/version "20101010-1"}
         zprint/zprint {:mvn/version "1.2.9"}}
- :aliases {:run {:main-opts ["-m" "nine-clj.core"]}
+ :aliases {:run {:main-opts ["-m" "wing.core"]}
            :uberjar {:jvm-opts ["-Dclojure.compiler.direct-linking=true"]}}}
