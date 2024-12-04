@@ -1,5 +1,5 @@
 (defproject org.clojars.taqmuraz/wing "0.1.3"
-  :description "Clojure OpenGL 3D graphics library"
+  :description "Wingsuit simulator"
   :url "http://github.com/Taqmuraz/wing"
   :license {:name "Creative Commons Attribution-NonCommercial-NoDerivs 4.0 International"
             :url "https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode.txt"}

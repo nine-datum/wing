@@ -2,15 +2,10 @@
   (:gen-class)
   (:require
     [wing.graph :as graph]
-    [wing.geom :as geom]
     [wing.math :as math]
-    [wing.text :as text]
-    [wing.phys :as phys]
     [wing.input :as input]
-    [wing.datum :as dat]
     [wing.prof :as prof]
-    [wing.gui :as gui]
-    [wing.scenes.menu :as menu]
+    [wing.menu :as menu]
   )
   (:import
     [nine.lwjgl

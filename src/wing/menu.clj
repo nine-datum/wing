@@ -1,14 +1,9 @@
-(ns wing.scenes.menu
+(ns wing.menu
   [:require
     [wing.gui :as gui]
-    [wing.datum :as dat]
-    [wing.io :as io]
     [wing.graph :as graph]
     [wing.math :as math]
     [wing.input :as input]
-    [wing.scenes.generic :as generic]
-    [wing.scenes.world :as world]
-    [wing.scenes.location :as location]
     [wing.scripting :as scripting]
     [wing.mac :refer [-->]]
   ]
@@ -27,16 +22,11 @@
     :texts [
       [(str "wing" (. System getProperty "wing.version")) gui/aspect-fit-layout [0 1 0 1] [-0.5 -0.9 1 0.1]]
     ]
-    :buttons (mapv [
+    :buttons [
       ["Начать игру" (fn [dev res state] ((res :world-setup) dev res))]
-      ["Загрузить игру" (fn [dev res state] (io/load-game dev res "saves/main.save"))]
       ["Настройки" (fn [dev res state] state)]
       ["Выход" (constantly nil)]
-    ] (cond
-        (-> "saves/main.save" java.io.File. .exists) [0 1 2 3]
-        :else [0 2 3]
-      )
-    )
+    ]
   }
 )
 (defn menu-loop-base [dev res state]
@@ -63,96 +53,6 @@
     (.clearColor 0 0 0 0)
   )
   (menu-loop-base dev res state)
-)
-
-(defn pause-menu-setup [dev res images texts buttons render-loop resume-state]
-  {
-    :loop pause-menu-loop
-    :gui-asset (res :gui-asset)
-    :buttons buttons
-    :images images
-    :texts texts
-    :resume-state resume-state
-    :render-loop render-loop
-    :escape-state :resume-state
-  }
-)
-
-(defn pause-menu-loop [dev res state]
-  ((state :render-loop) dev res (state :resume-state))
-  (cond
-    (-> dev :keyboard input/escape-up) (--> state :escape-state state)
-    :else (menu-loop-base dev res state)
-  )
-)
-
-(defn arena-pause-menu-setup [dev res resume-state]
-  (pause-menu-setup dev res [] [] [
-      ["Продолжить" (fn [dev res state] (state :resume-state))]
-      ["Покинуть сражение" (fn [dev res state] (-> state :resume-state :exit-setup
-        (apply [dev res (state :resume-state)])))]
-      ["Выйти в меню" (fn [dev res state] (menu-setup dev res))]
-    ]
-    generic/generic-render-loop
-    resume-state
-  )
-)
-
-(defn world-pause-menu-setup [dev res resume-state]
-  (pause-menu-setup dev res [] [] [
-      ["Продолжить" (fn [dev res state] (state :resume-state))]
-      ["Сохранить игру" (fn [dev res state] (doto
-        (-> state :resume-state)
-        (io/save-game "saves/main.save")
-      ))]
-      ["Выйти в меню" (fn [dev res state] (menu-setup dev res))]
-    ]
-    world/world-render-loop
-    resume-state
-  )
-)
-
-(defn location-pause-menu-setup [dev res resume-state]
-  (pause-menu-setup dev res [] [] [
-      ["Продолжить" (fn [dev res state] (state :resume-state))]
-      ["Выйти из города" (fn [dev res state] (-> state :resume-state :world-state-setup (apply [(state :resume-state)])))]
-      ["Выйти в меню" (fn [dev res state] (menu-setup dev res))]
-    ]
-    location/location-render-loop
-    resume-state
-  )
-)
-
-(declare army-menu-setup)
-
-(defn location-enter-menu-setup [dev res location-id location-state-setup arena-state-setup exit-state-setup resume-state]
-  (assoc (pause-menu-setup dev res []
-    [
-      ["Вы приблизились к городу" gui/aspect-fit-layout [1 1 1 1] [-0.5 0.2 1 0.1]]
-    ]
-    [
-      ["Зайти" (fn [dev res state] (location-state-setup))]
-      ["Нанять воинов" (fn [dev res state] (->> state exit-state-setup (army-menu-setup dev res location-id)))]
-      ["Напасть" (fn [dev res state] (arena-state-setup))]
-      ["Уйти" (fn [dev res state] (exit-state-setup state))]
-    ]
-    world/world-render-loop
-    resume-state
-  ) :escape-state exit-state-setup)
-)
-
-(defn game-over-menu-setup [dev res]
-  {
-    :gui-asset (res :gui-asset)
-    :loop menu-loop
-    :texts [
-      ["Погиб последний воин из вашего отряда." gui/aspect-fit-layout [1 1 1 1] [-0.5 0.2 1 0.1]]
-      ["Игра окончена." gui/aspect-fit-layout [2/3 1/4 1/4 1] [-0.5 0.1 1 0.1]]
-    ]
-    :buttons [
-      ["Выйти в меню" (fn [dev res state] (menu-setup dev res))]
-    ]
-  }
 )
 
 (declare loading-menu-loop)
@@ -235,121 +135,5 @@
       ))
     ]
     (list list funcs expr-func)
-  )
-)
-
-(declare army-menu-loop)
-
-(defn army-menu-setup [dev res location-id world-state]
-  (let [
-      { :keys [gui-asset] } res
-      player (world-state :player)
-      color (player :color)
-      army (-> player world/get-unit-army rest)
-      recr (-> world-state :locations location-id :recruits)
-      presets (-> res :arena :presets)
-      materials (update-vals presets #(dat/load-char-materials % color))
-    ]
-    {
-      :presets presets
-      :materials materials
-      :army army
-      :recr recr
-      :gui-asset gui-asset
-      :world-state world-state
-      :loop army-menu-loop
-      :location-id location-id
-    }
-  )
-)
-
-(defn army-menu-loop [dev res state]
-  (doto (dev :gl)
-    (.clearDepth)
-    (.clearColor 1/2 1/2 3/4 1)
-  )
-  (graph/projection
-    (math/perspective
-      (--> dev :width ())
-      (--> dev :height ())
-      (math/radians 60) 0.3 1000
-    )
-  )
-  (graph/camera (math/first-person-camera [0 2 -4] [(/ Math/PI 8) 0 0]))
-  (graph/world-light [0 -1 0])
-  (->> res :arena :models (map graph/model) dorun)
-  (let [
-      player (-> state :world-state :player)
-      asset (state :gui-asset)
-      { :keys [army recr location-id] } state
-      { :keys [color side] } player
-      { :keys [width height] } dev
-      nums-fn #(merge { :fighter 0 :archer 0 :ninja 0 :mage 0 } (frequencies %))
-      nums (nums-fn army)
-      recr-nums (nums-fn recr)
-      layout gui/aspect-fit-layout
-      bsx 0.5
-      bsy 0.1
-      xs -1
-      ys -0.5
-      ws 0.5
-      hs 1
-      _ (gui/blank asset layout -1 -0.9 2 0.7 [1/4 1/4 1/4 1])
-      _ (gui/text asset layout "Доступно для найма :" -0.5 (- ys bsy) 1 bsy [1 1 1 1])
-      paint-kind (fn [index kind num x y w h]
-        (graph/push-matrix)
-        (graph/translate (* 1.3 (- index 1.5)) 0 1)
-        (graph/rotate 0 Math/PI 0)
-        (dat/render-preset
-          (-> state :presets kind)
-          (-> state :materials kind)
-          "idle_pass"
-          (--> dev :get-time ())
-        )
-        (graph/pop-matrix)
-        (let [
-            rec (recr-nums kind)
-            minus (when (> num 0) (gui/button asset layout "Отпустить" x y bsx bsy))
-            plus (when (> rec 0) (gui/button asset layout "Нанять" x (+ y bsy bsy) bsx bsy))
-            preset (-> state :presets kind)
-            materials (-> state :materials kind)
-          ]
-          (gui/text asset layout (str num) (- x 1/4) (+ y bsy) 1 bsy [1 1 1 1])
-          (gui/text asset layout (str rec) (- x 1/4) (- y bsy bsy (/ bsy 2)) 1 bsy [1 1 1 1])
-          (cond
-            minus -1
-            plus 1
-            :else 0
-          )
-        )
-      )
-      diff (mapv
-        (fn [[kind num] i]
-          [kind (paint-kind i kind num (-> i (* ws) (+ xs)) ys ws hs)]
-        )
-        nums (range)
-      )
-      diff (into {} diff)
-      apply-diff (fn [nums diff]
-        (->> nums
-          (reduce-kv (fn [m k v] (assoc m k (+ v (diff k)))) {})
-          (map (fn [[k v]] (repeat v k)))
-          (apply concat)
-        )
-      )
-      army (apply-diff nums diff)
-      recr (apply-diff recr-nums (update-vals diff -))
-      cancel (gui/button asset layout "Отмена" -1 -0.9 1 0.1)
-      ok (gui/button asset layout "Принять" 0 -0.9 1 0.1)
-      state (assoc state :army army :recr recr)
-    ]
-    (cond
-      ok (-> state :world-state
-        (update :player #(assoc % :army army))
-        (update :locations #(update % location-id (fn [l] (assoc l :recruits recr))))
-      )
-      cancel (state :world-state)
-      :else state
-    )
   )
 )

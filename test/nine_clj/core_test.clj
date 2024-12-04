@@ -24,12 +24,3 @@
     ))
   )
 )
-
-(deftest nav-test
-  (testing "Path finding function"
-    (is (=
-      (nav/path [[0 0 0] [-1 0 0] [1 0 0] [0 0 6] [0 0 5]] [0 0 1] [0 0 10])
-      [[[0 0 1] [0 0 10]] 9.0]
-    ))
-  )
-)
