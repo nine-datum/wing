@@ -30,7 +30,7 @@
 (defn render-player [p time]
   (let [
       { :keys [pos look anim anims model] } p
-      anim (-> anim anims (graph/animate time))
+      anim (-> anim anims :anim (graph/animate time))
     ]
     (graph/push-matrix)
     (apply graph/translate pos)
