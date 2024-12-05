@@ -3,6 +3,7 @@
     [wing.graph :as graph]
     [wing.math :as math]
     [wing.input :as input]
+    [wing.phys :as phys]
     [wing.mac :refer [-->]]
   ]
 )
@@ -13,53 +14,64 @@
 (declare game-loop)
 (declare game-render-loop)
 
-(defn make-player [dev res pos look]
+(defn make-player [dev res world pos look]
   (let [
       { :keys [player anims] } res
+      rot (math/look-rot look)
+      body (phys/capsule world pos rot 0.2 1.8 1)
     ]
     {
       :model player
       :anims anims
       :anim "flight"
-      :pos pos
-      :look look
+      :body body
     }
   )
 )
 
 (defn render-player [p time]
   (let [
-      { :keys [pos look anim anims model] } p
+      { :keys [body anim anims model] } p
       anim (-> anim anims :anim (graph/animate time))
     ]
     (graph/push-matrix)
-    (apply graph/translate pos)
-    (apply graph/look look)
+    (-> body phys/get-matrix math/mat4f graph/apply-matrix)
     (graph/animated-model model anim nil)
     (graph/pop-matrix)
   )
 )
 
+(defn next-player [p in time]
+  (let [
+    ]
+    p
+  )
+)
+
 (defn game-setup [dev res]
   (let [
-      player (make-player dev res [0 0 0] [0 0 1])
+      world (phys/dynamics-world)
+      player (make-player dev res world [0 0 0] [0 0 1])
     ]
     {
       :loop game-loop
       :player player
       :time (--> dev :get-time ())
       :camrot-xy [0 0]
+      :world world
     }
   )
 )
 
 (defn game-loop [dev res state]
   (let [
+      { :keys [player world] } state
       time (--> dev :get-time ())
       last-time (state :time)
       dt (- time last-time)
       dt (min dt 1/10)
-      time (+ last-time dt)
+      world (phys/update-world world dt)
+      player (next-player player {} time)
       [ax ay] (mapv #(* % dt 3) (-> dev :keyboard input/arrows))
       state (update state :camrot-xy #(mapv + % [(- ay) ax]))
       camrot-xy (state :camrot-xy)
@@ -76,6 +88,7 @@
         :time time
         :campos campos
         :camrot camrot
+        :world world
       )
     ]
     (game-render-loop dev res state)

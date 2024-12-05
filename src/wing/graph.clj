@@ -119,7 +119,7 @@
 )
 
 (defn look [x y z]
-  (rotate 0 (math/clock x z) 0)
+  (apply rotate (math/look-rot [x y z]))
 )
 
 (defn scale [x y z]
