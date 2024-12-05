@@ -64,13 +64,13 @@
       released (and hovered (mouse :left-up))
       img-color (cond
         pressed [1 1 1 1]
-        hovered [0 1 0 1]
+        hovered [1 1 0 1]
         :else [0.5 0.5 0.5 1]
       )
       txt-color (cond
         pressed [1 1 0 1]
         hovered [1 1 1 1]
-        :else [0 1 0 1]
+        :else [1 1 0 1]
       )
     ]
     (graph/image (asset :button-image) (asset :image-shader) x y w h img-color)

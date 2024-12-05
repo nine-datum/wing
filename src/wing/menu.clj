@@ -20,7 +20,7 @@
       [(res :menu-image) gui/aspect-fit-layout [-1.5 -1 3 2]]
     ]
     :texts [
-      [(str "wing" (. System getProperty "wing.version")) gui/aspect-fit-layout [0 1 0 1] [-0.5 -0.9 1 0.1]]
+      [(str "wing" (. System getProperty "wing.version")) gui/aspect-fit-layout [1 1 0 1] [-0.5 -0.9 1 0.1]]
     ]
     :buttons [
       ["Начать игру" (fn [dev res state] ((res :world-setup) dev res))]
