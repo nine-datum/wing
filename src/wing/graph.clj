@@ -1,3 +1,4 @@
+
 (ns wing.graph
   [:require
     [wing.math :as math]
@@ -115,6 +116,10 @@
 
 (defn rotate [x y z]
   (apply-matrix (math/rotation x y z))
+)
+
+(defn look [x y z]
+  (rotate 0 (math/clock x z) 0)
 )
 
 (defn scale [x y z]
