@@ -8,8 +8,9 @@
   ]
 )
 
-(def camdist 5/2)
-(def cam+ [0 2 0])
+(def camdist 5)
+(def cam+ [0 1 0])
+(def player-offset [0 1 0])
 
 (declare game-loop)
 (declare game-render-loop)
@@ -18,6 +19,7 @@
   (let [
       { :keys [player anims] } res
       rot (math/look-rot look)
+      pos (mapv + pos player-offset)
       body (phys/capsule world pos rot 0.2 1.8 1)
     ]
     {
@@ -36,6 +38,7 @@
     ]
     (graph/push-matrix)
     (-> body phys/get-matrix math/mat4f graph/apply-matrix)
+    (apply graph/translate (mapv - player-offset))
     (graph/animated-model model anim nil)
     (graph/pop-matrix)
   )
@@ -51,13 +54,20 @@
 (defn game-setup [dev res]
   (let [
       world (phys/dynamics-world)
-      player (make-player dev res world [0 0 0] [0 0 1])
+      level (-> res :levels :city)
+      { :keys [markers model shapes] } level
+      start (markers "Start")
+      spawn-pos (-> start (.transformPoint (math/vec3f 0 0 0)) math/floats-from-vec3f)
+      spawn-look (-> start (.transformVector (math/vec3f 0 0 1)) math/floats-from-vec3f)
+      player (make-player dev res world spawn-pos spawn-look)
     ]
+    (doseq [s shapes] (phys/add-rigid-body world (s :shape) [0 0 0] [0 0 0] 0))
     {
       :loop game-loop
       :player player
       :time (--> dev :get-time ())
       :camrot-xy [0 0]
+      :model model
       :world world
     }
   )
@@ -77,12 +87,13 @@
       camrot-xy (state :camrot-xy)
       camrot (conj camrot-xy 0)
       cammat (apply math/rotation camrot)
+      campiv (-> player :body phys/get-position)
       campos (->> camdist
         -
         (math/vec3f 0 0)
         (.transformVector cammat)
         math/floats-from-vec3f
-        (mapv + cam+)
+        (mapv + cam+ campiv)
       )
       state (assoc state
         :time time
@@ -105,9 +116,10 @@
     ]
     (.clearDepth gl)
     (.clearColor gl 1/2 1/2 1 0)
-    (graph/projection (math/perspective w h (* Math/PI 2/3) 0.3 1000))
+    (graph/projection (math/perspective w h (* Math/PI 1/2) 0.3 1000))
     (graph/camera (math/first-person-camera campos camrot))
     (graph/world-light [0 -1 0])
+    (-> state :model graph/model)
     (-> state :player (render-player (state :time)))
   )
 )

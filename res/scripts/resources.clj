@@ -34,6 +34,19 @@
         )
         (into {})
       )
+      levels (->>  {
+          :city "res/world/city.dae"
+        }
+        (mapv (fn [[name file]] (vector name {
+          :markers (geom/geom-markers-map storage file)
+          :model (graph/load-model graphics file)
+          :shapes (->>
+            (geom/read-geom storage file)
+            (mapv #(phys/geom-shape (% :vertex) (% :root)))
+          )
+        })))
+        (into {})
+      )
     ]
     {
       :skin-shader skin-shader
@@ -44,6 +57,7 @@
       :player player
       :anims anims
       :game-setup game/game-setup
+      :levels levels
     }
   )
 )
