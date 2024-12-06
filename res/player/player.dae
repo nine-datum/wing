@@ -5,8 +5,8 @@
       <author>Blender User</author>
       <authoring_tool>Blender 3.3.21 commit date:2024-07-15, commit time:08:57, hash:e016c21db151</authoring_tool>
     </contributor>
-    <created>2024-12-05T16:19:03</created>
-    <modified>2024-12-05T16:19:03</modified>
+    <created>2024-12-06T21:59:25</created>
+    <modified>2024-12-06T21:59:25</modified>
     <unit name="meter" meter="1"/>
     <up_axis>Z_UP</up_axis>
   </asset>
@@ -198,6 +198,9 @@
       </skin>
     </controller>
   </library_controllers>
+  <library_animations>
+    <animation id="action_container-Armature" name="Armature"/>
+  </library_animations>
   <library_visual_scenes>
     <visual_scene id="Scene" name="Scene">
       <node id="Armature" name="Armature" type="NODE">
@@ -228,6 +231,18 @@
                     <connect sid="connect" type="bool">1</connect>
                     <layer sid="layer" type="string">0</layer>
                     <roll sid="roll" type="float">2.153311</roll>
+                  </technique>
+                </extra>
+              </node>
+              <node id="Armature_WingR" name="WingR" sid="WingR" type="JOINT">
+                <matrix sid="transform">0.6209634 8.9407e-8 -0.7838396 0.2351518 -0.7838396 -8.9407e-8 -0.6209635 0.4355519 -1.25599e-7 1 -1.52401e-8 -2.29373e-9 0 0 0 1</matrix>
+                <extra>
+                  <technique profile="blender">
+                    <layer sid="layer" type="string">0</layer>
+                    <roll sid="roll" type="float">-2.38419e-7</roll>
+                    <tip_x sid="tip_x" type="float">0</tip_x>
+                    <tip_y sid="tip_y" type="float">-0.5</tip_y>
+                    <tip_z sid="tip_z" type="float">0</tip_z>
                   </technique>
                 </extra>
               </node>
@@ -263,6 +278,18 @@
                   </technique>
                 </extra>
               </node>
+              <node id="Armature_WingL" name="WingL" sid="WingL" type="JOINT">
+                <matrix sid="transform">0.6142865 -2.66454e-15 0.7890831 -0.2367251 0.7890831 -8.9407e-8 -0.6142865 0.4383236 7.05495e-8 1 -8.47238e-8 1.85897e-8 0 0 0 1</matrix>
+                <extra>
+                  <technique profile="blender">
+                    <layer sid="layer" type="string">0</layer>
+                    <roll sid="roll" type="float">-2.38419e-7</roll>
+                    <tip_x sid="tip_x" type="float">0</tip_x>
+                    <tip_y sid="tip_y" type="float">-0.5</tip_y>
+                    <tip_z sid="tip_z" type="float">0</tip_z>
+                  </technique>
+                </extra>
+              </node>
               <extra>
                 <technique profile="blender">
                   <layer sid="layer" type="string">0</layer>
@@ -295,6 +322,18 @@
               <technique profile="blender">
                 <connect sid="connect" type="bool">1</connect>
                 <layer sid="layer" type="string">0</layer>
+              </technique>
+            </extra>
+          </node>
+          <node id="Armature_WingBack" name="WingBack" sid="WingBack" type="JOINT">
+            <matrix sid="transform">-4.37114e-8 0 -1 0 -1 0 4.37114e-8 -0.7108112 0 0.9999999 0 0 0 0 0 1</matrix>
+            <extra>
+              <technique profile="blender">
+                <layer sid="layer" type="string">0</layer>
+                <roll sid="roll" type="float">1.570796</roll>
+                <tip_x sid="tip_x" type="float">0</tip_x>
+                <tip_y sid="tip_y" type="float">-0.5</tip_y>
+                <tip_z sid="tip_z" type="float">0</tip_z>
               </technique>
             </extra>
           </node>
@@ -368,30 +407,30 @@
             </technique>
           </extra>
         </node>
-        <node id="Player" name="Player" type="NODE">
-          <matrix sid="transform">1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
-          <instance_controller url="#Armature_Player-skin">
-            <skeleton>#Armature_Root</skeleton>
-            <skeleton>#Armature_LegL</skeleton>
-            <skeleton>#Armature_LegR</skeleton>
-            <bind_material>
-              <technique_common>
-                <instance_material symbol="ColorA-material" target="#ColorA-material">
-                  <bind_vertex_input semantic="UVMap" input_semantic="TEXCOORD" input_set="0"/>
-                </instance_material>
-                <instance_material symbol="ColorB-material" target="#ColorB-material">
-                  <bind_vertex_input semantic="UVMap" input_semantic="TEXCOORD" input_set="0"/>
-                </instance_material>
-                <instance_material symbol="Glass-material" target="#Glass-material">
-                  <bind_vertex_input semantic="UVMap" input_semantic="TEXCOORD" input_set="0"/>
-                </instance_material>
-                <instance_material symbol="ColorC-material" target="#ColorC-material">
-                  <bind_vertex_input semantic="UVMap" input_semantic="TEXCOORD" input_set="0"/>
-                </instance_material>
-              </technique_common>
-            </bind_material>
-          </instance_controller>
-        </node>
+      </node>
+      <node id="Player" name="Player" type="NODE">
+        <matrix sid="transform">1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+        <instance_controller url="#Armature_Player-skin">
+          <skeleton>#Armature_Root</skeleton>
+          <skeleton>#Armature_LegL</skeleton>
+          <skeleton>#Armature_LegR</skeleton>
+          <bind_material>
+            <technique_common>
+              <instance_material symbol="ColorA-material" target="#ColorA-material">
+                <bind_vertex_input semantic="UVMap" input_semantic="TEXCOORD" input_set="0"/>
+              </instance_material>
+              <instance_material symbol="ColorB-material" target="#ColorB-material">
+                <bind_vertex_input semantic="UVMap" input_semantic="TEXCOORD" input_set="0"/>
+              </instance_material>
+              <instance_material symbol="Glass-material" target="#Glass-material">
+                <bind_vertex_input semantic="UVMap" input_semantic="TEXCOORD" input_set="0"/>
+              </instance_material>
+              <instance_material symbol="ColorC-material" target="#ColorC-material">
+                <bind_vertex_input semantic="UVMap" input_semantic="TEXCOORD" input_set="0"/>
+              </instance_material>
+            </technique_common>
+          </bind_material>
+        </instance_controller>
       </node>
     </visual_scene>
   </library_visual_scenes>
