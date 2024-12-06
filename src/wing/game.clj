@@ -4,7 +4,7 @@
     [wing.math :as math]
     [wing.input :as input]
     [wing.phys :as phys]
-    [wing.mac :refer [-->]]
+    [wing.mac :refer [--> funcall]]
   ]
 )
 
@@ -25,10 +25,29 @@
     {
       :model player
       :anims anims
-      :anim "flight"
+      :anim "idle"
       :body body
     }
   )
+)
+
+(defn walk-player [player]
+  (-> player :body (phys/set-rotation-enabled false))
+  (assoc player :state :walk)
+)
+
+(defn walk-player-next [player in]
+  (-> player :body (phys/move-char (mapv * (in :mov) (repeat 4))))
+  player
+)
+
+(def next-player-map {
+    :walk walk-player-next
+  }
+)
+
+(defn next-player [p in time]
+  (-> p :state next-player-map (funcall p in))
 )
 
 (defn render-player [p time]
@@ -44,13 +63,6 @@
   )
 )
 
-(defn next-player [p in time]
-  (let [
-    ]
-    p
-  )
-)
-
 (defn game-setup [dev res]
   (let [
       world (phys/dynamics-world)
@@ -59,7 +71,7 @@
       start (markers "Start")
       spawn-pos (-> start (.transformPoint (math/vec3f 0 0 0)) math/floats-from-vec3f)
       spawn-look (-> start (.transformVector (math/vec3f 0 0 1)) math/floats-from-vec3f)
-      player (make-player dev res world spawn-pos spawn-look)
+      player (walk-player (make-player dev res world spawn-pos spawn-look))
     ]
     (doseq [s shapes] (phys/add-rigid-body world (s :shape) [0 0 0] [0 0 0] 0))
     {
@@ -73,15 +85,29 @@
   )
 )
 
+(defn move-in [mov]
+  { :mov mov }
+)
+
 (defn game-loop [dev res state]
   (let [
       { :keys [player world] } state
-      time (--> dev :get-time ())
+      { :keys [keyboard get-time] } dev 
+      time (get-time)
       last-time (state :time)
       dt (- time last-time)
       dt (min dt 1/10)
       world (phys/update-world world dt)
-      player (next-player player {} time)
+      camrot (get state :camrot [0 0 0])
+      cammat-y (math/rotation 0 (camrot 1) 0)
+      in (->> keyboard input/wasd
+        (apply math/x0y)
+        (apply math/vec3f)
+        (.transformVector cammat-y)
+        math/floats-from-vec3f
+        move-in
+      )
+      player (next-player player in time)
       [ax ay] (mapv #(* % dt 3) (-> dev :keyboard input/arrows))
       state (update state :camrot-xy #(mapv + % [(- ay) ax]))
       camrot-xy (state :camrot-xy)
