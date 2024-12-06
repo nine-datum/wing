@@ -4,6 +4,7 @@
     [wing.math :as math]
     [wing.input :as input]
     [wing.phys :as phys]
+    [clojure.core.matrix :as mat]
     [wing.mac :refer [--> funcall]]
   ]
 )
@@ -15,7 +16,7 @@
 (declare game-loop)
 (declare game-render-loop)
 
-(defn make-player [dev res world pos look]
+(defn player-preset [dev res world pos look]
   (let [
       { :keys [player anims] } res
       rot (math/look-rot look)
@@ -25,42 +26,62 @@
     {
       :model player
       :anims anims
-      :anim "idle"
       :body body
     }
   )
 )
 
-(defn walk-player [player]
-  (-> player :body (phys/set-rotation-enabled false))
-  (assoc player :state :walk)
+(defn walk-player [preset]
+  (let [
+      look (-> preset :body
+        phys/get-matrix
+        math/mat4f
+        (.transformVector (math/vec3f 0 0 1))
+        math/floats-from-vec3f
+      )
+    ]
+    (-> preset :body (phys/set-rotation-enabled false))
+    (assoc preset :preset preset :look look :state :walk :anim "idle")
+  )
 )
 
 (defn walk-player-next [player in]
-  (-> player :body (phys/move-char (mapv * (in :mov) (repeat 4))))
-  player
+  (let [
+      mov (in :mov)
+      mz (-> mov mat/length zero?)
+      look (cond mz (player :look) :else (math/normalize mov))
+      anim (if mz "idle" "walk")
+    ]
+    (-> player :body (phys/move-char (mapv * mov (repeat 4))))
+    (assoc player :look look :anim anim)
+  )
 )
 
-(def next-player-map {
-    :walk walk-player-next
+(defn walk-player-render [player time]
+  (let [
+      { :keys [body anim anims model look] } player
+      anim (-> anim anims :anim (graph/animate time))
+      offset (mapv - player-offset)
+    ]
+    (graph/push-matrix)
+    (->> body phys/get-position (mapv + offset) (apply graph/translate))
+    (apply graph/look look)
+    (graph/animated-model model anim nil)
+    (graph/pop-matrix)
+  )
+)
+
+(def player-map {
+    :walk { :next walk-player-next :render walk-player-render }
   }
 )
 
 (defn next-player [p in time]
-  (-> p :state next-player-map (funcall p in))
+  (-> p :state player-map :next (funcall p in))
 )
 
 (defn render-player [p time]
-  (let [
-      { :keys [body anim anims model] } p
-      anim (-> anim anims :anim (graph/animate time))
-    ]
-    (graph/push-matrix)
-    (-> body phys/get-matrix math/mat4f graph/apply-matrix)
-    (apply graph/translate (mapv - player-offset))
-    (graph/animated-model model anim nil)
-    (graph/pop-matrix)
-  )
+  (-> p :state player-map :render (funcall p time))
 )
 
 (defn game-setup [dev res]
@@ -71,7 +92,7 @@
       start (markers "Start")
       spawn-pos (-> start (.transformPoint (math/vec3f 0 0 0)) math/floats-from-vec3f)
       spawn-look (-> start (.transformVector (math/vec3f 0 0 1)) math/floats-from-vec3f)
-      player (walk-player (make-player dev res world spawn-pos spawn-look))
+      player (walk-player (player-preset dev res world spawn-pos spawn-look))
     ]
     (doseq [s shapes] (phys/add-rigid-body world (s :shape) [0 0 0] [0 0 0] 0))
     {
@@ -122,6 +143,7 @@
         (mapv + cam+ campiv)
       )
       state (assoc state
+        :player player
         :time time
         :campos campos
         :camrot camrot
