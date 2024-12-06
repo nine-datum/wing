@@ -116,9 +116,9 @@
     ]
     (.clearDepth gl)
     (.clearColor gl 1/2 1/2 1 0)
-    (graph/projection (math/perspective w h (* Math/PI 1/2) 0.3 1000))
+    (graph/projection (math/perspective w h (* Math/PI 1/2) 0.3 5000))
     (graph/camera (math/first-person-camera campos camrot))
-    (graph/world-light [0 -1 0])
+    (-> [-1 -1 -0.5] math/normalize graph/world-light)
     (-> state :model graph/model)
     (-> state :player (render-player (state :time)))
   )

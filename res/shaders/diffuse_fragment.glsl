@@ -9,5 +9,6 @@ uniform vec4 color;
 
 void main (void)
 {	
-	out_Color = vec4(color.rgb * texture(texture2d, uv).rgb * (dot(worldNormal, -worldLight) + 1) * 0.5, 1);
+  float l = (dot(worldNormal, -worldLight) + 3) * 0.25;
+	out_Color = vec4(color.rgb * texture(texture2d, uv).rgb * l, 1);
 }
