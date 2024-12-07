@@ -13,53 +13,80 @@
 (def cam+ [0 1 0])
 (def player-offset [0 1 0])
 
+(def player-group 16)
+(def player-mask (bit-not 0))
+
 (declare game-loop)
 (declare game-render-loop)
+(declare walk-player)
+(declare fly-player)
 
-(defn player-preset [dev res world pos look]
+(defn player-asset [res world pos rot]
   (let [
       { :keys [player anims] } res
-      rot (math/look-rot look)
-      pos (mapv + pos player-offset)
-      body (phys/capsule world pos rot 0.2 1.8 1)
     ]
     {
+      :body (doto
+        (phys/capsule world (mapv + pos player-offset) rot 0.2 1.8 1)
+        (phys/set-group world player-group player-mask)
+      )
       :model player
       :anims anims
-      :body body
+      :world world
     }
   )
 )
 
-(defn walk-player [preset]
+(defn walk-player [asset]
   (let [
-      look (-> preset :body
+      body (asset :body)
+      look (-> body
         phys/get-matrix
         math/mat4f
         (.transformVector (math/vec3f 0 0 1))
         math/floats-from-vec3f
+        (assoc 1 0)
+        math/normalize
       )
+      rot (math/look-rot look)
     ]
-    (-> preset :body (phys/set-rotation-enabled false))
-    (assoc preset :preset preset :look look :state :walk :anim "idle")
+    (doto body
+      (phys/set-rotation rot)
+      (phys/set-rotation-enabled false)
+    )
+    {
+      :asset asset
+      :look look
+      :state :walk
+      :anim "idle"
+    }
   )
 )
 
 (defn walk-player-next [player in]
   (let [
+      {:keys [look asset] } player
+      { :keys [body world] } asset
       mov (in :mov)
       mz (-> mov mat/length zero?)
-      look (cond mz (player :look) :else (math/normalize mov))
+      look (cond mz look :else (math/normalize mov))
       anim (if mz "idle" "walk")
+      ray-origin (mapv + player-offset (phys/get-position body))
+      { :keys [point has-hit?] } (phys/ray-cast world ray-origin [0 -1 0] 3 player-group)
+      falling? (not has-hit?)
     ]
-    (-> player :body (phys/move-char (mapv * mov (repeat 4))))
-    (assoc player :look look :anim anim)
+    (phys/move-char body (mapv * mov (repeat 4)))
+    (cond
+      falling? (fly-player asset look)
+      :else (assoc player :look look :anim anim)
+    )
   )
 )
 
 (defn walk-player-render [player time]
   (let [
-      { :keys [body anim anims model look] } player
+      { :keys [asset anim look] } player
+      { :keys [anims model body] } asset
       anim (-> anim anims :anim (graph/animate time))
       offset (mapv - player-offset)
     ]
@@ -71,8 +98,45 @@
   )
 )
 
+(defn fly-player [asset look]
+  (let [
+      { :keys [body] } asset
+    ]
+    (doto body
+      (phys/set-rotation-enabled true)
+      (phys/set-rotation (math/look-rot look))
+      (phys/apply-local-force [0 -10 0] [0 0 1])
+    )
+    {
+      :asset asset
+      :anim "flight"
+      :state :fly
+    }
+  )
+)
+
+(defn fly-player-next [player in]
+  player
+)
+
+(defn fly-player-render [player time]
+  (let [
+      { :keys [asset anim look] } player
+      { :keys [anims model body] } asset
+      anim (-> anim anims :anim (graph/animate time))
+      offset (mapv - player-offset)
+    ]
+    (graph/push-matrix)
+    (-> body phys/get-matrix math/mat4f graph/apply-matrix)
+    (apply graph/translate offset)
+    (graph/animated-model model anim nil)
+    (graph/pop-matrix)
+  )
+)
+
 (def player-map {
     :walk { :next walk-player-next :render walk-player-render }
+    :fly { :next fly-player-next :render fly-player-render }
   }
 )
 
@@ -92,7 +156,8 @@
       start (markers "Start")
       spawn-pos (-> start (.transformPoint (math/vec3f 0 0 0)) math/floats-from-vec3f)
       spawn-look (-> start (.transformVector (math/vec3f 0 0 1)) math/floats-from-vec3f)
-      player (walk-player (player-preset dev res world spawn-pos spawn-look))
+      spawn-rot (math/look-rot spawn-look)
+      player (walk-player (player-asset res world spawn-pos spawn-rot))
     ]
     (doseq [s shapes] (phys/add-rigid-body world (s :shape) [0 0 0] [0 0 0] 0))
     {
@@ -134,7 +199,7 @@
       camrot-xy (state :camrot-xy)
       camrot (conj camrot-xy 0)
       cammat (apply math/rotation camrot)
-      campiv (-> player :body phys/get-position)
+      campiv (-> player :asset :body phys/get-position)
       campos (->> camdist
         -
         (math/vec3f 0 0)

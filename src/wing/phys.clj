@@ -64,19 +64,13 @@
 )
 
 (declare set-matrix)
+(declare rotmat)
 
 (defn add-rigid-body [dynamics-world shape pos rot mass]
   (let [
       [px py pz] pos
       [rx ry rz] rot
-      mat3 (Matrix3f.)
-      mat3 (do
-        (.setIdentity mat3)
-        (.rotX mat3 rx)
-        (.rotY mat3 ry)
-        (.rotZ mat3 rz)
-        mat3
-      )
+      mat3 (apply rotmat rot)
       mat4 (Matrix4f. mat3 (Vector3f. px py pz) (float 1))
       transform (Transform. mat4)
       motion-state (DefaultMotionState. transform)
@@ -106,6 +100,25 @@
 
 (defn extract-vec3 [^Vector3f v]
   [(.x v) (.y v) (.z v)]
+)
+
+(defn rotx [x]
+  (doto (Matrix3f.) .setIdentity (.rotX x))
+)
+
+(defn roty [y]
+  (doto (Matrix3f.) .setIdentity (.rotY y))
+)
+
+(defn rotz [z]
+  (doto (Matrix3f.) .setIdentity (.rotZ z))
+)
+
+(defn rotmat [x y z]
+  (doto (rotx x)
+    (.mul (roty y))
+    (.mul (rotz z))
+  )
 )
 
 (defn transform-position [t pos]
@@ -154,6 +167,32 @@
   body
 )
 
+(defn apply-world-force [^RigidBody body force at]
+  (let [
+      at (mapv - at (get-position body))
+      [fx fy fz] force
+      [ax ay az] at
+    ]
+    (.applyForce body (Vector3f. fx fy fz) (Vector3f. ax ay az))
+    body
+  )
+)
+
+(defn apply-local-force [^RigidBody body force at]
+  (let [
+      [fx fy fz] force
+      [ax ay az] at
+      m (-> body (.getCenterOfMassTransform (Transform.)) .basis)
+      f (Vector3f. fx fy fz)
+      a (Vector3f. ax ay az)
+    ]
+    (.transform m f)
+    (.transform m a)
+    (.applyForce body f a)
+    body
+  )
+)
+
 (defn get-velocity [^RigidBody body]
   (let [
       v (.getLinearVelocity body (Vector3f.))
@@ -190,11 +229,6 @@
   body
 )
 
-(defn set-rotation-enabled [^RigidBody body v]
-  (.setAngularFactor body (if v 1 0))
-  body
-)
-
 (defn set-position [^RigidBody body pos]
   (let [
       t (.getCenterOfMassTransform body (Transform.))
@@ -202,6 +236,23 @@
     ]
     (.setCenterOfMassTransform body t)
   )
+  body
+)
+
+(defn set-rotation [^RigidBody body rot]
+  (let [
+      mat3 (apply rotmat rot)
+      t (Transform.)
+    ]
+    (.getCenterOfMassTransform body t)
+    (-> t .basis (.set mat3))
+    (.setCenterOfMassTransform body t)
+    body
+  )
+)
+
+(defn set-rotation-enabled [^RigidBody body v]
+  (.setAngularFactor body (if v 1 0))
   body
 )
 
@@ -224,6 +275,15 @@
     ]
     (.getColumn m 3 fs)
     (vec (take 3 fs))
+  )
+)
+
+(defn get-look [^RigidBody body]
+  (-> body
+    get-matrix
+    math/mat4f
+    (.transformVector (math/vec3f 0 0 1))
+    math/floats-from-vec3f
   )
 )
 
