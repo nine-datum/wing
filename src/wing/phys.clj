@@ -288,7 +288,7 @@
 )
 
 (defn update-world [^DiscreteDynamicsWorld world time-step]
-  (.stepSimulation world time-step 10)
+  (.stepSimulation world time-step 10 1/100)
   world
 )
 
