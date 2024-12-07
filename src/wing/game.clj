@@ -27,7 +27,7 @@
     ]
     {
       :body (doto
-        (phys/capsule world (mapv + pos player-offset) rot 0.2 1.8 1)
+        (phys/capsule world (mapv + pos player-offset) rot 0.2 1.6 1)
         (phys/set-group world player-group player-mask)
       )
       :model player
