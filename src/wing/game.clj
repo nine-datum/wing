@@ -12,7 +12,7 @@
   ]
 )
 
-(def camdist 5)
+(def camdist 3)
 (def cam+ [0 1 0])
 (def player-offset [0 1 0])
 
@@ -24,14 +24,42 @@
 (declare walk-player)
 (declare fly-player)
 
-(defn player-asset [world pos rot]
+(defn player-asset [world pos rot controls color]
   {
     :body (doto
       (phys/capsule world (mapv + pos player-offset) rot 0.2 1.6 1)
       (phys/set-group world player-group player-mask)
     )
     :world world
+    :controls controls
+    :color color
+    :camrot [0 0 0]
+    :campos (mapv + pos cam+ [0 0 (- camdist)])
   }
+)
+
+(defn player-model [dev res player]
+  (graph/replace-materials
+    (dev :gl)
+    (res :player)
+    { "ColorA-material" (-> player :asset :color) }
+  )
+)
+
+(defn next-camera [player time delta-time]
+  (let [
+      { :keys [asset] } player
+      { :keys [campos camrot] } asset
+      pos (->> asset :body phys/get-position (mapv + cam+))
+      camlook (math/normalize (mapv - pos campos))
+      new-camrot (math/look-rot camlook)
+      new-campos (->> camlook (map -) (map * (repeat camdist)) (mapv + pos))
+      new-campos (update new-campos 1 #(max (pos 1) %))
+      campos (math/lerpv campos new-campos (* 7 delta-time))
+      camrot (math/lerpv camrot new-camrot (* 7 delta-time))
+    ]
+    (assoc player :asset (assoc asset :campos campos :camrot camrot))
+  )
 )
 
 (defn walk-player [asset]
@@ -80,13 +108,14 @@
   )
 )
 
-(defn walk-player-render [player res time]
+(defn walk-player-render [player dev res time]
   (let [
-      [model anims] (map res [:player :anims])
+      { :keys [anims] } res
       { :keys [asset anim look] } player
       { :keys [body] } asset
       anim (-> anim anims :anim (graph/animate time))
       offset (mapv - player-offset)
+      model (player-model dev res player)
     ]
     (graph/push-matrix)
     (->> body phys/get-position (mapv + offset) (apply graph/translate))
@@ -213,13 +242,15 @@
   )
 )
 
-(defn fly-player-render [player res time]
+(defn fly-player-render [player dev res time]
   (let [
-      [model anims] (map res [:player :anims])
+      { :keys [anims] } res
       { :keys [asset turn] } player
-      { :keys [body] } asset
+      { :keys [body color] } asset
+      { :keys [gl] } dev
       offset (mapv - player-offset)
       anim (mix-player-anims anims turn time)
+      model (player-model dev res player)
     ]
     (graph/push-matrix)
     (-> body phys/get-matrix math/mat4f graph/apply-matrix)
@@ -236,11 +267,11 @@
 )
 
 (defn next-player [p in time delta-time]
-  (-> p :state player-map :next (funcall p in time delta-time))
+  (-> p :state player-map :next (funcall p in time delta-time) (next-camera time delta-time))
 )
 
-(defn render-player [p res time]
-  (-> p :state player-map :render (funcall p res time))
+(defn render-player [p dev res time]
+  (-> p :state player-map :render (funcall p dev res time))
 )
 
 (defn game-setup [dev res]
@@ -252,14 +283,17 @@
       spawn-pos (-> start (.transformPoint (math/vec3f 0 0 0)) math/floats-from-vec3f)
       spawn-look (-> start (.transformVector (math/vec3f 0 0 1)) math/floats-from-vec3f)
       spawn-rot (math/look-rot spawn-look)
-      player (walk-player (player-asset world spawn-pos spawn-rot))
+      spawn-pos-a (mapv + [2 0 0] spawn-pos)
+      players (vector
+        (walk-player (player-asset world spawn-pos spawn-rot input/wasd [1 0 0 1]))
+        (walk-player (player-asset world spawn-pos-a spawn-rot input/arrows [0 0 1 1]))
+      )
     ]
     (doseq [s shapes] (phys/add-rigid-body world (s :shape) [0 0 0] [0 0 0] 0))
     {
       :loop game-loop
-      :player player
+      :players players
       :time (--> dev :get-time ())
-      :camrot-xy [0 0]
       :model model
       :world world
     }
@@ -270,44 +304,41 @@
   { :mov mov :raw-mov raw-mov }
 )
 
+(defn player-in [player keyboard]
+  (let [
+      camrot (-> player :asset :camrot)
+      cammat-y (math/rotation 0 (camrot 1) 0)
+      mov (-> player :asset :controls (funcall keyboard))
+      in (->> mov
+        (apply math/x0y)
+        (apply math/vec3f)
+        (.transformVector cammat-y)
+        math/floats-from-vec3f
+        (move-in mov)
+      )
+    ]
+    in
+  )
+)
+
 (defn game-loop [dev res state]
   (let [
-      { :keys [player world] } state
+      { :keys [players world] } state
       { :keys [keyboard get-time] } dev 
       time (get-time)
       last-time (state :time)
       dt (- time last-time)
       dt (min dt 1/10)
       world (phys/update-world world dt)
-      camrot (get state :camrot [0 0 0])
-      cammat-y (math/rotation 0 (camrot 1) 0)
-      wasd (input/wasd keyboard)
-      in (->> wasd
-        (apply math/x0y)
-        (apply math/vec3f)
-        (.transformVector cammat-y)
-        math/floats-from-vec3f
-        (move-in wasd)
+      players (mapv
+        #(next-player % (player-in % keyboard) time dt)
+        players
       )
-      player (next-player player in time dt)
-      [ax ay] (mapv #(* % dt 3) (-> dev :keyboard input/arrows))
+      [ax ay] [0 0];(mapv #(* % dt 3) (-> dev :keyboard input/arrows))
       state (update state :camrot-xy #(mapv + % [(- ay) ax]))
-      camrot-xy (state :camrot-xy)
-      camrot (conj camrot-xy 0)
-      cammat (apply math/rotation camrot)
-      campiv (-> player :asset :body phys/get-position)
-      campos (->> camdist
-        -
-        (math/vec3f 0 0)
-        (.transformVector cammat)
-        math/floats-from-vec3f
-        (mapv + cam+ campiv)
-      )
       state (assoc state
-        :player player
+        :players players
         :time time
-        :campos campos
-        :camrot camrot
         :world world
       )
     ]
@@ -324,7 +355,8 @@
       { :keys [gl width height] } dev
       w (width)
       h (height)
-      { :keys [campos camrot] } state
+      { :keys [players] } state
+      { :keys [campos camrot] } (-> players first :asset)
     ]
     (.clearDepth gl)
     (.clearColor gl 1/2 1/2 1 0)
@@ -332,6 +364,6 @@
     (graph/camera (math/first-person-camera campos camrot))
     (-> [-1 -1 -0.5] math/normalize graph/world-light)
     (-> state :model graph/model)
-    (-> state :player (render-player res (state :time)))
+    (doseq [p players] (render-player p dev res (state :time)))
   )
 )
