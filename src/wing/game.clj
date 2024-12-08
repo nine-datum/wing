@@ -13,6 +13,7 @@
 )
 
 (def camdist 3)
+(def max-camdist 5)
 (def cam+ [0 1 0])
 (def player-offset [0 1 0])
 
@@ -51,12 +52,16 @@
       { :keys [asset] } player
       { :keys [campos camrot] } asset
       pos (->> asset :body phys/get-position (mapv + cam+))
-      camlook (math/normalize (mapv - pos campos))
+      delt (mapv - pos campos)
+      camlook (math/normalize delt)
       new-camrot (math/look-rot camlook)
-      new-campos (->> camlook (map -) (map * (repeat camdist)) (mapv + pos))
-      new-campos (update new-campos 1 #(max (pos 1) %))
-      campos (math/lerpv campos new-campos (* 7 delta-time))
-      camrot (math/lerpv-angle camrot new-camrot (* 7 delta-time))
+      new-campos #(->> camlook (map -) (map * (repeat %)) (mapv + pos))
+      new-campos (comp #(update % 1 (partial max (pos 1))) new-campos)
+      campos (cond
+        (> max-camdist (mat/length delt)) (math/lerpv campos (new-campos camdist) (* 3 delta-time))
+        :else (new-campos max-camdist)
+      )
+      camrot (math/lerpv-angle camrot new-camrot (* 3 delta-time))
     ]
     (assoc player :asset (assoc asset :campos campos :camrot camrot))
   )
