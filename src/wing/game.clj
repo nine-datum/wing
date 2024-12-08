@@ -145,10 +145,10 @@
   (let [
       { :keys [turn asset] } player
       { :keys [anims body] } asset
-      turn (math/lerpv turn (-> in :raw-mov math/normalize) (* 5 delta-time))
+      turn (math/lerpv turn (-> in :raw-mov math/normalize) (* 2 delta-time))
       anim-mix (mix-player-anims anims turn time)
-      fwd-wing-rot (fn [sig [tx ty]] [(* tx sig Math/PI 1/4) 0 (-> tx - (* Math/PI 1/4))])
-      back-wing-rot (fn [[tx ty]] [(-> ty - (* Math/PI 1/4)) 0 0])
+      fwd-wing-rot (fn [sig [tx ty]] [(* tx sig Math/PI 1/8) 0 (-> tx - (* Math/PI 1/4))])
+      back-wing-rot (fn [[tx ty]] [(-> ty - inc (* Math/PI 1/6)) 0 0])
       wing-area (fn [[tx ty] area] (-> ty - inc (/ 2) (* area)))
       wings [
         { ; left wing
@@ -168,7 +168,7 @@
         {
           ; back wing
           :area 1
-          :rel [0 -1 0]
+          :rel [0 -2 0]
           :norm [0 0 -1]
           :rot-fn back-wing-rot
           :area-fn wing-area
