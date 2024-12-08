@@ -25,7 +25,7 @@
       menu-image (graph/load-image gl storage "res/images/menu.png")
       player (graph/load-animated-model graphics "res/player/player.dae")
       anims (->>
-        ["flight" "left" "right" "drop" "idle" "walk"]
+        ["flight" "left" "right" "drop" "back" "idle" "walk"]
         (map #(vector % (graph/load-anim-clj storage (partial = "JOINT")
               (str "res/anims/player/" % ".anim")
               "res/player/player.dae"

@@ -5,7 +5,10 @@
     [wing.input :as input]
     [wing.phys :as phys]
     [clojure.core.matrix :as mat]
-    [wing.mac :refer [--> funcall]]
+    [wing.mac :refer [--> funcall impl]]
+  ]
+  [:import
+    [nine.geometry Skeleton AnimatedSkeleton]
   ]
 )
 
@@ -63,7 +66,7 @@
   )
 )
 
-(defn walk-player-next [player in]
+(defn walk-player-next [player in time delta-time]
   (let [
       {:keys [look asset] } player
       { :keys [body world] } asset
@@ -109,27 +112,46 @@
     )
     {
       :asset asset
-      :anim "flight"
       :state :fly
+      :turn [0 0]
     }
   )
 )
 
-(defn fly-player-next [player in]
-  player
+(defn fly-player-next [player in time delta-time]
+  (update player :turn #(math/lerpv % (-> in :mov (mapv [0 2])) (* 5 delta-time)))
 )
 
 (defn fly-player-render [player time]
   (let [
-      { :keys [asset anim look] } player
+      { :keys [asset anim turn] } player
       { :keys [anims model body] } asset
-      anim (-> anim anims :anim (graph/animate time))
       offset (mapv - player-offset)
+      anim-mix (impl Skeleton transform [bone]
+        (let [
+            [tx ty] turn
+            pose #(-> % anims :anim (.animate time) (.transform bone))
+            res (as-> (pose "flight") p
+              (cond
+                (< tx 0) (.lerp p (pose "left") (- tx))
+                (> tx 0) (.lerp p (pose "right") tx)
+                :else p
+              )
+              (cond
+                (< ty 0) (.lerp p (pose "back") (- ty))
+                (> ty 0) (.lerp p (pose "drop") ty)
+                :else p
+              )
+            )
+          ]
+          res
+        )
+      )
     ]
     (graph/push-matrix)
     (-> body phys/get-matrix math/mat4f graph/apply-matrix)
     (apply graph/translate offset)
-    (graph/animated-model model anim nil)
+    (graph/animated-model model anim-mix nil)
     (graph/pop-matrix)
   )
 )
@@ -140,8 +162,8 @@
   }
 )
 
-(defn next-player [p in time]
-  (-> p :state player-map :next (funcall p in))
+(defn next-player [p in time delta-time]
+  (-> p :state player-map :next (funcall p in time delta-time))
 )
 
 (defn render-player [p time]
@@ -193,7 +215,7 @@
         math/floats-from-vec3f
         move-in
       )
-      player (next-player player in time)
+      player (next-player player in time dt)
       [ax ay] (mapv #(* % dt 3) (-> dev :keyboard input/arrows))
       state (update state :camrot-xy #(mapv + % [(- ay) ax]))
       camrot-xy (state :camrot-xy)
