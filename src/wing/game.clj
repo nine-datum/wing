@@ -24,20 +24,14 @@
 (declare walk-player)
 (declare fly-player)
 
-(defn player-asset [res world pos rot]
-  (let [
-      { :keys [player anims] } res
-    ]
-    {
-      :body (doto
-        (phys/capsule world (mapv + pos player-offset) rot 0.2 1.6 1)
-        (phys/set-group world player-group player-mask)
-      )
-      :model player
-      :anims anims
-      :world world
-    }
-  )
+(defn player-asset [world pos rot]
+  {
+    :body (doto
+      (phys/capsule world (mapv + pos player-offset) rot 0.2 1.6 1)
+      (phys/set-group world player-group player-mask)
+    )
+    :world world
+  }
 )
 
 (defn walk-player [asset]
@@ -86,10 +80,11 @@
   )
 )
 
-(defn walk-player-render [player time]
+(defn walk-player-render [player res time]
   (let [
+      [model anims] (map res [:player :anims])
       { :keys [asset anim look] } player
-      { :keys [anims model body] } asset
+      { :keys [body] } asset
       anim (-> anim anims :anim (graph/animate time))
       offset (mapv - player-offset)
     ]
@@ -218,10 +213,11 @@
   )
 )
 
-(defn fly-player-render [player time]
+(defn fly-player-render [player res time]
   (let [
+      [model anims] (map res [:player :anims])
       { :keys [asset turn] } player
-      { :keys [anims model body] } asset
+      { :keys [body] } asset
       offset (mapv - player-offset)
       anim (mix-player-anims anims turn time)
     ]
@@ -243,8 +239,8 @@
   (-> p :state player-map :next (funcall p in time delta-time))
 )
 
-(defn render-player [p time]
-  (-> p :state player-map :render (funcall p time))
+(defn render-player [p res time]
+  (-> p :state player-map :render (funcall p res time))
 )
 
 (defn game-setup [dev res]
@@ -256,7 +252,7 @@
       spawn-pos (-> start (.transformPoint (math/vec3f 0 0 0)) math/floats-from-vec3f)
       spawn-look (-> start (.transformVector (math/vec3f 0 0 1)) math/floats-from-vec3f)
       spawn-rot (math/look-rot spawn-look)
-      player (walk-player (player-asset res world spawn-pos spawn-rot))
+      player (walk-player (player-asset world spawn-pos spawn-rot))
     ]
     (doseq [s shapes] (phys/add-rigid-body world (s :shape) [0 0 0] [0 0 0] 0))
     {
@@ -336,6 +332,6 @@
     (graph/camera (math/first-person-camera campos camrot))
     (-> [-1 -1 -0.5] math/normalize graph/world-light)
     (-> state :model graph/model)
-    (-> state :player (render-player (state :time)))
+    (-> state :player (render-player res (state :time)))
   )
 )
