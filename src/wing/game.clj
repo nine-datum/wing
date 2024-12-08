@@ -145,24 +145,65 @@
   (let [
       { :keys [turn asset] } player
       { :keys [anims body] } asset
-      turn (math/lerpv turn (-> in :mov (mapv [0 2])) (* 5 delta-time))
+      turn (math/lerpv turn (in :raw-mov) (* 5 delta-time))
       anim-mix (mix-player-anims anims turn time)
+      fwd-wing-rot (fn [[tx ty]] [0 0 (-> tx - (* Math/PI 1/4))])
+      back-wing-rot (fn [[tx ty]] [(-> ty - (* Math/PI 1/4)) 0 0])
+      wing-area (fn [[tx ty] area] (-> ty inc (/ 2) (* area)))
       wings [
-        { :area 0.5 :bone "WingL" }
-        { :area 0.5 :bone "WingR" }
-        { :area 1 :bone "WingBack" }
+        { ; left wing
+          :area 1/2
+          :rel [-1 0 0]
+          :norm [0 0 -1]
+          :rot-fn fwd-wing-rot
+          :area-fn wing-area
+        }
+        { ; right wing
+          :area 1/2
+          :rel [1 0 0]
+          :norm [0 0 -1]
+          :rot-fn fwd-wing-rot
+          :area-fn wing-area
+        }
+        {
+          ; back wing
+          :area 1
+          :rel [0 -1 0]
+          :norm [0 0 -1]
+          :rot-fn back-wing-rot
+          :area-fn wing-area
+        }
+        { ; tail wing
+          :area 1
+          :rel [0 -1 0]
+          :norm [0 1 0]
+          :rot-fn back-wing-rot
+          :area-fn wing-area
+        }
       ]
+      body-mat (-> body phys/get-matrix math/mat4f)
       wings (->> wings
-        (map #(->> % :bone (.transform anim-mix) (assoc % :bone)))
         (map #(let [
-              { :keys [bone area] } %
-              pos (->> (math/vec3f 0 0 0) (.transformPoint bone) math/floats-from-vec3f)
-              norm (->> (math/vec3f 0 0 1) (.transformVector bone) math/floats-from-vec3f)
+              { :keys [area rel norm rot-fn area-fn] } %
+              mat (->> turn rot-fn (apply math/rotation) (.mul body-mat))
+              area (area-fn turn area)
+              pos (math/floats-from-vec3f
+                (.transformPoint mat (apply math/vec3f rel))
+              )
+              norm (->> (apply math/vec3f norm)
+                (.transformVector mat)
+                math/floats-from-vec3f
+                math/normalize
+              )
               vel (phys/get-point-velocity body pos)
+              ap (-> vel math/normalize (mat/dot norm) -)
+              vm2 (->> vel mat/length); (repeat 2) (apply *))
+              force (mapv (partial * ap vm2 area) norm)
             ]
-            
+            (phys/apply-world-force body force pos)
           )
         )
+        dorun
       )
     ]
     (assoc player :turn turn)
@@ -221,8 +262,8 @@
   )
 )
 
-(defn move-in [mov]
-  { :mov mov }
+(defn move-in [raw-mov mov]
+  { :mov mov :raw-mov raw-mov }
 )
 
 (defn game-loop [dev res state]
@@ -236,12 +277,13 @@
       world (phys/update-world world dt)
       camrot (get state :camrot [0 0 0])
       cammat-y (math/rotation 0 (camrot 1) 0)
-      in (->> keyboard input/wasd
+      wasd (input/wasd keyboard)
+      in (->> wasd
         (apply math/x0y)
         (apply math/vec3f)
         (.transformVector cammat-y)
         math/floats-from-vec3f
-        move-in
+        (move-in wasd)
       )
       player (next-player player in time dt)
       [ax ay] (mapv #(* % dt 3) (-> dev :keyboard input/arrows))
