@@ -274,7 +274,7 @@
   (-> p :state player-map :render (funcall p dev res time))
 )
 
-(defn game-setup [dev res]
+(defn game-setup [dev res player-num]
   (let [
       world (phys/dynamics-world)
       level (-> res :levels :city)
@@ -284,10 +284,10 @@
       spawn-look (-> start (.transformVector (math/vec3f 0 0 1)) math/floats-from-vec3f)
       spawn-rot (math/look-rot spawn-look)
       spawn-pos-a (mapv + [2 0 0] spawn-pos)
-      players (vector
+      players (take player-num (vector
         (walk-player (player-asset world spawn-pos spawn-rot input/wasd [1 0 0 1]))
         (walk-player (player-asset world spawn-pos-a spawn-rot input/arrows [0 0 1 1]))
-      )
+      ))
     ]
     (doseq [s shapes] (phys/add-rigid-body world (s :shape) [0 0 0] [0 0 0] 0))
     {
@@ -357,21 +357,24 @@
       h (height)
       { :keys [players] } state
       hw (/ w 2)
-      viewports [
-        [0 0 hw h]
-        [hw 0 hw h]
-      ]
+      viewports {
+        1 [[0 0 w h]]
+        2 [
+          [0 0 hw h]
+          [hw 0 hw h]
+        ]
+      }
     ]
     (.clearDepth gl)
     (.clearColor gl 1/2 1/2 1 0)
     (mapv (fn [p v]
       (apply graph/viewport (cons gl v))
-      (graph/projection (math/perspective hw h (* Math/PI 1/2) 0.3 5000))
+      (graph/projection (math/perspective (nth v 2) h (* Math/PI 1/2) 0.3 5000))
       (graph/camera (math/first-person-camera (-> p :asset :campos) (-> p :asset :camrot)))
       (-> [-1 -1 -0.5] math/normalize graph/world-light)
       (-> state :model graph/model)
       (doseq [p players] (render-player p dev res (state :time)))
-    ) players viewports)
+    ) players (-> players count viewports))
     (graph/viewport gl 0 0 w h)
   )
 )

@@ -23,7 +23,8 @@
       [(str "wing" (. System getProperty "wing.version")) gui/aspect-fit-layout [1 1 0 1] [-0.5 -0.9 1 0.1]]
     ]
     :buttons [
-      ["Начать игру" (fn [dev res state] ((res :game-setup) dev res))]
+      ["1 игрок" (fn [dev res state] ((res :game-setup) dev res 1))]
+      ["2 игрока" (fn [dev res state] ((res :game-setup) dev res 2))]
       ["Настройки" (fn [dev res state] state)]
       ["Выход" (constantly nil)]
     ]
