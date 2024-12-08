@@ -199,14 +199,14 @@
       l (.getLinearVelocity body (Vector3f.))
       a (.getAngularVelocity body (Vector3f.))
       [px py pz] point
-      r (->> (Transform.)
-        (.getCenterOfMassTransform body)
-        .origin
-      )
+      o (.origin (.getCenterOfMassTransform body (Transform.)))
+      s (Vector3f.)
+      c (Vector3f.)
+      r (Vector3f.)
     ]
-    (.sub r (Vector3f. px py pz) r)
-    (.cross r a r)
-    (.add r l)
+    (.sub s (Vector3f. px py pz) o)
+    (.cross c a s)
+    (.add r c l)
     (extract-vec3 r)
   )
 )

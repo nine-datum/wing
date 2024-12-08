@@ -57,6 +57,7 @@
       :player player
       :anims anims
       :game-setup game/game-setup
+      :menu-setup menu/menu-setup
       :levels levels
     }
   )

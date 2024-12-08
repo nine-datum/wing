@@ -108,13 +108,13 @@
         pose #(-> % anims :anim (.animate time) (.transform bone))
         res (as-> (pose "flight") p
           (cond
-            (< tx 0) (.lerp p (pose "left") (- tx))
-            (> tx 0) (.lerp p (pose "right") tx)
+            (< ty 0) (.lerp p (pose "back") (- ty))
+            (> ty 0) (.lerp p (pose "drop") ty)
             :else p
           )
           (cond
-            (< ty 0) (.lerp p (pose "back") (- ty))
-            (> ty 0) (.lerp p (pose "drop") ty)
+            (< tx 0) (.lerp p (pose "left") (- tx))
+            (> tx 0) (.lerp p (pose "right") tx)
             :else p
           )
         )
@@ -145,24 +145,24 @@
   (let [
       { :keys [turn asset] } player
       { :keys [anims body] } asset
-      turn (math/lerpv turn (in :raw-mov) (* 5 delta-time))
+      turn (math/lerpv turn (-> in :raw-mov math/normalize) (* 5 delta-time))
       anim-mix (mix-player-anims anims turn time)
-      fwd-wing-rot (fn [[tx ty]] [0 0 (-> tx - (* Math/PI 1/4))])
+      fwd-wing-rot (fn [sig [tx ty]] [(* tx sig Math/PI 1/4) 0 (-> tx - (* Math/PI 1/4))])
       back-wing-rot (fn [[tx ty]] [(-> ty - (* Math/PI 1/4)) 0 0])
-      wing-area (fn [[tx ty] area] (-> ty inc (/ 2) (* area)))
+      wing-area (fn [[tx ty] area] (-> ty - inc (/ 2) (* area)))
       wings [
         { ; left wing
           :area 1/2
           :rel [-1 0 0]
           :norm [0 0 -1]
-          :rot-fn fwd-wing-rot
+          :rot-fn (partial fwd-wing-rot -1)
           :area-fn wing-area
         }
         { ; right wing
           :area 1/2
           :rel [1 0 0]
           :norm [0 0 -1]
-          :rot-fn fwd-wing-rot
+          :rot-fn (partial fwd-wing-rot 1)
           :area-fn wing-area
         }
         {
@@ -176,9 +176,16 @@
         { ; tail wing
           :area 1
           :rel [0 -1 0]
-          :norm [0 1 0]
-          :rot-fn back-wing-rot
-          :area-fn wing-area
+          :norm [0 0 -1]
+          :rot-fn (constantly [0 0 0])
+          :area-fn (fn [t a] a)
+        }
+        { ; tail wing 1
+          :area 1
+          :rel [0 -1 0]
+          :norm [1 0 0]
+          :rot-fn (constantly [0 0 0])
+          :area-fn (fn [t a] a)
         }
       ]
       body-mat (-> body phys/get-matrix math/mat4f)
@@ -196,6 +203,7 @@
                 math/normalize
               )
               vel (phys/get-point-velocity body pos)
+              norm (->> norm (mat/dot vel) Math/signum - repeat (mapv * norm))
               ap (-> vel math/normalize (mat/dot norm) -)
               vm2 (->> vel mat/length); (repeat 2) (apply *))
               force (mapv (partial * ap vm2 area) norm)
@@ -308,7 +316,10 @@
       )
     ]
     (game-render-loop dev res state)
-    state
+    (cond
+      (input/escape-up keyboard) (-> res :menu-setup (funcall dev res))
+      :else state
+    )
   )
 )
 
