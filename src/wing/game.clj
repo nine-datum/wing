@@ -56,7 +56,7 @@
       new-campos (->> camlook (map -) (map * (repeat camdist)) (mapv + pos))
       new-campos (update new-campos 1 #(max (pos 1) %))
       campos (math/lerpv campos new-campos (* 7 delta-time))
-      camrot (math/lerpv camrot new-camrot (* 7 delta-time))
+      camrot (math/lerpv-angle camrot new-camrot (* 7 delta-time))
     ]
     (assoc player :asset (assoc asset :campos campos :camrot camrot))
   )
@@ -356,14 +356,22 @@
       w (width)
       h (height)
       { :keys [players] } state
-      { :keys [campos camrot] } (-> players first :asset)
+      hw (/ w 2)
+      viewports [
+        [0 0 hw h]
+        [hw 0 hw h]
+      ]
     ]
     (.clearDepth gl)
     (.clearColor gl 1/2 1/2 1 0)
-    (graph/projection (math/perspective w h (* Math/PI 1/2) 0.3 5000))
-    (graph/camera (math/first-person-camera campos camrot))
-    (-> [-1 -1 -0.5] math/normalize graph/world-light)
-    (-> state :model graph/model)
-    (doseq [p players] (render-player p dev res (state :time)))
+    (mapv (fn [p v]
+      (apply graph/viewport (cons gl v))
+      (graph/projection (math/perspective hw h (* Math/PI 1/2) 0.3 5000))
+      (graph/camera (math/first-person-camera (-> p :asset :campos) (-> p :asset :camrot)))
+      (-> [-1 -1 -0.5] math/normalize graph/world-light)
+      (-> state :model graph/model)
+      (doseq [p players] (render-player p dev res (state :time)))
+    ) players viewports)
+    (graph/viewport gl 0 0 w h)
   )
 )

@@ -66,6 +66,7 @@
       BuffersReader
       BufferMapping
     ]
+    [org.lwjgl.opengl GL11] ; replace with nine engine class
   ]
 )
 
@@ -506,4 +507,8 @@
       (.draw d)
     )
   )
+)
+
+(defn viewport [gl x y w h]
+  (. GL11 glViewport x y w h)
 )
