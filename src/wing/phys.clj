@@ -194,6 +194,23 @@
   )
 )
 
+(defn get-point-velocity [^RigidBody body point]
+  (let [
+      l (.getLinearVelocity body (Vector3f.))
+      a (.getAngularVelocity body (Vector3f.))
+      [px py pz] point
+      r (->> (Transform.)
+        (.getCenterOfMassTransform body)
+        .origin
+      )
+    ]
+    (.sub r (Vector3f. px py pz) r)
+    (.cross r a r)
+    (.add r l)
+    (extract-vec3 r)
+  )
+)
+
 (defn get-velocity [^RigidBody body]
   (let [
       v (.getLinearVelocity body (Vector3f.))

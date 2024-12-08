@@ -101,6 +101,29 @@
   )
 )
 
+(defn mix-player-anims [anims turn time]
+  (impl Skeleton transform [bone]
+    (let [
+        [tx ty] turn
+        pose #(-> % anims :anim (.animate time) (.transform bone))
+        res (as-> (pose "flight") p
+          (cond
+            (< tx 0) (.lerp p (pose "left") (- tx))
+            (> tx 0) (.lerp p (pose "right") tx)
+            :else p
+          )
+          (cond
+            (< ty 0) (.lerp p (pose "back") (- ty))
+            (> ty 0) (.lerp p (pose "drop") ty)
+            :else p
+          )
+        )
+      ]
+      res
+    )
+  )
+)
+
 (defn fly-player [asset look]
   (let [
       { :keys [body] } asset
@@ -119,39 +142,44 @@
 )
 
 (defn fly-player-next [player in time delta-time]
-  (update player :turn #(math/lerpv % (-> in :mov (mapv [0 2])) (* 5 delta-time)))
+  (let [
+      { :keys [turn asset] } player
+      { :keys [anims body] } asset
+      turn (math/lerpv turn (-> in :mov (mapv [0 2])) (* 5 delta-time))
+      anim-mix (mix-player-anims anims turn time)
+      wings [
+        { :area 0.5 :bone "WingL" }
+        { :area 0.5 :bone "WingR" }
+        { :area 1 :bone "WingBack" }
+      ]
+      wings (->> wings
+        (map #(->> % :bone (.transform anim-mix) (assoc % :bone)))
+        (map #(let [
+              { :keys [bone area] } %
+              pos (->> (math/vec3f 0 0 0) (.transformPoint bone) math/floats-from-vec3f)
+              norm (->> (math/vec3f 0 0 1) (.transformVector bone) math/floats-from-vec3f)
+              vel (phys/get-point-velocity body pos)
+            ]
+            
+          )
+        )
+      )
+    ]
+    (assoc player :turn turn)
+  )
 )
 
 (defn fly-player-render [player time]
   (let [
-      { :keys [asset anim turn] } player
+      { :keys [asset turn] } player
       { :keys [anims model body] } asset
       offset (mapv - player-offset)
-      anim-mix (impl Skeleton transform [bone]
-        (let [
-            [tx ty] turn
-            pose #(-> % anims :anim (.animate time) (.transform bone))
-            res (as-> (pose "flight") p
-              (cond
-                (< tx 0) (.lerp p (pose "left") (- tx))
-                (> tx 0) (.lerp p (pose "right") tx)
-                :else p
-              )
-              (cond
-                (< ty 0) (.lerp p (pose "back") (- ty))
-                (> ty 0) (.lerp p (pose "drop") ty)
-                :else p
-              )
-            )
-          ]
-          res
-        )
-      )
+      anim (mix-player-anims anims turn time)
     ]
     (graph/push-matrix)
     (-> body phys/get-matrix math/mat4f graph/apply-matrix)
     (apply graph/translate offset)
-    (graph/animated-model model anim-mix nil)
+    (graph/animated-model model anim nil)
     (graph/pop-matrix)
   )
 )
