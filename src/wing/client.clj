@@ -5,6 +5,8 @@
   ]
 )
 
+(def active? (atom true))
+
 (defn start-client [addr port]
   (future
     (let [
@@ -12,7 +14,9 @@
         out (-> sock .getOutputStream DataOutputStream.)
       ]
       (println "client started")
-      (.writeUTF out "hellou")
+      (doseq [i (range 10)] (.writeUTF out "hellou"))
+      (.writeUTF out "end")
+      (println "client closed")
       (.close out)
       (.close sock)
     )
