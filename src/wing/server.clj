@@ -25,23 +25,26 @@
     (try
       (let [
           in (-> sock .getInputStream BufferedInputStream. DataInputStream.)
-          line (atom "")
-          name (.readUTF in)
+          last (atom "")
         ]
         (println "client connected : " name)
-        (while (and @active? (not= "end" (reset! line (.readUTF in))))
-          (swap! line (fn [l]
-            (println "a message from " name " : " l)
+        (while (and active? (not= @last "end"))
+          (let [
+              n (.readUTF in)
+              l (.readUTF in)
+            ]
+            (reset! last l)
+            (println "a message from " n " : " l)
             (client/accept name (read-string l))
             (doseq [c (-> @clients set (disj sock))]
               (-> c .getOutputStream DataOutputStream.
                 (doto
-                  (.writeUTF name)
+                  (.writeUTF n)
                   (.writeUTF l)
                 )
               )
             )
-          ))
+          )
         )
         (println "client disconnected :" name)
         (.close in)

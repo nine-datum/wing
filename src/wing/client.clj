@@ -6,7 +6,7 @@
 )
 
 (def active? (atom false))
-(def rate 1)
+(def rate 20)
 (def sent-message (atom nil))
 (def got-messages (atom nil))
 
@@ -55,10 +55,13 @@
         ]
         (reset! active? true)
         (println "client started")
-        (.writeUTF out name)
         (handle-in sock)
         (while @active?
-          (swap! sent-message #(when (-> % nil? not) (.writeUTF out (pr-str %))))
+          (swap! sent-message #(when (-> % nil? not)
+              (.writeUTF out name)
+              (.writeUTF out (pr-str %))
+            )
+          )
           (Thread/sleep (/ 1 rate 1/1000))
         )
         (.writeUTF out "end")
