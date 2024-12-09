@@ -12,8 +12,8 @@
   ]
 )
 
-(def camdist 3)
-(def max-camdist 5)
+(def camdist 2)
+(def max-camdist 3)
 (def cam+ [0 1 0])
 (def player-offset [0 1 0])
 
@@ -177,18 +177,18 @@
       turn (math/lerpv turn (-> in :raw-mov math/normalize) (* 2 delta-time))
       anim-mix (mix-player-anims anims turn time)
       fwd-wing-rot (fn [sig [tx ty]] [(* tx sig Math/PI 1/8) 0 (-> tx - (* Math/PI 1/4))])
-      back-wing-rot (fn [[tx ty]] [(-> ty - inc (* Math/PI 1/6)) 0 0])
+      back-wing-rot (fn [[tx ty]] [(-> ty - (max 0) (* Math/PI 1/6)) 0 0])
       wing-area (fn [[tx ty] area] (-> ty - inc (/ 2) (* area)))
       wings [
         { ; left wing
-          :area 1
+          :area 2
           :rel [-1 0 0]
           :norm [0 0 -1]
           :rot-fn (partial fwd-wing-rot -1)
           :area-fn wing-area
         }
         { ; right wing
-          :area 1
+          :area 2
           :rel [1 0 0]
           :norm [0 0 -1]
           :rot-fn (partial fwd-wing-rot 1)
@@ -196,7 +196,7 @@
         }
         {
           ; back wing
-          :area 2
+          :area 4
           :rel [0 -2 0]
           :norm [0 0 -1]
           :rot-fn back-wing-rot
