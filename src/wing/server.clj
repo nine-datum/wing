@@ -35,7 +35,6 @@
             ]
             (reset! last l)
             (println "a message from " n " : " l)
-            (client/accept name (read-string l))
             (doseq [c (-> @clients set (disj sock))]
               (-> c .getOutputStream DataOutputStream.
                 (doto
