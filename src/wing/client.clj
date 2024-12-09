@@ -7,6 +7,11 @@
 
 (def active? (atom false))
 (def rate 1)
+(def message (atom ()))
+
+(defn send! [val]
+  (reset! message val)
+)
 
 (defn start-client [addr port name]
   (future
@@ -18,7 +23,7 @@
       (println "client started")
       (.writeUTF out name)
       (while @active?
-        (.writeUTF out "hello, niga")
+        (swap! message #(when (-> % empty? not) (.writeUTF out (pr-str %))))
         (Thread/sleep (/ 1 rate 1/1000))
       )
       (.writeUTF out "end")
