@@ -1,4 +1,7 @@
 (ns wing.server
+  [:require
+    [wing.client :as client]
+  ]
   [:import
     [java.io DataInputStream DataOutputStream BufferedInputStream]
     [java.net ServerSocket]
@@ -11,7 +14,7 @@
   (reset! active? false)
 )
 
-(defn handle-client [sock]
+(defn handle-client [sock clients]
   (future
     (try
       (let [
@@ -20,16 +23,26 @@
           name (.readUTF in)
         ]
         (println "client connected : " name)
-        (while (and @active? (not= @line "end"))
-          (reset! line (.readUTF in))
-          (println "a message from " name " : " @line)
+        (while (and @active? (not= "end" (reset! line (.readUTF in))))
+          (swap! line (fn [l]
+            (println "a message from " name " : " l)
+            (client/accept name (read-string l))
+            (doseq [c (-> @clients set (disj sock))]
+              (-> c .getOutputStream DataOutputStream.
+                (doto
+                  (.writeUTF name)
+                  (.writeUTF l)
+                )
+              )
+            )
+          ))
         )
         (close-server)
         (println "client disconnected :" name)
         (.close in)
         (.close sock)
       )
-      (catch Throwable e (println e))
+      (catch Throwable e (println "Handling client error : " e))
     )
   )
   nil
@@ -40,14 +53,20 @@
     (try
       (let [
           serv (ServerSocket. port)
+          clients (atom ())
         ]
         (reset! active? true)
         (println "server started")
-        (while active? (handle-client (.accept serv)))
+        (while active? (let [
+            new-cl (.accept serv)
+          ]
+          (swap! clients (partial cons new-cl))
+          (handle-client new-cl clients)
+        ))
         (println "server closed")
         (.close serv)
       )
-      (catch Throwable e (println e))
+      (catch Throwable e (println "Starting server error : " e))
     )
   )
   nil
