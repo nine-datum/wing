@@ -6,6 +6,8 @@
     [wing.input :as input]
     [wing.prof :as prof]
     [wing.menu :as menu]
+    [wing.client :as client]
+    [wing.server :as server]
   )
   (:import
     [nine.lwjgl
@@ -53,7 +55,11 @@
   (proxy [WindowLoopAction] []
     (call [w h]
       (cond
-        (= (. GLFW GLFW_TRUE) (. GLFW glfwGetWindowAttrib id GLFW/GLFW_FOCUSED))
+        (or
+          (client/running?)
+          (server/running?)
+          (= (. GLFW GLFW_TRUE) (. GLFW glfwGetWindowAttrib id GLFW/GLFW_FOCUSED))
+        )
         (do
           (update-status proc-refresh-status)
           (graph/reset-matrix-stack)

@@ -45,7 +45,7 @@
   (graph/replace-materials
     (dev :gl)
     (res :player)
-    { "ColorA-material" (-> player :asset :color) }
+    { "ColorA-material" (-> player :color) }
   )
 )
 
@@ -92,7 +92,7 @@
       :state :walk
       :anim "idle"
       :color (asset :color)
-      :mat (phys/get-matrix body)
+      :pos (phys/get-position body)
     }
   )
 )
@@ -108,12 +108,12 @@
       ray-origin (mapv + player-offset (phys/get-position body))
       { :keys [point has-hit?] } (phys/ray-cast world ray-origin [0 -1 0] 3 player-group)
       falling? (not has-hit?)
-      mat (phys/get-matrix body)
+      pos (phys/get-position body)
     ]
     (phys/move-char body (mapv * mov (repeat 4)))
     (cond
       falling? (fly-player asset look)
-      :else (assoc player :look look :anim anim :mat mat)
+      :else (assoc player :look look :anim anim :pos pos)
     )
   )
 )
@@ -121,14 +121,13 @@
 (defn walk-player-render [player dev res time]
   (let [
       { :keys [anims] } res
-      { :keys [asset anim look] } player
-      { :keys [body] } asset
+      { :keys [anim look pos] } player
       anim (-> anim anims :anim (graph/animate time))
       offset (mapv - player-offset)
       model (player-model dev res player)
     ]
     (graph/push-matrix)
-    (->> body phys/get-position (mapv + offset) (apply graph/translate))
+    (->> pos (mapv + offset) (apply graph/translate))
     (apply graph/look look)
     (graph/animated-model model anim nil)
     (graph/pop-matrix)
@@ -319,7 +318,7 @@
 
 (defn client-loop [dev res state]
   (let [
-      net-players (-> (client/got) vals (apply concat))
+      net-players (->> (client/got) vals (apply concat))
       state (game-loop dev res state)
     ]
     (client/send! (mapv make-netplayer (state :players)))
@@ -328,7 +327,7 @@
 )
 
 (defn client-setup [dev res name]
-  (client/start-client "localhost" 8081)
+  (client/start-client "localhost" 8081 name)
   (assoc (game-setup dev res 1) :loop client-loop)
 )
 
@@ -392,7 +391,7 @@
       { :keys [gl width height] } dev
       w (width)
       h (height)
-      { :keys [players player-num] } state
+      { :keys [players net-players player-num] } state
       hw (/ w 2)
       viewports {
         1 [[0 0 w h]]
@@ -410,8 +409,8 @@
       (graph/camera (math/first-person-camera (-> p :asset :campos) (-> p :asset :camrot)))
       (-> [-1 -1 -0.5] math/normalize graph/world-light)
       (-> state :model graph/model)
-      (doseq [p players] (render-player p dev res (state :time)))
-    ) players (viewports player-num))
+      (doseq [p (concat players net-players)] (render-player p dev res (state :time)))
+    ) players (-> player-num viewports cycle))
     (graph/viewport gl 0 0 w h)
   )
 )

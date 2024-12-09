@@ -41,8 +41,8 @@
     :buttons [
       ["1 игрок" (fn [dev res state] ((res :game-setup) dev res 1))]
       ["2 игрока" (fn [dev res state] ((res :game-setup) dev res 2))]
-      ["Создать сервер" (fn [dev res state] (res :server-setup dev res))]
-      ["Подключиться" (fn [dev res state] (res :client-setup dev res))]
+      ["Создать сервер" (fn [dev res state] ((res :server-setup) dev res "player"))]
+      ["Подключиться" (fn [dev res state] ((res :client-setup) dev res "player"))]
       ["Назад" (fn [dev res state] (menu-setup dev res))]
     ]
   }

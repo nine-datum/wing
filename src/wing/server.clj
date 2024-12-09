@@ -9,9 +9,15 @@
 )
 
 (def active? (atom false))
+(def server-res (atom nil))
+
+(defn running? [] @active?)
 
 (defn close-server []
   (reset! active? false)
+  (swap! server-res #(when (-> % nil? not)
+    (.close %)
+  ))
 )
 
 (defn handle-client [sock clients]
@@ -37,7 +43,6 @@
             )
           ))
         )
-        (close-server)
         (println "client disconnected :" name)
         (.close in)
         (.close sock)
@@ -56,6 +61,7 @@
           clients (atom ())
         ]
         (reset! active? true)
+        (reset! server-res serv)
         (println "server started")
         (while active? (let [
             new-cl (.accept serv)
@@ -64,7 +70,7 @@
           (handle-client new-cl clients)
         ))
         (println "server closed")
-        (.close serv)
+        (close-server)
       )
       (catch Throwable e (println "Starting server error : " e))
     )

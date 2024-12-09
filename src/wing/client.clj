@@ -10,6 +10,8 @@
 (def sent-message (atom nil))
 (def got-messages (atom nil))
 
+(defn running? [] @active?)
+
 (declare accept)
 
 (defn send! [val]
