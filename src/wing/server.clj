@@ -1,10 +1,24 @@
 (ns wing.server
-  (:require [aleph.http :as http]
-            [manifold.stream :as stream]))
+  [:import
+    [java.io DataInputStream DataOutputStream BufferedInputStream]
+    [java.net ServerSocket]
+  ]
+)
 
-(defn handler [request] (println request)
-  {:status 200
-   :body "Hello from server!"})
-
-(defn start []
-  (http/start-server handler {:port 8081}))
+(defn start-server [port]
+  (future
+    (let [
+        serv (doto (ServerSocket. port))
+        sock (.accept serv)
+        in (-> sock .getInputStream BufferedInputStream. DataInputStream.)
+        line (atom "")
+      ]
+      (println "server started, client connected")
+      ;(while (not= line "end")
+        (println (.readUTF in))
+      ;)
+      (.close in)
+      (.close sock)
+    )
+  )
+)

@@ -8,7 +8,6 @@
     [net.mikera/core.matrix "0.63.0"]
     [io.github.taqmuraz/nine "1.2.40"]
     [cz.advel.jbullet/jbullet "20101010-1"]
-    [aleph "0.8.1"]
   ]
   ;:jvm-opts ["-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005"]
   :main ^:skip-aot wing.core
