@@ -11,6 +11,7 @@
 
 (declare menu-loop)
 (declare pause-menu-loop)
+(declare play-menu-setup)
 
 (defn menu-setup [dev res]
   {
@@ -23,13 +24,30 @@
       [(str "wing" (. System getProperty "wing.version")) gui/aspect-fit-layout [1 1 0 1] [-0.5 -0.9 1 0.1]]
     ]
     :buttons [
-      ["1 игрок" (fn [dev res state] ((res :game-setup) dev res 1))]
-      ["2 игрока" (fn [dev res state] ((res :game-setup) dev res 2))]
+      ["Играть" (fn [dev res state] (play-menu-setup dev res))]
       ["Настройки" (fn [dev res state] state)]
       ["Выход" (constantly nil)]
     ]
   }
 )
+
+(defn play-menu-setup [dev res]
+  {
+    :loop menu-loop
+    :gui-asset (res :gui-asset)
+    :images [
+      [(res :menu-image) gui/aspect-fit-layout [-1.5 -1 3 2]]
+    ]
+    :buttons [
+      ["1 игрок" (fn [dev res state] ((res :game-setup) dev res 1))]
+      ["2 игрока" (fn [dev res state] ((res :game-setup) dev res 2))]
+      ["Создать сервер" (fn [dev res state] (res :server-setup dev res))]
+      ["Подключиться" (fn [dev res state] (res :client-setup dev res))]
+      ["Назад" (fn [dev res state] (menu-setup dev res))]
+    ]
+  }
+)
+
 (defn menu-loop-base [dev res state]
   (let [
       { :keys [gui-asset images buttons texts] } state

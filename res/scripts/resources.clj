@@ -57,6 +57,8 @@
       :player player
       :anims anims
       :game-setup game/game-setup
+      :server-setup game/server-setup
+      :client-setup game/client-setup
       :menu-setup menu/menu-setup
       :levels levels
     }

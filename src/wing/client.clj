@@ -9,12 +9,10 @@
 (def rate 1)
 (def sent-message (atom nil))
 (def got-messages (atom nil))
-(def client-name (atom nil))
 
 (declare accept)
 
 (defn send! [val]
-  (accept @client-name val)
   (reset! sent-message val)
 )
 
@@ -54,7 +52,6 @@
           out (-> sock .getOutputStream DataOutputStream.)
         ]
         (reset! active? true)
-        (reset! client-name name)
         (println "client started")
         (.writeUTF out name)
         (handle-in sock)

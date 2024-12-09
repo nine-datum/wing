@@ -4,6 +4,8 @@
     [wing.math :as math]
     [wing.input :as input]
     [wing.phys :as phys]
+    [wing.client :as client]
+    [wing.server :as server]
     [clojure.core.matrix :as mat]
     [wing.mac :refer [--> funcall impl]]
   ]
@@ -89,6 +91,8 @@
       :look look
       :state :walk
       :anim "idle"
+      :color (asset :color)
+      :mat (phys/get-matrix body)
     }
   )
 )
@@ -104,11 +108,12 @@
       ray-origin (mapv + player-offset (phys/get-position body))
       { :keys [point has-hit?] } (phys/ray-cast world ray-origin [0 -1 0] 3 player-group)
       falling? (not has-hit?)
+      mat (phys/get-matrix body)
     ]
     (phys/move-char body (mapv * mov (repeat 4)))
     (cond
       falling? (fly-player asset look)
-      :else (assoc player :look look :anim anim)
+      :else (assoc player :look look :anim anim :mat mat)
     )
   )
 )
@@ -155,7 +160,7 @@
 
 (defn fly-player [asset look]
   (let [
-      { :keys [body] } asset
+      { :keys [body color] } asset
     ]
     (doto body
       (phys/set-rotation-enabled true)
@@ -166,6 +171,8 @@
       :asset asset
       :state :fly
       :turn [0 0]
+      :color color
+      :mat (phys/get-matrix body)
     }
   )
 )
@@ -217,7 +224,8 @@
           :area-fn (fn [t a] a)
         }
       ]
-      body-mat (-> body phys/get-matrix math/mat4f)
+      mat-vec (phys/get-matrix body)
+      body-mat (math/mat4f mat-vec)
       wings (->> wings
         (map #(let [
               { :keys [area rel norm rot-fn area-fn] } %
@@ -243,22 +251,21 @@
         dorun
       )
     ]
-    (assoc player :turn turn)
+    (assoc player :turn turn :mat mat-vec)
   )
 )
 
 (defn fly-player-render [player dev res time]
   (let [
       { :keys [anims] } res
-      { :keys [asset turn] } player
-      { :keys [body color] } asset
+      { :keys [turn mat] } player
       { :keys [gl] } dev
       offset (mapv - player-offset)
       anim (mix-player-anims anims turn time)
       model (player-model dev res player)
     ]
     (graph/push-matrix)
-    (-> body phys/get-matrix math/mat4f graph/apply-matrix)
+    (-> mat math/mat4f graph/apply-matrix)
     (apply graph/translate offset)
     (graph/animated-model model anim nil)
     (graph/pop-matrix)
@@ -298,11 +305,36 @@
     {
       :loop game-loop
       :players players
+      :player-num player-num
       :time (--> dev :get-time ())
       :model model
       :world world
     }
   )
+)
+
+(defn make-netplayer [player]
+  (dissoc player :asset)
+)
+
+(defn client-loop [dev res state]
+  (let [
+      net-players (-> (client/got) vals (apply concat))
+      state (game-loop dev res state)
+    ]
+    (client/send! (mapv make-netplayer (state :players)))
+    (assoc state :net-players net-players)
+  )
+)
+
+(defn client-setup [dev res name]
+  (client/start-client "localhost" 8081)
+  (assoc (game-setup dev res 1) :loop client-loop)
+)
+
+(defn server-setup [dev res name]
+  (server/start-server 8081)
+  (client-setup dev res name)
 )
 
 (defn move-in [raw-mov mov]
@@ -360,7 +392,7 @@
       { :keys [gl width height] } dev
       w (width)
       h (height)
-      { :keys [players] } state
+      { :keys [players player-num] } state
       hw (/ w 2)
       viewports {
         1 [[0 0 w h]]
@@ -379,7 +411,7 @@
       (-> [-1 -1 -0.5] math/normalize graph/world-light)
       (-> state :model graph/model)
       (doseq [p players] (render-player p dev res (state :time)))
-    ) players (-> players count viewports))
+    ) players (viewports player-num))
     (graph/viewport gl 0 0 w h)
   )
 )
