@@ -5,23 +5,42 @@
   ]
 )
 
+(def active? (atom false))
+
+(defn close-server []
+  (reset! active? false)
+)
+
+(defn handle-client [sock]
+  (future
+    (let [
+        in (-> sock .getInputStream BufferedInputStream. DataInputStream.)
+        line (atom "")
+        name (.readUTF in)
+      ]
+      (while (and @active? (not= @line "end"))
+        (reset! line (.readUTF in))
+        (println "a message from " name " : " @line)
+      )
+      (close-server)
+      (println "client " name " disconnected")
+      (.close in)
+      (.close sock)
+    )
+  )
+  nil
+)
+
 (defn start-server [port]
   (future
     (let [
         serv (doto (ServerSocket. port))
-        sock (.accept serv)
-        in (-> sock .getInputStream BufferedInputStream. DataInputStream.)
-        line (atom "")
       ]
-      (println "server started, client connected")
-      (while (not= @line "end")
-        (reset! line (.readUTF in))
-        (println @line)
-      )
-      (println "server closed")
-      (.close in)
-      (.close sock)
+      (reset! active? true)
+      (while active? (handle-client (.accept serv)))
+      (println "server started")
       (.close serv)
     )
   )
+  nil
 )
