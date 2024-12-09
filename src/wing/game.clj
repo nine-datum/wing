@@ -181,14 +181,14 @@
       wing-area (fn [[tx ty] area] (-> ty - inc (/ 2) (* area)))
       wings [
         { ; left wing
-          :area 1/2
+          :area 1
           :rel [-1 0 0]
           :norm [0 0 -1]
           :rot-fn (partial fwd-wing-rot -1)
           :area-fn wing-area
         }
         { ; right wing
-          :area 1/2
+          :area 1
           :rel [1 0 0]
           :norm [0 0 -1]
           :rot-fn (partial fwd-wing-rot 1)
@@ -196,7 +196,7 @@
         }
         {
           ; back wing
-          :area 1
+          :area 2
           :rel [0 -2 0]
           :norm [0 0 -1]
           :rot-fn back-wing-rot
