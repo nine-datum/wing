@@ -26,6 +26,7 @@
 (declare game-render-loop)
 (declare walk-player)
 (declare fly-player)
+(declare parachute-player)
 
 (defn left-player-controls [keyboard sym]
   (case sym
@@ -36,7 +37,7 @@
 
 (defn right-player-controls [keyboard sym]
   (case sym
-    :jump (input/right-shift-down keyboard)
+    :jump (input/enter-down keyboard)
     :mov (input/arrows keyboard)
   )
 )
@@ -196,81 +197,81 @@
   )
 )
 
+(defn proc-wing [body body-mat wing]
+  (let [
+      { :keys [area rel norm rot onesided] } wing
+      mat (.mul body-mat (apply math/rotation rot))
+      pos (math/floats-from-vec3f
+        (.transformPoint mat (apply math/vec3f rel))
+      )
+      norm (->> (apply math/vec3f norm)
+        (.transformVector mat)
+        math/floats-from-vec3f
+        math/normalize
+      )
+      vel (phys/get-point-velocity body pos)
+      dot (mat/dot vel norm)
+      skip? (and onesided (< dot 0))
+      norm (->> dot Math/signum - repeat (mapv * norm))
+      ap (-> vel math/normalize (mat/dot norm) -)
+      vm2 (->> vel mat/length)
+      force (mapv (partial * ap vm2 area) norm)
+    ]
+    (when-not skip? (phys/apply-world-force body force pos))
+  )
+)
+
 (defn fly-player-next [player in time delta-time]
   (let [
       { :keys [turn asset] } player
       { :keys [anims body] } asset
       turn (math/lerpv turn (-> in :raw-mov math/normalize) (* 2 delta-time))
       anim-mix (mix-player-anims anims turn time)
-      fwd-wing-rot (fn [sig [tx ty]] [(* tx sig Math/PI 1/8) 0 (-> tx - (* Math/PI 1/4))])
-      back-wing-rot (fn [[tx ty]] [(-> ty - (max 0) (* Math/PI 1/6)) 0 0])
-      wing-area (fn [[tx ty] area] (-> ty - inc (/ 2) (* area)))
+      [tx ty] turn
+      fwd-wing-rot (fn [sig] [(* tx sig Math/PI 1/8) 0 (-> tx - (* Math/PI 1/4))])
+      back-wing-rot [(-> ty - (max 0) (* Math/PI 1/6)) 0 0]
+      wing-area (fn [area] (-> ty - inc (/ 2) (* area)))
       wings [
         { ; left wing
-          :area 2
+          :area (wing-area 2)
           :rel [-1 0 0]
           :norm [0 0 -1]
-          :rot-fn (partial fwd-wing-rot -1)
-          :area-fn wing-area
+          :rot (fwd-wing-rot -1)
         }
         { ; right wing
-          :area 2
+          :area (wing-area 2)
           :rel [1 0 0]
           :norm [0 0 -1]
-          :rot-fn (partial fwd-wing-rot 1)
-          :area-fn wing-area
+          :rot (fwd-wing-rot 1)
         }
         {
           ; back wing
-          :area 4
+          :area (wing-area 4)
           :rel [0 -2 0]
           :norm [0 0 -1]
-          :rot-fn back-wing-rot
-          :area-fn wing-area
+          :rot back-wing-rot
         }
         { ; tail wing
           :area 1
           :rel [0 -1 0]
           :norm [0 0 -1]
-          :rot-fn (constantly [0 0 0])
-          :area-fn (fn [t a] a)
+          :rot [0 0 0]
         }
         { ; tail wing 1
           :area 1
           :rel [0 -1 0]
           :norm [1 0 0]
-          :rot-fn (constantly [0 0 0])
-          :area-fn (fn [t a] a)
+          :rot [0 0 0]
         }
       ]
       mat-vec (phys/get-matrix body)
       body-mat (math/mat4f mat-vec)
-      wings (->> wings
-        (map #(let [
-              { :keys [area rel norm rot-fn area-fn] } %
-              mat (->> turn rot-fn (apply math/rotation) (.mul body-mat))
-              area (area-fn turn area)
-              pos (math/floats-from-vec3f
-                (.transformPoint mat (apply math/vec3f rel))
-              )
-              norm (->> (apply math/vec3f norm)
-                (.transformVector mat)
-                math/floats-from-vec3f
-                math/normalize
-              )
-              vel (phys/get-point-velocity body pos)
-              norm (->> norm (mat/dot vel) Math/signum - repeat (mapv * norm))
-              ap (-> vel math/normalize (mat/dot norm) -)
-              vm2 (->> vel mat/length); (repeat 2) (apply *))
-              force (mapv (partial * ap vm2 area) norm)
-            ]
-            (phys/apply-world-force body force pos)
-          )
-        )
-        dorun
-      )
     ]
-    (assoc player :turn turn :mat mat-vec)
+    (doseq [w wings] (proc-wing body body-mat w))
+    (cond
+      (= (in :action) :jump) (parachute-player player)
+      :else (assoc player :turn turn :mat mat-vec)
+    )
   )
 )
 
@@ -291,9 +292,79 @@
   )
 )
 
+(defn parachute-player [player]
+  (let [
+      { :keys [asset] } player
+      { :keys [color body] } asset
+    ]
+    {
+      :asset asset
+      :state :parachute
+      :color color
+      :anim "parachuting"
+      :mat (phys/get-matrix body)
+    }
+  )
+)
+
+(defn parachute-player-next [player in time delta-time]
+  (let [
+      { :keys [asset] } player
+      { :keys [body] } asset
+      mat (phys/get-matrix body)
+      body-mat (math/mat4f mat)
+      rel (->> (math/vec3f 0 5 0) (.transformPoint body-mat) math/floats-from-vec3f)
+      vel (phys/get-point-velocity body rel)
+      dot (-> 1 vel -)
+      force (->> vel math/normalize (mapv -) (mapv (partial * dot)))
+      wings [
+        {
+          :area 1/12
+          :rel [0 0 -1]
+          :norm [1 0 0]
+          :rot [0 0 0]
+        }
+        {
+          :area 1/12
+          :rel [1 0 0]
+          :norm [0 0 1]
+          :rot [0 0 0]
+        }
+        {
+          :area 1/12
+          :rel [-1 0 0]
+          :norm [0 0 1]
+          :rot [0 0 0]
+        }
+      ]
+    ]
+    ;(doseq [w wings] (proc-wing body body-mat w))
+    (phys/apply-world-force body force rel)
+    (assoc player :mat mat)
+  )
+)
+
+(defn parachute-player-render [player dev res time]
+  (let [
+      { :keys [mat color anim] } player
+      offset (mapv - player-offset)
+      model (player-model dev res player)
+      anim (-> res :anims (get anim) :anim (.animate time))
+      parachute (res :parachute)
+    ]
+    (graph/push-matrix)
+    (-> mat math/mat4f graph/apply-matrix)
+    (graph/model parachute)
+    (apply graph/translate offset)
+    (graph/animated-model model anim nil)
+    (graph/pop-matrix)
+  )
+)
+
 (def player-map {
     :walk { :next walk-player-next :render walk-player-render }
     :fly { :next fly-player-next :render fly-player-render }
+    :parachute { :next parachute-player-next :render parachute-player-render }
   }
 )
 

@@ -24,8 +24,13 @@
       gui-asset (gui/gui-asset (assoc dev :mouse (input/viewport-mouse mouse width height)))
       menu-image (graph/load-image gl storage "res/images/menu.png")
       player (graph/load-animated-model graphics "res/player/player.dae")
+      parachute (graph/load-model graphics "res/player/parachute.dae")
       anims (->>
-        ["flight" "left" "right" "drop" "back" "idle" "walk"]
+        [
+          "flight" "left" "right" "drop" "back"
+          "idle" "walk"
+          "open_parachute" "parachuting"
+        ]
         (map #(vector % (graph/load-anim-clj storage (partial = "JOINT")
               (str "res/anims/player/" % ".anim")
               "res/player/player.dae"
@@ -55,6 +60,7 @@
       :gui-asset gui-asset
       :menu-image menu-image
       :player player
+      :parachute parachute
       :anims anims
       :game-setup game/game-setup
       :server-setup game/server-setup

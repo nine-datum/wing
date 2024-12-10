@@ -7,6 +7,7 @@
       LWJGL_Keyboard
       LWJGL_Mouse
     ]
+    [nine.input Keyboard]
     [nine.math
       Vector2f
     ]
@@ -61,17 +62,16 @@
   (LWJGL_Keyboard. wid)
 )
 
-(defn key-down [keyboard key] (-> keyboard (.keyOf key) .isDown))
-(defn key-up [keyboard key] (-> keyboard (.keyOf key) .isUp))
+(defn key-down [^Keyboard keyboard key] (-> keyboard (.keyOf key) .isDown))
+(defn key-up [^Keyboard keyboard key] (-> keyboard (.keyOf key) .isUp))
 
-(defn escape-down [keyboard] (-> keyboard .escape .isDown))
-(defn escape-up [keyboard] (-> keyboard .escape .isUp))
-(defn shift-down [keyboard] (-> keyboard .leftShift .isDown))
-(defn shift-up [keyboard] (-> keyboard .leftShift .isUp))
-(defn right-shift-down [keyboard] (-> keyboard .rightShift .isDown))
-(defn right-shift-up [keyboard] (-> keyboard .rightShift .isUp))
-(defn space-down [keyboard] (-> keyboard .space .isDown))
-(defn space-up [keyboard] (-> keyboard .space .isUp))
+(defn escape-down [^Keyboard keyboard] (-> keyboard .escape .isDown))
+(defn escape-up [^Keyboard keyboard] (-> keyboard .escape .isUp))
+(defn shift-down [^Keyboard keyboard] (-> keyboard .leftShift .isDown))
+(defn shift-up [^Keyboard keyboard] (-> keyboard .leftShift .isUp))
+(defn space-down [^Keyboard keyboard] (-> keyboard .space .isDown))
+(defn space-up [^Keyboard keyboard] (-> keyboard .space .isUp))
+(defn enter-down [^Keyboard keyboard] (-> keyboard (.keyOfIndex org.lwjgl.glfw.GLFW/GLFW_KEY_ENTER) .isDown))
 
 (defn wasd [kb]
   (mapv +
