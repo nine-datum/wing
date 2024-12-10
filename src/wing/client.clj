@@ -1,7 +1,7 @@
 (ns wing.client
   [:import
     [java.io DataInputStream DataOutputStream BufferedInputStream]
-    [java.net Socket]
+    [java.net Socket DatagramSocket DatagramPacket InetAddress NetworkInterface]
   ]
 )
 
@@ -87,6 +87,53 @@
         (println "Error starting client" e)
         (close-client)
       )
+    )
+  )
+  nil
+)
+
+(defn get-local-addresses []
+  (->>
+    (NetworkInterface/getNetworkInterfaces)
+    (enumeration-seq)
+    (mapcat #(-> % .getInetAddresses enumeration-seq))
+    (map #(.getHostAddress %))
+    set
+  )
+)
+
+(defn discover-servers [udp-port result-fn]
+  (future
+    (try
+      (let [
+            socket (DatagramSocket.)
+            message-bytes (.getBytes "Are there servers?")
+            broadcast-address (InetAddress/getByName "192.168.1.255")
+            packet (DatagramPacket. message-bytes (count message-bytes) broadcast-address udp-port)]
+        (.setBroadcast socket true)
+        (.send socket packet)
+        (println "Broadcast message sent")
+        (let [buffer (byte-array 1024)
+              response-packet (DatagramPacket. buffer (count buffer))]
+          (try
+            (.setSoTimeout socket 3000) ; Ждем максимум 3 секунды
+            (.receive socket response-packet)
+            (let [server-address (.getAddress response-packet)
+                server-data (String. (.getData response-packet) 0 (.getLength response-packet))
+                addr (.getHostAddress server-address)
+                own-addrs (get-local-addresses)
+                addr (if (contains? own-addrs addr) "localhost" addr)
+              ]
+              (println "Discovered server at" addr "with message:" server-data)
+              (result-fn addr server-data)
+            )
+            (catch Exception e
+              (println "No servers found")
+            )
+          )
+        )
+      )
+      (catch Throwable e (println "Discowering servers error : " e))
     )
   )
   nil

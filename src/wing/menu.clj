@@ -4,6 +4,7 @@
     [wing.graph :as graph]
     [wing.math :as math]
     [wing.input :as input]
+    [wing.client :as client]
     [wing.scripting :as scripting]
     [wing.mac :refer [-->]]
   ]
@@ -31,6 +32,50 @@
   }
 )
 
+(defn connect-menu-loop [dev res state]
+  (let [
+      { :keys [servers gui-asset] } state
+      layout gui/aspect-fit-layout
+      _ (menu-loop dev res state)
+      bs (mapv
+        (fn [serv i]
+          (assoc serv :press? (gui/button gui-asset layout
+            (str (serv :name) " " (serv :addr))
+            -0.5 (* 1/10 (inc i) -1) 1 0.1
+          ))
+        )
+        @servers
+        (range)
+      )
+      calcel (gui/button gui-asset layout "Назад" -0.5 -0.5 1 0.1)
+      serv (->> bs (filter :press?) first)
+    ]
+    (cond
+      serv ((res :client-setup) dev res (serv :addr) "player")
+      calcel (play-menu-setup dev res)
+      :else state
+    )
+  )
+)
+
+(defn connect-menu-setup [dev res]
+  (let [
+      servers (atom ())
+    ]
+    (client/discover-servers (res :udp-port)
+      #(swap! servers (partial cons { :addr %1 :name %2 }))
+    )
+    {
+      :loop connect-menu-loop
+      :servers servers
+      :gui-asset (res :gui-asset)
+      :images [
+        [(res :menu-image) gui/aspect-fit-layout [-1.5 -1 3 2]]
+      ]
+    }
+  )
+)
+
 (defn play-menu-setup [dev res]
   {
     :loop menu-loop
@@ -42,7 +87,7 @@
       ["1 игрок" (fn [dev res state] ((res :game-setup) dev res 1))]
       ["2 игрока" (fn [dev res state] ((res :game-setup) dev res 2))]
       ["Создать сервер" (fn [dev res state] ((res :server-setup) dev res "player"))]
-      ["Подключиться" (fn [dev res state] ((res :client-setup) dev res "player"))]
+      ["Подключиться" (fn [dev res state] (connect-menu-setup dev res))]
       ["Назад" (fn [dev res state] (menu-setup dev res))]
     ]
   }

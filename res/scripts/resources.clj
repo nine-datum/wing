@@ -62,6 +62,8 @@
       :menu-setup menu/menu-setup
       :error-menu-setup menu/error-menu-setup
       :levels levels
+      :net-port 8081
+      :udp-port 8082
     }
   )
 )

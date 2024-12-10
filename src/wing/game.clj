@@ -357,8 +357,8 @@
   )
 )
 
-(defn client-setup [dev res name]
-  (client/start-client "localhost" 8081 name)
+(defn client-setup [dev res addr name]
+  (client/start-client addr (res :net-port) name)
   (assoc (game-setup dev res 1)
     :loop client-loop
     :exit client/close-client
@@ -366,8 +366,8 @@
 )
 
 (defn server-setup [dev res name]
-  (server/start-server 8081)
-  (assoc (client-setup dev res name)
+  (server/start-server (res :net-port) (res :udp-port) name)
+  (assoc (client-setup dev res "localhost" name)
     :loop server-loop
     :exit (fn [] (client/close-client) (server/close-server))
   )

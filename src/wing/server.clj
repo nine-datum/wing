@@ -4,7 +4,7 @@
   ]
   [:import
     [java.io DataInputStream DataOutputStream BufferedInputStream]
-    [java.net ServerSocket]
+    [java.net ServerSocket DatagramPacket DatagramSocket]
   ]
 )
 
@@ -51,7 +51,9 @@
   nil
 )
 
-(defn start-server [port]
+(declare start-udp-listener)
+
+(defn start-server [port udp-port name]
   (reset! active? true)
   (future
     (try
@@ -59,6 +61,7 @@
           serv (ServerSocket. port)
           clients (atom ())
         ]
+        (start-udp-listener udp-port name)
         (println "server started")
         (future
           (try
@@ -76,6 +79,7 @@
         )
         (while @active? (Thread/sleep 1))
         (.close serv)
+        (close-server)
         (println "server closed")
       )
       (catch Throwable e
@@ -85,4 +89,31 @@
     )
   )
   nil
+)
+
+(defn start-udp-listener [udp-port message]
+  (let [socket (DatagramSocket. udp-port)]
+    (println "UDP listener started on port" udp-port)
+    (future
+      (while (running?)
+        (let [
+            buffer (byte-array 1024)
+            packet (DatagramPacket. buffer (count buffer))
+          ]
+          (.receive socket packet)
+          (let [
+              client-address (.getAddress packet)
+              client-port (.getPort packet)
+              response-bytes (.getBytes message)
+              response-packet (DatagramPacket. response-bytes (count response-bytes) client-address client-port)
+            ]
+            (.send socket response-packet)
+            (println "Responded to" (.getHostAddress client-address) ":" client-port)
+          )
+        )
+      )
+      (.close socket)
+      (println "udp listener stopped")
+    )
+  )
 )
