@@ -113,7 +113,7 @@
       (let [
             socket (DatagramSocket.)
             message-bytes (.getBytes "Are there servers?")
-            broadcast-address (InetAddress/getByName "192.168.1.255")
+            broadcast-address (InetAddress/getByName "255.255.255.255")
             packet (DatagramPacket. message-bytes (count message-bytes) broadcast-address udp-port)]
         (.setBroadcast socket true)
         (.send socket packet)
