@@ -315,30 +315,36 @@
       body-mat (math/mat4f mat)
       rel (->> (math/vec3f 0 5 0) (.transformPoint body-mat) math/floats-from-vec3f)
       vel (phys/get-point-velocity body rel)
-      dot (-> 1 vel -)
-      force (->> vel math/normalize (mapv -) (mapv (partial * dot)))
-      wings [
-        {
-          :area 1/12
-          :rel [0 0 -1]
-          :norm [1 0 0]
-          :rot [0 0 0]
-        }
-        {
-          :area 1/12
-          :rel [1 0 0]
-          :norm [0 0 1]
-          :rot [0 0 0]
-        }
-        {
-          :area 1/12
-          :rel [-1 0 0]
-          :norm [0 0 1]
-          :rot [0 0 0]
-        }
-      ]
+      force (->> vel (mapv -) (mapv (partial * 1/10)))
+      f (/ Math/PI 6)
+      b (- f)
+      wings (concat
+        (mapv #(hash-map
+            :area 1
+            :rel [0 5 0]
+            :norm [0 -1 0]
+            :rot %
+            :onesided true
+          )
+          [
+            [0 0 0]
+            [f 0 0]
+            [b 0 0]
+            [0 0 f]
+            [0 0 b]
+          ]
+        )
+        [
+          {
+            :area 1/4
+            :rel [0 0 -1]
+            :norm [1 0 0]
+            :rot [0 0 0]
+          }
+        ]
+      )
     ]
-    ;(doseq [w wings] (proc-wing body body-mat w))
+    (doseq [w wings] (proc-wing body body-mat w))
     (phys/apply-world-force body force rel)
     (assoc player :mat mat)
   )
