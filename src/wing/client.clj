@@ -39,10 +39,12 @@
         ]
         (while (and @active? (-> sock .isClosed not) (not= @last "end"))
           (reset! last (.readUTF in))
-          (swap! last (fn [l]
-            (when (not= l "end") (accept (first l) (rest l)))
-            l
-          ))
+          (let [
+              l @last
+              [name val] (when (not= l "end") (read-string l))
+            ]
+            (when name (accept name val))
+          )
         )
       )
       (catch Throwable e
