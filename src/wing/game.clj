@@ -30,14 +30,14 @@
 
 (defn left-player-controls [keyboard sym]
   (case sym
-    :jump (input/space-down keyboard)
+    :jump (input/space-up keyboard)
     :mov (input/wasd keyboard)
   )
 )
 
 (defn right-player-controls [keyboard sym]
   (case sym
-    :jump (input/enter-down keyboard)
+    :jump (input/enter-up keyboard)
     :mov (input/arrows keyboard)
   )
 )
@@ -90,6 +90,28 @@
   )
 )
 
+(defn next-parachute-camera [player time delta-time]
+  (let [
+      { :keys [asset] } player
+      { :keys [campos camrot body] } asset
+      campiv (mapv + cam+ (phys/get-position body))
+      vel (phys/get-velocity body)
+      camdir (->
+        body phys/get-matrix math/mat4f
+        (.transformVector (math/vec3f 0 0 1))
+        math/floats-from-vec3f
+        math/normalize
+      )
+      camdir (->> vel (map * (repeat 1/10)) (mapv + camdir) math/normalize)
+      new-campos (mapv - campiv (map * camdir (repeat max-camdist)))
+      new-camrot (math/look-rot camdir)
+      campos (math/lerpv campos new-campos (* 3 delta-time))
+      camrot (math/lerpv-angle camrot new-camrot (* 3 delta-time))
+    ]
+    (assoc player :asset (assoc asset :campos campos :camrot camrot))
+  )
+)
+
 (defn walk-player [asset]
   (let [
       body (asset :body)
@@ -132,8 +154,9 @@
       pos (phys/get-position body)
     ]
     (phys/move-char body (mapv * mov (repeat 4)))
+    (phys/set-rotation body (math/look-rot look))
     (cond
-      falling? (fly-player asset look)
+      falling? (fly-player asset)
       :else (assoc player :look look :anim anim :pos pos)
     )
   )
@@ -178,13 +201,12 @@
   )
 )
 
-(defn fly-player [asset look]
+(defn fly-player [asset]
   (let [
       { :keys [body color] } asset
     ]
     (doto body
       (phys/set-rotation-enabled true)
-      (phys/set-rotation (math/look-rot look))
       (phys/apply-local-force [0 -10 0] [0 0 1])
     )
     {
@@ -269,7 +291,7 @@
     ]
     (doseq [w wings] (proc-wing body body-mat w))
     (cond
-      (= (in :action) :jump) (parachute-player player)
+      (= (in :action) :jump) (parachute-player asset)
       :else (assoc player :turn turn :mat mat-vec)
     )
   )
@@ -292,9 +314,8 @@
   )
 )
 
-(defn parachute-player [player]
+(defn parachute-player [asset]
   (let [
-      { :keys [asset] } player
       { :keys [color body] } asset
     ]
     {
@@ -310,7 +331,7 @@
 (defn parachute-player-next [player in time delta-time]
   (let [
       { :keys [asset] } player
-      { :keys [body] } asset
+      { :keys [body world] } asset
       mat (phys/get-matrix body)
       body-mat (math/mat4f mat)
       rel (->> (math/vec3f 0 5 0) (.transformPoint body-mat) math/floats-from-vec3f)
@@ -320,7 +341,7 @@
       b (- f)
       wings (concat
         (mapv #(hash-map
-            :area 1
+            :area 1/2
             :rel [0 5 0]
             :norm [0 -1 0]
             :rot %
@@ -343,10 +364,19 @@
           }
         ]
       )
+      pos (math/get-vec-column-3 mat 3)
+      on-ground? (->
+        (phys/sphere-check world pos (mapv + pos [0 -1 0]) 1 player-group)
+        empty? not
+      )
     ]
     (doseq [w wings] (proc-wing body body-mat w))
     (phys/apply-world-force body force rel)
-    (assoc player :mat mat)
+    (cond
+      (= (in :action) :jump) (fly-player asset)
+      on-ground? (walk-player asset)
+      :else (assoc player :mat mat)
+    )
   )
 )
 
@@ -368,14 +398,16 @@
 )
 
 (def player-map {
-    :walk { :next walk-player-next :render walk-player-render }
-    :fly { :next fly-player-next :render fly-player-render }
-    :parachute { :next parachute-player-next :render parachute-player-render }
+    :walk { :next walk-player-next :render walk-player-render :cam next-camera }
+    :fly { :next fly-player-next :render fly-player-render :cam next-camera }
+    :parachute { :next parachute-player-next :render parachute-player-render :cam next-parachute-camera }
   }
 )
 
 (defn next-player [p in time delta-time]
-  (-> p :state player-map :next (funcall p in time delta-time) (next-camera time delta-time))
+  (-> p :state player-map :next (funcall p in time delta-time)
+    ((-> p :state player-map :cam) time delta-time)
+  )
 )
 
 (defn render-player [p dev res time]

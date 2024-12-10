@@ -374,7 +374,7 @@
   )
 )
 
-(defn sphere-check [^DiscreteDynamicsWorld world from to radius]
+(defn sphere-check [^DiscreteDynamicsWorld world from to radius & ignore-groups]
   (let [
       ss (SphereShape. radius)
       tf (fn [t c]
@@ -391,7 +391,13 @@
           1.0
         )
       )
+      mask (cond
+        (empty? ignore-groups) -1
+        (-> ignore-groups rest empty?) (-> ignore-groups first bit-not short)
+        :else (-> (apply bit-or ignore-groups) bit-not short)
+      )
     ]
+    (set! (.collisionFilterMask callback) mask)
     (.convexSweepTest world ss tfrom tto callback)
     @res
   )
