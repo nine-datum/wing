@@ -24,19 +24,14 @@
           last (atom "")
         ]
         (println "client connected : " name)
-        (while (and active? (not= @last "end"))
+        (while (and active? (-> sock .isClosed not) (not= @last "end"))
           (let [
-              n (.readUTF in)
               l (.readUTF in)
             ]
             (reset! last l)
-            (println "a message from " n " : " l)
             (doseq [c (-> @clients set (disj sock))]
               (-> c .getOutputStream DataOutputStream.
-                (doto
-                  (.writeUTF n)
-                  (.writeUTF l)
-                )
+                (.writeUTF l)
               )
             )
           )
@@ -78,6 +73,11 @@
           )
         )
         (while @active? (Thread/sleep 1))
+        (doseq [c @clients]
+          (when (-> c .isClosed not)
+            (-> c .getOutputStream DataOutputStream. (.writeUTF "end"))
+          )
+        )
         (.close serv)
         (close-server)
         (println "server closed")
@@ -92,26 +92,35 @@
 )
 
 (defn start-udp-listener [udp-port message]
-  (let [socket (DatagramSocket. udp-port)]
-    (println "UDP listener started on port" udp-port)
-    (future
-      (while (running?)
-        (let [
-            buffer (byte-array 1024)
-            packet (DatagramPacket. buffer (count buffer))
-          ]
-          (.receive socket packet)
-          (let [
-              client-address (.getAddress packet)
-              client-port (.getPort packet)
-              response-bytes (.getBytes message)
-              response-packet (DatagramPacket. response-bytes (count response-bytes) client-address client-port)
-            ]
-            (.send socket response-packet)
-            (println "Responded to" (.getHostAddress client-address) ":" client-port)
+  (let [
+      socket (DatagramSocket. udp-port)
+      task (future
+        (while (running?)
+          (try
+            (let [
+                buffer (byte-array 1024)
+                packet (DatagramPacket. buffer (count buffer))
+              ]
+              (.receive socket packet)
+              (let [
+                  client-address (.getAddress packet)
+                  client-port (.getPort packet)
+                  response-bytes (.getBytes message)
+                  response-packet (DatagramPacket. response-bytes (count response-bytes) client-address client-port)
+                ]
+                (.send socket response-packet)
+                (println "Responded to" (.getHostAddress client-address) ":" client-port)
+              )
+            )
+            (catch Throwable e (println "Error with UDP listener" e))
           )
         )
       )
+    ]
+    (println "UDP listener started on port" udp-port)
+    (future
+      (while (running?) (Thread/sleep 1))
+      (future-cancel task)
       (.close socket)
       (println "udp listener stopped")
     )

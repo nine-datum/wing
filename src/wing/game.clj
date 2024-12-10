@@ -37,7 +37,7 @@
 (defn right-player-controls [keyboard sym]
   (case sym
     :jump (input/right-shift-down keyboard)
-    :mov (input/arrows)
+    :mov (input/arrows keyboard)
   )
 )
 

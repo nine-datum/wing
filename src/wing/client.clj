@@ -35,14 +35,14 @@
     (try
       (let [
           in (-> sock .getInputStream BufferedInputStream. DataInputStream.)
+          last (atom "")
         ]
-        (while @active?
-          (let [
-              name (.readUTF in)
-              msg (.readUTF in)
-            ]
-            (accept name (read-string msg))
-          )
+        (while (and @active? (-> sock .isClosed not) (not= @last "end"))
+          (reset! last (.readUTF in))
+          (swap! last (fn [l]
+            (when (not= l "end") (accept (first l) (rest l)))
+            l
+          ))
         )
       )
       (catch Throwable e
@@ -66,8 +66,7 @@
         (while @active?
           (try (do
               (swap! sent-message #(when %
-                  (.writeUTF out name)
-                  (.writeUTF out (pr-str %))
+                  (.writeUTF out (pr-str (list name %)))
                 )
               )
               (Thread/sleep (/ 1 rate 1/1000))
