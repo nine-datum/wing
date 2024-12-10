@@ -18,8 +18,8 @@
   (reset! sent-message val)
 )
 
-(defn accept [name val]
-  (swap! got-messages #(assoc % name val))
+(defn accept [name uid val]
+  (swap! got-messages #(assoc % (str name "_" uid) val))
 )
 
 (defn got []
@@ -41,9 +41,9 @@
           (reset! last (.readUTF in))
           (let [
               l @last
-              [name val] (when (not= l "end") (read-string l))
+              [name uid val] (when (not= l "end") (read-string l))
             ]
-            (when name (accept name val))
+            (when name (accept name uid val))
           )
         )
       )
@@ -60,6 +60,7 @@
   (future
     (try
       (let [
+          uid (str (java.util.UUID/randomUUID))
           sock (Socket. addr port)
           out (-> sock .getOutputStream DataOutputStream.)
         ]
@@ -68,7 +69,7 @@
         (while @active?
           (try (do
               (swap! sent-message #(when %
-                  (.writeUTF out (pr-str (list name %)))
+                  (.writeUTF out (pr-str (list name uid %)))
                 )
               )
               (Thread/sleep (/ 1 rate 1/1000))
