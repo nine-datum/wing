@@ -9,15 +9,11 @@
 )
 
 (def active? (atom false))
-(def server-res (atom nil))
 
 (defn running? [] @active?)
 
 (defn close-server []
   (reset! active? false)
-  (swap! server-res #(when (-> % nil? not)
-    (.close %)
-  ))
 )
 
 (defn handle-client [sock clients]
@@ -56,25 +52,36 @@
 )
 
 (defn start-server [port]
+  (reset! active? true)
   (future
     (try
       (let [
           serv (ServerSocket. port)
           clients (atom ())
         ]
-        (reset! active? true)
-        (reset! server-res serv)
         (println "server started")
-        (while active? (let [
-            new-cl (.accept serv)
-          ]
-          (swap! clients (partial cons new-cl))
-          (handle-client new-cl clients)
-        ))
+        (future
+          (try
+            (while active? (let [
+                new-cl (.accept serv)
+              ]
+              (swap! clients (partial cons new-cl))
+              (handle-client new-cl clients)
+            ))
+            (catch Throwable e
+              (println "Error waiting for client : " e)
+              (close-server)
+            )
+          )
+        )
+        (while @active? (Thread/sleep 1))
+        (.close serv)
         (println "server closed")
+      )
+      (catch Throwable e
+        (println "Starting server error : " e)
         (close-server)
       )
-      (catch Throwable e (println "Starting server error : " e))
     )
   )
   nil

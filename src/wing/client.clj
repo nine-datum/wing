@@ -6,7 +6,6 @@
 )
 
 (def active? (atom false))
-(def client-sock (atom nil))
 (def rate 20)
 (def sent-message (atom nil))
 (def got-messages (atom nil))
@@ -29,7 +28,6 @@
 
 (defn close-client []
   (reset! active? false)
-  (swap! client-sock #(.close %))
 )
 
 (defn handle-in [sock]
@@ -47,36 +45,49 @@
           )
         )
       )
-      (catch Throwable e (println "Handling input from server error : " e))
+      (catch Throwable e
+        (println "Handling input from server error : " e)
+        (close-client)
+      )
     )
   )
 )
 
 (defn start-client [addr port name]
+  (reset! active? true)
   (future
     (try
       (let [
           sock (Socket. addr port)
           out (-> sock .getOutputStream DataOutputStream.)
         ]
-        (reset! client-sock sock)
-        (reset! active? true)
         (println "client started")
         (handle-in sock)
         (while @active?
-          (swap! sent-message #(when (-> % nil? not)
-              (.writeUTF out name)
-              (.writeUTF out (pr-str %))
+          (try (do
+              (swap! sent-message #(when %
+                  (.writeUTF out name)
+                  (.writeUTF out (pr-str %))
+                )
+              )
+              (Thread/sleep (/ 1 rate 1/1000))
+            )
+            (catch Throwable e
+              (println "Error sending client message" e)
+              (close-client)
             )
           )
-          (Thread/sleep (/ 1 rate 1/1000))
         )
         (.writeUTF out "end")
         (println "client closed")
         (.close out)
+        (.close sock)
+      )
+      (catch Throwable e
+        (println "Error starting client" e)
         (close-client)
       )
-      (catch Throwable e (println e))
     )
   )
+  nil
 )

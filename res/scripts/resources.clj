@@ -60,6 +60,7 @@
       :server-setup game/server-setup
       :client-setup game/client-setup
       :menu-setup menu/menu-setup
+      :error-menu-setup menu/error-menu-setup
       :levels levels
     }
   )

@@ -68,6 +68,8 @@
 (defn escape-up [keyboard] (-> keyboard .escape .isUp))
 (defn shift-down [keyboard] (-> keyboard .leftShift .isDown))
 (defn shift-up [keyboard] (-> keyboard .leftShift .isUp))
+(defn right-shift-down [keyboard] (-> keyboard .rightShift .isDown))
+(defn right-shift-up [keyboard] (-> keyboard .rightShift .isUp))
 (defn space-down [keyboard] (-> keyboard .space .isDown))
 (defn space-up [keyboard] (-> keyboard .space .isUp))
 

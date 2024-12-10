@@ -27,6 +27,26 @@
 (declare walk-player)
 (declare fly-player)
 
+(defn left-player-controls [keyboard sym]
+  (case sym
+    :jump (input/space-down keyboard)
+    :mov (input/wasd keyboard)
+  )
+)
+
+(defn right-player-controls [keyboard sym]
+  (case sym
+    :jump (input/right-shift-down keyboard)
+    :mov (input/arrows)
+  )
+)
+
+(def player-controls {
+    :left left-player-controls
+    :right right-player-controls
+  }
+)
+
 (defn player-asset [world pos rot controls color]
   {
     :body (doto
@@ -296,13 +316,14 @@
       spawn-rot (math/look-rot spawn-look)
       spawn-pos-a (mapv + [2 0 0] spawn-pos)
       players (take player-num (vector
-        (walk-player (player-asset world spawn-pos spawn-rot input/wasd [1 0 0 1]))
-        (walk-player (player-asset world spawn-pos-a spawn-rot input/arrows [0 0 1 1]))
+        (walk-player (player-asset world spawn-pos spawn-rot :left [1 0 0 1]))
+        (walk-player (player-asset world spawn-pos-a spawn-rot :right [0 0 1 1]))
       ))
     ]
     (doseq [s shapes] (phys/add-rigid-body world (s :shape) [0 0 0] [0 0 0] 0))
     {
       :loop game-loop
+      :exit (constantly nil)
       :players players
       :player-num player-num
       :time (--> dev :get-time ())
@@ -317,23 +338,39 @@
 )
 
 (defn client-loop [dev res state]
-  (let [
-      net-players (->> (client/got) vals (apply concat))
-      state (game-loop dev res state)
-    ]
-    (client/send! (mapv make-netplayer (state :players)))
-    (assoc state :net-players net-players)
+  (cond (client/running?)
+    (let [
+        net-players (->> (client/got) vals (apply concat))
+        state (game-loop dev res state)
+      ]
+      (client/send! (mapv make-netplayer (state :players)))
+      (assoc state :net-players net-players)
+    )
+    :else ((res :error-menu-setup) dev res "Ошибка подключения к серверу")
+  )
+)
+
+(defn server-loop [dev res state]
+  (cond (server/running?)
+    (client-loop dev res state)
+    :else ((res :error-menu-setup) dev res "Ошибка работы сервера")
   )
 )
 
 (defn client-setup [dev res name]
   (client/start-client "localhost" 8081 name)
-  (assoc (game-setup dev res 1) :loop client-loop)
+  (assoc (game-setup dev res 1)
+    :loop client-loop
+    :exit client/close-client
+  )
 )
 
 (defn server-setup [dev res name]
   (server/start-server 8081)
-  (client-setup dev res name)
+  (assoc (client-setup dev res name)
+    :loop server-loop
+    :exit (fn [] (client/close-client) (server/close-server))
+  )
 )
 
 (defn move-in [raw-mov mov]
@@ -344,7 +381,8 @@
   (let [
       camrot (-> player :asset :camrot)
       cammat-y (math/rotation 0 (camrot 1) 0)
-      mov (-> player :asset :controls (funcall keyboard))
+      controls (-> player :asset :controls player-controls)
+      mov (controls keyboard :mov)
       in (->> mov
         (apply math/x0y)
         (apply math/vec3f)
@@ -352,6 +390,8 @@
         math/floats-from-vec3f
         (move-in mov)
       )
+      jump (controls keyboard :jump)
+      in (cond jump (assoc in :action :jump) :else in)
     ]
     in
   )
@@ -380,7 +420,10 @@
     ]
     (game-render-loop dev res state)
     (cond
-      (input/escape-up keyboard) (-> res :menu-setup (funcall dev res))
+      (input/escape-up keyboard) (do
+        (-> state :exit funcall)
+        (-> res :menu-setup (funcall dev res))
+      )
       :else state
     )
   )

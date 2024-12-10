@@ -48,6 +48,22 @@
   }
 )
 
+(defn error-menu-setup [dev res message]
+  {
+    :loop menu-loop
+    :gui-asset (res :gui-asset)
+    :images [
+      [(res :menu-image) gui/aspect-fit-layout [-1.5 -1 3 2]]
+    ]
+    :texts [
+      [message gui/aspect-fit-layout [1 1 0 1] [-0.5 0.1 1 0.1]]
+    ]
+    :buttons [
+      ["В меню" (fn [dev res state] (menu-setup dev res))]
+    ]
+  }
+)
+
 (defn menu-loop-base [dev res state]
   (let [
       { :keys [gui-asset images buttons texts] } state
