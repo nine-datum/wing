@@ -9,6 +9,7 @@
 (def rate 20)
 (def sent-message (atom nil))
 (def got-messages (atom nil))
+(def archive (atom nil))
 
 (defn running? [] @active?)
 
@@ -23,11 +24,13 @@
 )
 
 (defn got []
-  @got-messages
+   @got-messages
 )
 
 (defn close-client []
   (reset! active? false)
+  (reset! archive (got))
+  (reset! got-messages nil)
 )
 
 (defn handle-in [sock]
