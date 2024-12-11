@@ -176,10 +176,8 @@
   (let [
       rel (mapv - at (get-position body))
       ang (mat/cross rel force)
-      dot 1
-      cen (mapv * force (repeat dot))
     ]
-    (.applyCentralForce body (apply make-vec3 cen))
+    (.applyCentralForce body (apply make-vec3 force))
     (.applyTorque body (apply make-vec3 ang))
     body
   )
