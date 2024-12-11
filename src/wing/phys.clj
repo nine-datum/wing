@@ -103,6 +103,10 @@
   [(.x v) (.y v) (.z v)]
 )
 
+(defn make-vec3 [^double x ^double y ^double z]
+  (Vector3f. x y z)
+)
+
 (defn rotx [x]
   (doto (Matrix3f.) .setIdentity (.rotX x))
 )
@@ -170,11 +174,13 @@
 
 (defn apply-world-force [^RigidBody body force at]
   (let [
-      at (mapv - at (get-position body))
-      [fx fy fz] force
-      [ax ay az] at
+      rel (mapv - at (get-position body))
+      ang (mat/cross rel force)
+      dot 1
+      cen (mapv * force (repeat dot))
     ]
-    (.applyForce body (Vector3f. fx fy fz) (Vector3f. ax ay az))
+    (.applyCentralForce body (apply make-vec3 cen))
+    (.applyTorque body (apply make-vec3 ang))
     body
   )
 )

@@ -236,7 +236,7 @@
       skip? (and onesided (< dot 0))
       norm (->> dot Math/signum - repeat (mapv * norm))
       ap (-> vel math/normalize (mat/dot norm) -)
-      vm2 (->> vel mat/length)
+      vm2 (mat/length vel)
       force (mapv (partial * ap vm2 area) norm)
     ]
     (when-not skip? (phys/apply-world-force body force pos))
