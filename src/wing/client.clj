@@ -2,6 +2,8 @@
   [:import
     [java.io DataInputStream DataOutputStream BufferedInputStream]
     [java.net Socket DatagramSocket DatagramPacket InetAddress NetworkInterface]
+    [java.nio ByteBuffer]
+    [java.nio.charset Charset]
   ]
 )
 
@@ -65,6 +67,51 @@
   (reset! got-messages nil)
   (reset! prev-messages nil)
   (reset! prev-time nil)
+)
+
+(def charset (Charset/forName "UTF-8"))
+
+(defn bytes->string [bytes]
+  (let [
+      ^ByteBuffer bb (ByteBuffer/wrap bytes)
+      len (.getInt bb)
+      ^"[B" buf (byte-array len)
+    ]
+    (.get bb buf)
+    (String. buf charset)
+  )
+)
+
+(defn string->bytes [str]
+  (let [
+      len (.length str)
+      ^"[B" buf (.getBytes str charset)
+      ^"[B" res (-> buf alength (+ 4) byte-array)
+      ^ByteBuffer bb (ByteBuffer/wrap res)
+    ]
+    (.putInt bb len)
+    (.put bb buf)
+    res
+  )
+)
+
+(defn read-udp [port stop? func]
+  (future
+    (try
+      (let [
+          sock (DatagramSocket. port)
+          buf (byte-array 2048)
+          pack (DatagramPacket. buf (.length buf))
+        ]
+        (while (stop?)
+          (.receive sock pack)
+          (-> pack .getData bytes->string func)
+        )
+        (.close sock)
+      )
+      (catch Throwable e (println "Reading UDP error : " e))
+    )
+  )
 )
 
 (defn handle-in [sock]
