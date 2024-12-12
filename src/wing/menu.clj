@@ -62,7 +62,7 @@
   (let [
       servers (atom ())
     ]
-    (client/discover-servers (res :udp-port)
+    (client/discover-servers (res :broadcast-port)
       #(swap! servers (partial cons { :addr %1 :name %2 }))
     )
     {

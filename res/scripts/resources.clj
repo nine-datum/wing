@@ -72,6 +72,7 @@
       :levels levels
       :net-port 8081
       :udp-port 8082
+      :broadcast-port 8083
     }
   )
 )

@@ -21,21 +21,16 @@
     (try
       (let [
           in (-> sock .getInputStream BufferedInputStream. DataInputStream.)
+          addr (-> sock .getInputStream BufferedInputStream. DataInputStream.)
+          client-active? (atom true)
           last (atom "")
         ]
         (println "client connected : " name ", clients total : " (count @clients))
-        (while (and active? (-> sock .isClosed not) (not= @last "end"))
-          (let [
-              l (->> in .readUTF (reset! last))
-            ]
-            (when (not= l "end")
-              (doseq [c (disj @clients sock)]
-                (-> c .getOutputStream DataOutputStream.
-                  (.writeUTF l)
-                )
-              )
-            )
-          )
+        (client/send-udp (-> sock .getInetAddress .getHostAddress) (.getPort sock) running?
+          (comp client/string->bytes pr-str client/got)
+        )
+        (while (and active? (not= @last "end"))
+          (->> in .readUTF (reset! last))
         )
         (println "client disconnected :" name ", last message was :" @last)
         (.close in)
@@ -50,7 +45,7 @@
 
 (declare start-udp-listener)
 
-(defn start-server [port udp-port name]
+(defn start-server [port udp-port broadcast-port name]
   (reset! active? true)
   (future
     (try
@@ -58,7 +53,7 @@
           serv (ServerSocket. port)
           clients (atom (hash-set))
         ]
-        (start-udp-listener udp-port name)
+        (start-udp-listener broadcast-port name)
         (println "server started")
         (future
           (try

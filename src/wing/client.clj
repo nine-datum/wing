@@ -24,7 +24,7 @@
 
 (defn accept [name uid val]
   (reset! prev-messages @got-messages)
-  (swap! got-messages #(assoc % (str name "_" uid) val))
+  (swap! got-messages #(assoc % uid val))
   (reset! prev-time (get-time))
 )
 
@@ -95,21 +95,48 @@
   )
 )
 
-(defn read-udp [port stop? func]
+(defn read-udp [port continue? func]
   (future
     (try
       (let [
           sock (DatagramSocket. port)
           buf (byte-array 2048)
-          pack (DatagramPacket. buf (.length buf))
+          pack (DatagramPacket. buf (alength buf))
         ]
-        (while (stop?)
+        (while (continue?)
           (.receive sock pack)
           (-> pack .getData bytes->string func)
+          (Thread/sleep 1)
         )
         (.close sock)
       )
       (catch Throwable e (println "Reading UDP error : " e))
+    )
+  )
+)
+
+(defn send-udp [addr port continue? data-func]
+  (future
+    (try
+      (let [
+          sock (DatagramSocket.)
+        ]
+        (while (continue?)
+          (let [
+              dat (data-func)
+              addr (InetAddress/getByName addr)
+            ]
+            (when dat
+              (.send sock
+                (DatagramPacket. dat (alength dat) addr port)
+              )
+            )
+          )
+          (Thread/sleep (/ 1 rate 1/1000))
+        )
+        (.close sock)
+      )
+      (catch Throwable e (println "Sending UDP error : " e))
     )
   )
 )
@@ -123,14 +150,10 @@
         ]
         (println "Reading messages from server...")
         (while (and @active? (-> sock .isClosed not) (not= @last "end"))
-          (let [
-              l (->> in .readUTF (reset! last))
-              [name uid val] (when (not= l "end") (read-string l))
-            ]
-            (when name (accept name uid val))
-          )
+          (->> in .readUTF (reset! last))
         )
         (println "Finished reading messages from server, last message was " @last)
+        (close-client)
       )
       (catch Throwable e
         (println "Handling input from server error : " e)
@@ -140,7 +163,7 @@
   )
 )
 
-(defn start-client [addr port name]
+(defn start-client [addr port udp-port name]
   (clean)
   (reset! active? true)
   (future
@@ -151,21 +174,20 @@
           out (-> sock .getOutputStream DataOutputStream.)
         ]
         (println "client started")
-        (handle-in sock)
-        (while @active?
-          (try (do
-              (swap! sent-message #(when %
-                  (.writeUTF out (pr-str (list name uid %)))
-                )
-              )
-              (Thread/sleep (/ 1 rate 1/1000))
-            )
-            (catch Throwable e
-              (println "Error sending client message" e)
-              (close-client)
+        (read-udp udp-port running?
+          (fn [l]
+            (let [
+                map (when (-> l first (= (char 123))) (read-string l))
+              ]
+              (when map (doseq [p map] (accept "player" (first p) (second p))))
             )
           )
         )
+        (handle-in sock)
+        (send-udp addr udp-port running?
+          #(->> @sent-message (hash-map uid) pr-str string->bytes)
+        )
+        (while (running?) (Thread/sleep 1))
         (.writeUTF out "end")
         (println "client closed")
         (.close out)
