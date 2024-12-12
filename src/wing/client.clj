@@ -74,18 +74,19 @@
           in (-> sock .getInputStream BufferedInputStream. DataInputStream.)
           last (atom "")
         ]
+        (println "Reading messages from server...")
         (while (and @active? (-> sock .isClosed not) (not= @last "end"))
-          (reset! last (.readUTF in))
           (let [
-              l @last
+              l (->> in .readUTF (reset! last))
               [name uid val] (when (not= l "end") (read-string l))
             ]
             (when name (accept name uid val))
           )
         )
+        (println "Finished reading messages from server, last message was " @last)
       )
       (catch Throwable e
-        (println "Handling input from server error : " (error-str))
+        (println "Handling input from server error : " e)
         (close-client)
       )
     )

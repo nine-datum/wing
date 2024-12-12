@@ -26,12 +26,13 @@
         (println "client connected : " name ", clients total : " (count @clients))
         (while (and active? (-> sock .isClosed not) (not= @last "end"))
           (let [
-              l (.readUTF in)
+              l (->> in .readUTF (reset! last))
             ]
-            (reset! last l)
-            (doseq [c (-> @clients set (disj sock))]
-              (-> c .getOutputStream DataOutputStream.
-                (.writeUTF l)
+            (when (not= l "end")
+              (doseq [c (disj @clients sock)]
+                (-> c .getOutputStream DataOutputStream.
+                  (.writeUTF l)
+                )
               )
             )
           )
@@ -39,6 +40,7 @@
         (println "client disconnected :" name ", last message was :" @last)
         (.close in)
         (.close sock)
+        (swap! clients #(disj % sock))
       )
       (catch Throwable e (println "Handling client error : " e))
     )
@@ -54,7 +56,7 @@
     (try
       (let [
           serv (ServerSocket. port)
-          clients (atom ())
+          clients (atom (hash-set))
         ]
         (start-udp-listener udp-port name)
         (println "server started")
@@ -63,7 +65,7 @@
             (while active? (let [
                 new-cl (.accept serv)
               ]
-              (swap! clients (fn [cs] (cons new-cl (filterv #(-> % .isClosed not) cs))))
+              (swap! clients #(conj % new-cl))
               (handle-client new-cl clients)
             ))
             (catch Throwable e
