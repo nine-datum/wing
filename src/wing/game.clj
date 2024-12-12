@@ -178,6 +178,15 @@
   )
 )
 
+(defn walk-player-lerp [a b t]
+  (let [
+      pos (math/lerpv (a :pos) (b :pos) t)
+      look (math/normalize (math/lerpv (a :look) (b :look) t))
+    ]
+    (assoc b :pos pos :look look)
+  )
+)
+
 (defn mix-player-anims [anims turn time]
   (impl Skeleton transform [bone]
     (let [
@@ -314,6 +323,15 @@
   )
 )
 
+(defn fly-player-lerp [a b t]
+  (let [
+      turn (math/lerpv (a :turn) (b :turn) t)
+      mat (math/lerpv (a :mat) (b :mat) t)
+    ]
+    (assoc b :turn turn :mat mat)
+  )
+)
+
 (defn parachute-player [asset]
   (let [
       { :keys [color body] } asset
@@ -397,10 +415,29 @@
   )
 )
 
+(defn parachute-player-lerp [a b t]
+  (assoc b :mat (math/lerpv (a :mat) (b :mat) t))
+)
+
 (def player-map {
-    :walk { :next walk-player-next :render walk-player-render :cam next-camera }
-    :fly { :next fly-player-next :render fly-player-render :cam next-camera }
-    :parachute { :next parachute-player-next :render parachute-player-render :cam next-parachute-camera }
+    :walk {
+      :next walk-player-next
+      :render walk-player-render
+      :cam next-camera
+      :lerp walk-player-lerp
+    }
+    :fly {
+      :next fly-player-next
+      :render fly-player-render
+      :cam next-camera
+      :lerp fly-player-lerp
+    }
+    :parachute {
+      :next parachute-player-next
+      :render parachute-player-render
+      :cam next-parachute-camera
+      :lerp parachute-player-lerp
+    }
   }
 )
 
@@ -412,6 +449,13 @@
 
 (defn render-player [p dev res time]
   (-> p :state player-map :render (funcall p dev res time))
+)
+
+(defn lerp-player [a b t]
+  (cond
+    (= (a :state) (b :state)) (-> a :state player-map :lerp (funcall a b t))
+    :else b
+  )
 )
 
 (defn game-setup [dev res player-num]
@@ -449,7 +493,7 @@
 (defn client-loop [dev res state]
   (cond (client/running?)
     (let [
-        net-players (->> (client/got) vals (apply concat))
+        net-players (->> (client/got-lerp lerp-player) vals (apply concat))
         state (game-loop dev res state)
       ]
       (client/send! (mapv make-netplayer (state :players)))

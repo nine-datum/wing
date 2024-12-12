@@ -23,7 +23,7 @@
           in (-> sock .getInputStream BufferedInputStream. DataInputStream.)
           last (atom "")
         ]
-        (println "client connected : " name)
+        (println "client connected : " name ", clients total : " (count @clients))
         (while (and active? (-> sock .isClosed not) (not= @last "end"))
           (let [
               l (.readUTF in)
@@ -36,7 +36,7 @@
             )
           )
         )
-        (println "client disconnected :" name)
+        (println "client disconnected :" name ", last message was :" @last)
         (.close in)
         (.close sock)
       )
@@ -63,7 +63,7 @@
             (while active? (let [
                 new-cl (.accept serv)
               ]
-              (swap! clients (partial cons new-cl))
+              (swap! clients (fn [cs] (cons new-cl (filterv #(-> % .isClosed not) cs))))
               (handle-client new-cl clients)
             ))
             (catch Throwable e

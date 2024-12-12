@@ -9,28 +9,62 @@
 (def rate 20)
 (def sent-message (atom nil))
 (def got-messages (atom nil))
-(def archive (atom nil))
+(def prev-messages (atom nil))
+(def prev-time (atom nil))
+
+(defn get-time [] (/ (System/currentTimeMillis) 1000))
 
 (defn running? [] @active?)
-
-(declare accept)
 
 (defn send! [val]
   (reset! sent-message val)
 )
 
 (defn accept [name uid val]
+  (reset! prev-messages @got-messages)
   (swap! got-messages #(assoc % (str name "_" uid) val))
+  (reset! prev-time (get-time))
 )
 
 (defn got []
    @got-messages
 )
 
+(defn got-lerp [lerp-fn]
+  (let [
+      as @prev-messages
+      bs @got-messages
+      t @prev-time
+      p (when t (-> (get-time) (- t) (* rate)))
+    ]
+    (when (and as bs p)
+      (->> bs keys
+        (map
+          #(let [
+              a (as %)
+              b (bs %)
+            ]
+            (vector % (cond
+              (and a b (= (count a) (count b))) (mapv lerp-fn a b (repeat p))
+              :else b
+            ))
+          )
+        )
+        (into {})
+      )
+    )
+  )
+)
+
 (defn close-client []
   (reset! active? false)
-  (reset! archive (got))
+)
+
+(defn clean []
+  (reset! sent-message nil)
   (reset! got-messages nil)
+  (reset! prev-messages nil)
+  (reset! prev-time nil)
 )
 
 (defn handle-in [sock]
@@ -51,7 +85,7 @@
         )
       )
       (catch Throwable e
-        (println "Handling input from server error : " e)
+        (println "Handling input from server error : " (error-str))
         (close-client)
       )
     )
@@ -59,6 +93,7 @@
 )
 
 (defn start-client [addr port name]
+  (clean)
   (reset! active? true)
   (future
     (try
