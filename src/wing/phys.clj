@@ -198,6 +198,10 @@
   )
 )
 
+(defn apply-force [^RigidBody body force]
+  (.applyCentralForce body (apply make-vec3 force))
+)
+
 (defn get-point-velocity [^RigidBody body point]
   (let [
       l (.getLinearVelocity body (Vector3f.))

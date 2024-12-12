@@ -28,6 +28,8 @@
 (declare game-render-loop)
 (declare walk-player)
 (declare run-player)
+(declare jump-player)
+(declare fall-player)
 (declare fly-player)
 (declare parachute-player)
 
@@ -36,6 +38,7 @@
     :jump (input/space-up keyboard)
     :mov (input/wasd keyboard)
     :run (input/shift-down keyboard)
+    :spec (input/tab-up keyboard)
   )
 )
 
@@ -44,6 +47,7 @@
     :jump (input/backspace-up keyboard)
     :mov (input/arrows keyboard)
     :run (input/enter-down keyboard)
+    :spec (input/shift-down keyboard)
   )
 )
 
@@ -172,21 +176,38 @@
   )
 )
 
+(defn body-look [body]
+  (-> body
+    phys/get-matrix
+    math/mat4f
+    (.transformVector (math/vec3f 0 0 1))
+    math/floats-from-vec3f
+    (assoc 1 0)
+    math/normalize
+  )
+)
+
+(defn on-ground? [player]
+  (let [
+      { :keys [world body] } (player :asset)
+      pos (phys/get-position body)
+    ]
+    (->
+      (phys/sphere-check world pos (mapv - pos [0 1 0]) 1/4 player-group)
+      empty? not
+    )
+  )
+)
+
 (defn move-player [asset state move-anim move-speed]
   (let [
       body (asset :body)
-      look (-> body
-        phys/get-matrix
-        math/mat4f
-        (.transformVector (math/vec3f 0 0 1))
-        math/floats-from-vec3f
-        (assoc 1 0)
-        math/normalize
-      )
+      look (body-look body)
       rot (math/look-rot look)
     ]
     (doto body
       (phys/set-rotation rot)
+      (phys/set-angular-velocity [0 0 0])
       (phys/set-rotation-enabled false)
     )
     {
@@ -210,24 +231,22 @@
       mz (-> mov mat/length zero?)
       look (cond mz look :else (math/normalize mov))
       anim (if mz "idle" move-anim)
-      ray-origin (mapv + player-offset (phys/get-position body))
-      { :keys [point has-hit?] } (phys/ray-cast world ray-origin [0 -1 0] 3 player-group)
-      falling? (not has-hit?)
+      falling? (-> player on-ground? not)
       pos (phys/get-position body)
     ]
     (phys/move-char body (mapv * mov (repeat move-speed)))
     (phys/set-rotation body (math/look-rot look))
     (cond
-      falling? (fly-player asset)
+      falling? (fall-player asset)
       :else (assoc player :look look :anim anim :pos pos)
     )
   )
 )
 
-(defn move-player-render [player dev res time]
+(defn pos-look-player-render [player dev res time]
   (let [
       { :keys [anims player-model] } res
-      { :keys [anim look pos color] } player
+      { :keys [anim pos look color] } player
       anim (-> anim anims :anim (graph/animate time))
       offset (mapv - player-offset)
       model (make-player-model (dev :gl) player-model color)
@@ -238,6 +257,30 @@
     (graph/animated-model model anim nil)
     (graph/pop-matrix)
   )
+)
+
+(defn mat-player-render [player dev res time]
+  (let [
+      { :keys [anims player-model] } res
+      { :keys [anim mat color] } player
+      anim (-> anim anims :anim (graph/animate time))
+      offset (mapv - player-offset)
+      model (make-player-model (dev :gl) player-model color)
+    ]
+    (graph/push-matrix)
+    (-> mat math/mat4f graph/apply-matrix)
+    (apply graph/translate offset)
+    (graph/animated-model model anim nil)
+    (graph/pop-matrix)
+  )
+)
+
+(defn mat-player-lerp [a b t]
+  (assoc b :mat (math/lerpv (a :mat) (b :mat) t))
+)
+
+(defn move-player-render [player dev res time]
+  (pos-look-player-render player dev res time)
 )
 
 (defn move-player-lerp [a b t]
@@ -257,9 +300,10 @@
   (let [
       next (move-player-next player in time delta-time)
     ]
-    (cond
-      (= (in :action) :run) (-> player :asset run-player)
-      :else next
+    (case (in :action)
+      :jump (-> player :asset (jump-player time))
+      :run (-> player :asset run-player)
+      next
     )
   )
 )
@@ -272,10 +316,71 @@
   (let [
       next (move-player-next player in time delta-time)
     ]
-    (cond
-      (not= (in :action) :run) (-> player :asset walk-player)
-      :else next
+    (case (in :action)
+      :jump (-> player :asset (jump-player time))
+      :run next
+      (-> player :asset walk-player)
     )
+  )
+)
+
+(defn jump-player [asset time]
+  (let [
+      { :keys [body color] } asset
+      rot (-> body body-look math/look-rot)
+    ]
+    (phys/set-rotation-enabled body false)
+    (phys/apply-force body [0 300 0])
+    {
+      :asset asset
+      :color color
+      :start time
+      :state :jump
+      :anim "jump"
+      :mat (phys/get-matrix body)
+    }
+  )
+)
+
+(defn jump-player-next [player in time delta-time]
+  (let [
+      { :keys [asset start] } player
+      { :keys [body world] } asset
+      t (- time start)
+      falling? (> t 2/3)
+    ]
+    (cond
+      falling? (fall-player asset)
+      :else (assoc player :mat (phys/get-matrix body))
+    )
+  )
+)
+
+(defn jump-player-render [player dev res time]
+  (let [
+      { :keys [anim start] } player
+      t (- time start)
+    ]
+    (mat-player-render player dev res t)
+  )
+)
+
+(defn fall-player [asset]
+  {
+    :asset asset
+    :state :fall
+    :anim "fall"
+    :color (asset :color)
+    :mat (-> asset :body phys/get-matrix)
+  }
+)
+
+(defn fall-player-next [player in time delta-time]
+  (cond
+    (on-ground? player) (-> player :asset walk-player)
+    (= (in :action) :jump) (-> player :asset parachute-player)
+    (= (in :action) :spec) (-> player :asset fly-player)
+    :else (assoc player :mat (-> player :asset :body phys/get-matrix))
   )
 )
 
@@ -344,9 +449,10 @@
       body-mat (math/mat4f mat-vec)
     ]
     (doseq [w wings] (proc-wing body body-mat w))
-    (cond
-      (= (in :action) :jump) (parachute-player asset)
-      :else (assoc player :turn turn :mat mat-vec)
+    (case (in :action)
+      :jump (parachute-player asset)
+      :spec (fall-player asset)
+      (assoc player :turn turn :mat mat-vec)
     )
   )
 )
@@ -427,17 +533,13 @@
           }
         ]
       )
-      pos (math/get-vec-column-3 mat 3)
-      on-ground? (->
-        (phys/sphere-check world pos (mapv + pos [0 -1 0]) 1 player-group)
-        empty? not
-      )
+      grounded? (on-ground? player)
     ]
     (doseq [w wings] (proc-wing body body-mat w))
     (phys/apply-world-force body force rel)
     (cond
-      (= (in :action) :jump) (fly-player asset)
-      on-ground? (walk-player asset)
+      (= (in :action) :jump) (fall-player asset)
+      grounded? (walk-player asset)
       :else (assoc player :mat mat)
     )
   )
@@ -461,10 +563,6 @@
   )
 )
 
-(defn parachute-player-lerp [a b t]
-  (assoc b :mat (math/lerpv (a :mat) (b :mat) t))
-)
-
 (def player-map {
     :walk {
       :next walk-player-next
@@ -482,13 +580,25 @@
       :next parachute-player-next
       :render parachute-player-render
       :cam next-parachute-camera
-      :lerp parachute-player-lerp
+      :lerp mat-player-lerp
     }
     :run {
       :next run-player-next
       :render move-player-render
       :cam next-run-camera
       :lerp move-player-lerp
+    }
+    :jump {
+      :next jump-player-next
+      :render jump-player-render
+      :cam next-run-camera
+      :lerp mat-player-lerp
+    }
+    :fall {
+      :next fall-player-next
+      :render mat-player-render
+      :cam next-run-camera
+      :lerp mat-player-lerp
     }
   }
 )
@@ -597,9 +707,11 @@
       )
       jump (controls keyboard :jump)
       run (controls keyboard :run)
+      spec (controls keyboard :spec)
       in (cond
         jump (assoc in :action :jump)
         run (assoc in :action :run)
+        spec (assoc in :action :spec)
         :else in
       )
     ]

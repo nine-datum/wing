@@ -75,6 +75,8 @@
 (defn space-up [^Keyboard keyboard] (-> keyboard .space .isUp))
 (defn enter-down [^Keyboard keyboard] (-> keyboard (.keyOfIndex org.lwjgl.glfw.GLFW/GLFW_KEY_ENTER) .isDown))
 (defn enter-up [^Keyboard keyboard] (-> keyboard (.keyOfIndex org.lwjgl.glfw.GLFW/GLFW_KEY_ENTER) .isUp))
+(defn tab-down [^Keyboard keyboard] (-> keyboard .tab .isDown))
+(defn tab-up [^Keyboard keyboard] (-> keyboard .tab .isUp))
 
 (defn wasd [kb]
   (mapv +
