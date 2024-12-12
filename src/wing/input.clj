@@ -67,6 +67,8 @@
 
 (defn escape-down [^Keyboard keyboard] (-> keyboard .escape .isDown))
 (defn escape-up [^Keyboard keyboard] (-> keyboard .escape .isUp))
+(defn backspace-down [^Keyboard keyboard] (-> keyboard .backspace .isDown))
+(defn backspace-up [^Keyboard keyboard] (-> keyboard .backspace .isUp))
 (defn shift-down [^Keyboard keyboard] (-> keyboard .leftShift .isDown))
 (defn shift-up [^Keyboard keyboard] (-> keyboard .leftShift .isUp))
 (defn space-down [^Keyboard keyboard] (-> keyboard .space .isDown))
