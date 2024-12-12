@@ -376,6 +376,12 @@
 )
 
 (defn fall-player-next [player in time delta-time]
+  (-> player :asset :body
+    (phys/rotate-by-relative-force
+      (->> in :raw-mov (apply math/x0y) (mapv * (repeat 0.1)))
+      [0 5 0]
+    )
+  )
   (cond
     (on-ground? player) (-> player :asset walk-player)
     (= (in :action) :jump) (-> player :asset parachute-player)
