@@ -334,7 +334,7 @@
     {
       :asset asset
       :color color
-      :start time
+      :age 0
       :state :jump
       :anim "jump"
       :mat (phys/get-matrix body)
@@ -344,25 +344,28 @@
 
 (defn jump-player-next [player in time delta-time]
   (let [
-      { :keys [asset start] } player
+      { :keys [asset age] } player
       { :keys [body world] } asset
-      t (- time start)
-      falling? (> t 2/3)
+      falling? (> age 2/3)
+      age (+ age delta-time)
     ]
     (cond
       falling? (fall-player asset)
-      :else (assoc player :mat (phys/get-matrix body))
+      :else (assoc player :age age :mat (phys/get-matrix body))
     )
   )
 )
 
 (defn jump-player-render [player dev res time]
   (let [
-      { :keys [anim start] } player
-      t (- time start)
+      { :keys [anim age] } player
     ]
-    (mat-player-render player dev res t)
+    (mat-player-render player dev res age)
   )
+)
+
+(defn jump-player-lerp [a b t]
+  (assoc (mat-player-lerp a b t) :age (math/lerp (a :age) (b :age) t))
 )
 
 (defn fall-player [asset]
@@ -598,7 +601,7 @@
       :next jump-player-next
       :render jump-player-render
       :cam next-run-camera
-      :lerp mat-player-lerp
+      :lerp jump-player-lerp
     }
     :fall {
       :next fall-player-next
