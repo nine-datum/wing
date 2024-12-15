@@ -11,6 +11,7 @@
 (def got-messages (atom nil))
 (def prev-messages (atom nil))
 (def prev-time (atom nil))
+(def prev-delta-time (atom nil))
 
 (defn get-time [] (/ (System/currentTimeMillis) 1000))
 
@@ -21,9 +22,15 @@
 )
 
 (defn accept [name uid val]
-  (reset! prev-messages @got-messages)
-  (swap! got-messages #(assoc % (str name "_" uid) val))
-  (reset! prev-time (get-time))
+  (let [
+      time (get-time)
+      prev @prev-time
+    ]
+    (reset! prev-messages @got-messages)
+    (swap! got-messages #(assoc % (str name "_" uid) val))
+    (when prev (reset! prev-delta-time (- time prev)))
+    (reset! prev-time time)
+  )
 )
 
 (defn got []
@@ -35,7 +42,9 @@
       as @prev-messages
       bs @got-messages
       t @prev-time
-      p (when t (-> (get-time) (- t) (* rate)))
+      dt @prev-delta-time
+      rate (when dt (if (> dt 0) (/ 1 dt) 1))
+      p (when (and t rate) (-> (get-time) (- t) (* rate)))
     ]
     (when (and as bs p)
       (->> bs keys
