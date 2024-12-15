@@ -184,12 +184,7 @@
 )
 
 (defn rotate-by-relative-force [^RigidBody body force rel]
-  (let [
-      ang (mat/cross rel force)
-    ]
-    (.applyTorque body (apply make-vec3 ang))
-    body
-  )
+  (->> force (mat/cross rel) (set-angular-velocity body))
 )
 
 (defn apply-local-force [^RigidBody body force at]

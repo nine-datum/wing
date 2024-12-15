@@ -208,6 +208,7 @@
     (doto body
       (phys/set-rotation rot)
       (phys/set-angular-velocity [0 0 0])
+      (phys/set-velocity [0 0 0])
       (phys/set-rotation-enabled false)
     )
     {
@@ -381,7 +382,7 @@
 (defn fall-player-next [player in time delta-time]
   (-> player :asset :body
     (phys/rotate-by-relative-force
-      (->> in :raw-mov (apply math/x0y) (mapv * (repeat 0.1)))
+      (->> in :raw-mov (apply math/x0y) reverse)
       [0 5 0]
     )
   )
@@ -420,6 +421,7 @@
       [tx ty] turn
       fwd-wing-rot (fn [sig] [(* tx sig Math/PI 1/8) 0 (-> tx - (* Math/PI 1/4))])
       back-wing-rot [(-> ty - (max 0) (* Math/PI 1/6)) 0 0]
+      back-wing-pos-z (-> ty - (max 0))
       wing-area (fn [area] (-> ty - inc (/ 2) (* area)))
       wings [
         { ; left wing
@@ -437,7 +439,7 @@
         {
           ; back wing
           :area (wing-area 4)
-          :rel [0 -2 0]
+          :rel [0 -2 back-wing-pos-z]
           :norm [0 0 -1]
           :rot back-wing-rot
         }
