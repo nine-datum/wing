@@ -30,7 +30,7 @@
     ]
     (when (and
         (not= uid client-uid)
-        (-> @got-archive (get uid) (get uid) (get :time 0) (< time))
+        (-> @got-archive (get uid) (get :time 0) (< time))
       )
       (reset! prev-messages @got-messages)
       (swap! got-messages #(assoc % uid val))
