@@ -27,7 +27,7 @@
         ]
         (println "client connected : " name ", clients total : " (count @clients))
         (client/send-udp (-> sock .getInetAddress .getHostAddress) udp-port running?
-          (comp client/string->bytes pr-str (partial apply merge) client/archive)
+          (comp client/string->bytes pr-str vals client/archive)
         )
         (while (and active? (not= @last "end"))
           (->> in .readUTF (reset! last))

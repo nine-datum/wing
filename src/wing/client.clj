@@ -117,12 +117,15 @@
       (let [
           sock (DatagramSocket. port)
           buf (byte-array 2048)
-          pack (DatagramPacket. buf (alength buf))
         ]
         (while (continue?)
-          (.receive sock pack)
-          (-> pack .getData bytes->string func)
-          (Thread/sleep 1)
+          (let [
+              pack (DatagramPacket. buf (alength buf))
+            ]
+            (.receive sock pack)
+            (-> pack .getData bytes->string func)
+            (Thread/sleep 1)
+          )
         )
         (.close sock)
       )
@@ -193,9 +196,9 @@
         (read-udp udp-port running?
           (fn [l]
             (let [
-                map (when (-> l first (= (char 123))) (read-string l))
+                lst (when l (read-string l))
               ]
-              (when map (doseq [p map] (-> p second accept)))
+              (doseq [p lst] (accept p))
             )
           )
         )
@@ -203,7 +206,7 @@
         (send-udp addr udp-port running?
           #(let [msg @sent-message] (when msg (->> msg
             (hash-map :name name :time (get-time) :uid uid :val)
-            (hash-map uid)
+            list
             pr-str string->bytes
           )))
         )
