@@ -27,17 +27,16 @@
 (defn accept [msg]
   (let [
       { :keys [name uid time val] } msg
-      cond1? (not= uid client-uid)
       t (-> @got-archive (get uid) (get :time 0))
-      cond2? (< t time)
-      pass? (and cond1? cond2?)
+      not-self? (not= uid client-uid)
+      new? (< t time)
+      pass? (and not-self? new?)
     ]
-    (println "Got message, conds : " [cond1? cond2?] ", times [past present eq?] :" [t time (= t time)])
+    (when new? (swap! got-archive #(assoc % uid msg)))
     (when pass?
       (reset! prev-messages @got-messages)
       (swap! got-messages #(assoc % uid val))
       (reset! prev-time (get-time))
-      (swap! got-archive #(assoc % uid msg))
     )
   )
 )
@@ -85,6 +84,7 @@
   (reset! got-messages nil)
   (reset! prev-messages nil)
   (reset! prev-time nil)
+  (reset! got-archive nil)
 )
 
 (def charset (Charset/forName "UTF-8"))
@@ -193,7 +193,6 @@
           uid client-uid
           sock (Socket. addr port)
           out (-> sock .getOutputStream DataOutputStream.)
-          counter (partial swap! (atom 0) inc)
         ]
         (println "client started")
         (read-udp udp-port running?
@@ -208,7 +207,7 @@
         (handle-in sock)
         (send-udp addr udp-port running?
           #(let [msg @sent-message] (when msg (->> msg
-            (hash-map :name name :time (counter) :uid uid :val)
+            (hash-map :name name :time (get-time) :uid uid :val)
             list
             pr-str string->bytes
           )))
