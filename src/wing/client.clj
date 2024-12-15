@@ -201,11 +201,11 @@
         )
         (handle-in sock)
         (send-udp addr udp-port running?
-          #(->> @sent-message
+          #(let [msg @sent-message] (when msg (->> msg
             (hash-map :name name :time (get-time) :uid uid :val)
             (hash-map uid)
             pr-str string->bytes
-          )
+          )))
         )
         (while (running?) (Thread/sleep 1))
         (.writeUTF out "end")
