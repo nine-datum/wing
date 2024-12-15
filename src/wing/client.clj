@@ -13,6 +13,8 @@
 (def got-messages (atom nil))
 (def prev-messages (atom nil))
 (def prev-time (atom nil))
+(def client-uid (str (java.util.UUID/randomUUID)))
+(def got-archive (atom nil))
 
 (defn get-time [] (/ (System/currentTimeMillis) 1000))
 
@@ -22,14 +24,28 @@
   (reset! sent-message val)
 )
 
-(defn accept [name uid val]
-  (reset! prev-messages @got-messages)
-  (swap! got-messages #(assoc % uid val))
-  (reset! prev-time (get-time))
+(defn accept [msg]
+  (let [
+      { :keys [name uid time val] } msg
+    ]
+    (when (and
+        (not= uid client-uid)
+        (-> @got-archive (get uid) (get uid) (get :time 0) (< time))
+      )
+      (reset! prev-messages @got-messages)
+      (swap! got-messages #(assoc % uid val))
+      (reset! prev-time (get-time))
+      (swap! got-archive #(assoc % uid msg))
+    )
+  )
 )
 
 (defn got []
-   @got-messages
+  @got-messages
+)
+
+(defn archive []
+  @got-archive
 )
 
 (defn got-lerp [lerp-fn]
@@ -169,7 +185,7 @@
   (future
     (try
       (let [
-          uid (str (java.util.UUID/randomUUID))
+          uid client-uid
           sock (Socket. addr port)
           out (-> sock .getOutputStream DataOutputStream.)
         ]
@@ -179,13 +195,17 @@
             (let [
                 map (when (-> l first (= (char 123))) (read-string l))
               ]
-              (when map (doseq [p map] (accept "player" (first p) (second p))))
+              (when map (doseq [p map] (-> p second accept)))
             )
           )
         )
         (handle-in sock)
         (send-udp addr udp-port running?
-          #(->> @sent-message (hash-map uid) pr-str string->bytes)
+          #(->> @sent-message
+            (hash-map :name name :time (get-time) :uid uid :val)
+            (hash-map uid)
+            pr-str string->bytes
+          )
         )
         (while (running?) (Thread/sleep 1))
         (.writeUTF out "end")

@@ -16,7 +16,7 @@
   (reset! active? false)
 )
 
-(defn handle-client [sock clients udp-port]
+(defn handle-client [sock clients]
   (future
     (try
       (let [
@@ -26,8 +26,8 @@
           last (atom "")
         ]
         (println "client connected : " name ", clients total : " (count @clients))
-        (client/send-udp (-> sock .getInetAddress .getHostAddress) udp-port running?
-          (comp client/string->bytes pr-str client/got)
+        (client/send-udp (-> sock .getInetAddress .getHostAddress) (.getPort sock) running?
+          (comp client/string->bytes pr-str (partial apply merge) vals client/archive)
         )
         (while (and active? (not= @last "end"))
           (->> in .readUTF (reset! last))
@@ -61,7 +61,7 @@
                 new-cl (.accept serv)
               ]
               (swap! clients #(conj % new-cl))
-              (handle-client new-cl clients udp-port)
+              (handle-client new-cl clients)
             ))
             (catch Throwable e
               (println "Error waiting for client : " e)
