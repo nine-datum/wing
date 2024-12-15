@@ -382,7 +382,7 @@
 (defn fall-player-next [player in time delta-time]
   (-> player :asset :body
     (phys/rotate-by-relative-force
-      (->> in :raw-mov (apply math/x0y) reverse)
+      (in :mov)
       [0 5 0]
     )
   )
