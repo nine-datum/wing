@@ -405,6 +405,7 @@
     :color (asset :color)
     :mat (-> asset :body phys/get-matrix)
     :anim "ball"
+    :age 0
   }
 )
 
@@ -413,16 +414,19 @@
       body (-> player :asset :body)
       mat (phys/get-matrix body)
       mat4 (math/mat4f mat)
-      rel (-> mat4 (.transformPoint (math/vec3f 0 2 0)) math/floats-from-vec3f)
+      pos (-> mat4 (.transformPoint (math/vec3f 0 0 0)) math/floats-from-vec3f)
       src (-> mat4 (.transformVector (math/vec3f 0 1 0))
         math/floats-from-vec3f math/normalize
       )
       vel (phys/get-velocity body)
       dst (math/normalize vel)
       dot (mat/dot src dst)
+      delta (mapv - dst src)
+      grounded? (on-ground? player)
     ]
-    (phys/apply-world-force body (mapv * vel (repeat 1/4)) rel)
+    (phys/apply-world-force body delta (mapv + pos src))
     (cond
+      grounded? (-> player :asset walk-player)
       (and (> (mat/length vel) flight-enter-speed) (> dot 0.99)) (do
         (phys/set-angular-velocity body [0 0 0])
         (-> player :asset fly-player)
