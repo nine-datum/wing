@@ -24,12 +24,16 @@
 (def player-group 16)
 (def player-mask (bit-not 0))
 
+(def flight-enter-speed 10)
+(def flight-leave-speed 5)
+
 (declare game-loop)
 (declare game-render-loop)
 (declare walk-player)
 (declare run-player)
 (declare jump-player)
 (declare fall-player)
+(declare ball-player)
 (declare fly-player)
 (declare parachute-player)
 
@@ -389,8 +393,42 @@
   (cond
     (on-ground? player) (-> player :asset walk-player)
     (= (in :action) :jump) (-> player :asset parachute-player)
-    (= (in :action) :spec) (-> player :asset fly-player)
+    (= (in :action) :spec) (-> player :asset ball-player)
     :else (assoc player :mat (-> player :asset :body phys/get-matrix))
+  )
+)
+
+(defn ball-player [asset]
+  {
+    :asset asset
+    :state :ball
+    :color (asset :color)
+    :mat (-> asset :body phys/get-matrix)
+    :anim "ball"
+  }
+)
+
+(defn ball-player-next [player in time delta-time]
+  (let [
+      body (-> player :asset :body)
+      mat (phys/get-matrix body)
+      mat4 (math/mat4f mat)
+      rel (-> mat4 (.transformPoint (math/vec3f 0 2 0)) math/floats-from-vec3f)
+      src (-> mat4 (.transformVector (math/vec3f 0 1 0))
+        math/floats-from-vec3f math/normalize
+      )
+      vel (phys/get-velocity body)
+      dst (math/normalize vel)
+      dot (mat/dot src dst)
+    ]
+    (phys/apply-world-force body (mapv * vel (repeat 1/4)) rel)
+    (cond
+      (and (> (mat/length vel) flight-enter-speed) (> dot 0.99)) (do
+        (phys/set-angular-velocity body [0 0 0])
+        (-> player :asset fly-player)
+      )
+      :else (assoc player :mat mat)
+    )
   )
 )
 
@@ -405,7 +443,7 @@
     {
       :asset asset
       :state :fly
-      :turn [0 0]
+      :turn [0 -1]
       :color color
       :mat (phys/get-matrix body)
     }
@@ -460,10 +498,14 @@
       body-mat (math/mat4f mat-vec)
     ]
     (doseq [w wings] (proc-wing body body-mat w))
-    (case (in :action)
-      :jump (parachute-player asset)
-      :spec (fall-player asset)
-      (assoc player :turn turn :mat mat-vec)
+    (cond
+      (-> body phys/get-velocity mat/length (< flight-leave-speed)) (ball-player asset)
+      :else
+      (case (in :action)
+        :jump (parachute-player asset)
+        :spec (fall-player asset)
+        (assoc player :turn turn :mat mat-vec)
+      )
     )
   )
 )
@@ -607,6 +649,12 @@
     }
     :fall {
       :next fall-player-next
+      :render mat-player-render
+      :cam next-run-camera
+      :lerp mat-player-lerp
+    }
+    :ball {
+      :next ball-player-next
       :render mat-player-render
       :cam next-run-camera
       :lerp mat-player-lerp

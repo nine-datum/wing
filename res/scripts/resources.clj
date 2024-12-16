@@ -29,7 +29,7 @@
       anims (->>
         [
           "flight" "left" "right" "drop" "back"
-          "idle" "walk" "run" "jump" "fall"
+          "idle" "walk" "run" "jump" "fall" "ball"
           "open_parachute" "parachuting"
         ]
         (map #(vector % (graph/load-anim-clj storage (partial = "JOINT")
