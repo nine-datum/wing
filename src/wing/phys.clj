@@ -173,6 +173,10 @@
   body
 )
 
+(defn update-velocity [^RigidBody body func]
+  (->> body get-velocity func (set-velocity body))
+)
+
 (defn apply-world-force [^RigidBody body force at]
   (let [
       rel (mapv - at (get-position body))

@@ -91,12 +91,14 @@
       delt (mapv - pos campos)
       camlook (math/normalize delt)
       new-camrot (math/look-rot camlook)
-      new-campos #(->> camlook (map -) (map * (repeat %)) (mapv + pos))
-      new-campos (comp #(update % 1 (partial max (pos 1))) new-campos)
-      campos (cond
-        (> max-camdist (mat/length delt)) (math/lerpv campos (new-campos camdist) (* 3 delta-time))
-        :else (new-campos max-camdist)
+      new-campos #(as-> camlook c
+        (mapv - c)
+        (update c 1 (partial max 0))
+        (math/normalize c)
+        (map * c (repeat %))
+        (mapv + c pos)
       )
+      campos (math/lerpv campos (new-campos camdist) (* 3 delta-time))
       camrot (math/lerpv-angle camrot new-camrot (* 3 delta-time))
     ]
     (assoc player :asset (assoc asset :campos campos :camrot camrot))
@@ -336,7 +338,7 @@
       rot (-> body body-look math/look-rot)
     ]
     (phys/set-rotation-enabled body false)
-    (phys/apply-force body [0 300 0])
+    (phys/update-velocity body #(mapv + % [0 10 0]))
     {
       :asset asset
       :color color
