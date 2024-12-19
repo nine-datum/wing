@@ -26,6 +26,7 @@
       player-wings-model (graph/load-animated-model graphics "res/player/player.dae")
       player-model (graph/load-animated-model graphics "res/player/player-no-wings.dae")
       parachute (graph/load-model graphics "res/player/parachute.dae")
+      arrow (graph/load-model graphics "res/player/arrow.dae")
       anims (->>
         [
           "flight" "left" "right" "drop" "back"
@@ -63,6 +64,7 @@
       :player-model player-model
       :player-wings-model player-wings-model
       :parachute parachute
+      :arrow arrow
       :anims anims
       :game-setup game/game-setup
       :server-setup game/server-setup

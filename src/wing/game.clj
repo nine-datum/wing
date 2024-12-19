@@ -723,7 +723,7 @@
 )
 
 (defn make-netplayer [player]
-  (dissoc player :asset)
+  (assoc (dissoc player :asset) :world-center (-> player :asset :body phys/get-position))
 )
 
 (defn client-loop [dev res state]
@@ -849,6 +849,25 @@
       (-> [-1 -1 -0.5] math/normalize graph/world-light)
       (-> state :model graph/model)
       (doseq [p (concat players net-players)] (render-player p dev res (state :time)))
+      (doseq [np net-players]
+        (let [
+            cen (-> p :asset :body phys/get-position)
+            pos (np :world-center)
+            dir (mapv - pos cen)
+            color (np :color)
+            arrow (graph/replace-materials gl (res :arrow) { "Color-material" color })
+          ]
+          (when (< 2 (mat/length dir))
+            (graph/push-matrix)
+            (apply graph/translate cen)
+            (apply graph/rotate (-> dir math/normalize math/look-rot))
+            (graph/translate 0 0 2/3)
+            (graph/scale 1/3 1/3 1/3)
+            (graph/model arrow)
+            (graph/pop-matrix)
+          )
+        )
+      )
     ) players (-> player-num viewports cycle))
     (graph/viewport gl 0 0 w h)
   )
