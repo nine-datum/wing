@@ -79,6 +79,26 @@
   )
 )
 
+(defn blank-button [asset layout x y w h color hcolor pcolor]
+  (let [
+      mouse (asset :mouse)
+      [x y w h] (layout asset x y w h)
+      [mx my] (mouse :pos)
+      [ex ey] (map + [x y] [w h])
+      hovered (and (<= x mx ex) (<= y my ey))
+      pressed (and hovered (mouse :left-down))
+      released (and hovered (mouse :left-up))
+      img-color (cond
+        pressed pcolor
+        hovered hcolor
+        :else color
+      )
+    ]
+    (graph/image (asset :button-image) (asset :image-shader) x y w h img-color)
+    released
+  )
+)
+
 (defn aspect-fit-layout [asset x y w h]
   (let [
       sw (--> asset :width ())

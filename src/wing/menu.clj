@@ -6,13 +6,16 @@
     [wing.input :as input]
     [wing.client :as client]
     [wing.scripting :as scripting]
-    [wing.mac :refer [-->]]
+    [wing.mac :refer [--> funcall]]
+    [clojure.java.io :refer [make-parents]]
   ]
 )
 
 (declare menu-loop)
+(declare menu-loop-base)
 (declare pause-menu-loop)
 (declare play-menu-setup)
+(declare profile-menu-setup)
 
 (defn menu-setup [dev res]
   {
@@ -26,10 +29,84 @@
     ]
     :buttons [
       ["Играть" (fn [dev res state] (play-menu-setup dev res))]
-      ["Настройки" (fn [dev res state] state)]
+      ["Профиль" (fn [dev res state] (profile-menu-setup dev res))]
       ["Выход" (constantly nil)]
     ]
   }
+)
+
+(def profile-path "user/profile")
+
+(defn load-profile []
+  (-> profile-path java.io.File. .exists (when (-> profile-path slurp read-string)))
+)
+
+(defn save-profile [p]
+  (make-parents profile-path)
+  (spit profile-path (pr-str p))
+)
+
+(defn profile-menu-loop [dev res state]
+  (doto (dev :gl)
+    (.clearDepth)
+    (.clearColor 1/2 1/2 1/2 1)
+  )
+  (let [
+      { :keys [player-wings-model anims] } res
+      asset (state :gui-asset)
+      layout gui/aspect-fit-layout
+      anim (-> anims (get "idle") :anim (graph/animate 0))
+      model (graph/replace-materials (dev :gl) player-wings-model { "ColorA-material" (state :color)})
+      w (-> dev :width funcall)
+      h (-> dev :height funcall)
+      colors [
+        [1 0 0 1]
+        [0 1 0 1]
+        [0 0 1 1]
+      ]
+      cs (mapv
+        (fn [c i]
+          [(gui/blank-button asset layout -0.05 (-> i (* 0.1) (- 0.5)) 0.1 0.1 c c c) c]
+        )
+        colors
+        (range)
+      )
+      color-selected (nth (->> cs (filter first) first) 1 (state :color))
+      ok? (gui/button asset layout "Принять" -0.5 -0.7 1 0.1)
+      cancel? (gui/button asset layout "Отмена" -0.5 -0.9 1 0.1)
+    ]
+    (graph/projection (math/perspective w h (* Math/PI 1/3) 0.3 1000))
+    (graph/camera (math/first-person-camera [0 1 -3] [0 0 0]))
+    (graph/push-matrix)
+    (graph/translate -1 0 0)
+    (graph/rotate 0 Math/PI 0)
+    (graph/animated-model model anim nil)
+    (graph/pop-matrix)
+    (cond
+      ok? (do (save-profile (select-keys state [ :color ])) (menu-setup dev res))
+      cancel? (menu-setup dev res)
+      :else (assoc state :color color-selected)
+    )
+  )
+)
+
+(defn profile-menu-setup [dev res]
+  (let [
+      color (get (load-profile) :color [1 0 0 1])
+    ]
+    {
+      :gui-asset (res :gui-asset)
+      :loop profile-menu-loop
+      :color color
+      :buttons [
+        ["Принять" (fn [dev res state] (do
+          (save-profile (select-keys state [ :color ]))
+          (menu-setup dev res)
+        ))]
+        ["Отмена" (fn [dev res state] (menu-setup dev res))]
+      ]
+    }
+  )
 )
 
 (defn connect-menu-loop [dev res state]
