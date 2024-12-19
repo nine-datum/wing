@@ -687,7 +687,7 @@
   )
 )
 
-(defn game-setup [dev res player-num]
+(defn game-setup [dev res colors]
   (let [
       world (phys/dynamics-world)
       level (-> res :levels :city)
@@ -697,17 +697,21 @@
       spawn-look (-> start (.transformVector (math/vec3f 0 0 1)) math/floats-from-vec3f)
       spawn-rot (math/look-rot spawn-look)
       spawn-pos-a (mapv + [2 0 0] spawn-pos)
-      players (take player-num (vector
-        (walk-player (player-asset world spawn-pos spawn-rot :left [1 0 0 1]))
-        (walk-player (player-asset world spawn-pos-a spawn-rot :right [0 0 1 1]))
-      ))
+      players (mapv
+        (fn [pos control color]
+          (walk-player (player-asset world pos spawn-rot control color))
+        )
+        [spawn-pos spawn-pos-a]
+        [:left :right]
+        colors
+      )
     ]
     (doseq [s shapes] (phys/add-rigid-body world (s :shape) [0 0 0] [0 0 0] 0))
     {
       :loop game-loop
       :exit (constantly nil)
       :players players
-      :player-num player-num
+      :player-num (count colors)
       :time (--> dev :get-time ())
       :model model
       :world world
@@ -739,17 +743,17 @@
   )
 )
 
-(defn client-setup [dev res addr name]
+(defn client-setup [dev res addr color name]
   (client/start-client addr (res :net-port) (res :udp-port) name)
-  (assoc (game-setup dev res 1)
+  (assoc (game-setup dev res [color])
     :loop client-loop
     :exit client/close-client
   )
 )
 
-(defn server-setup [dev res name]
+(defn server-setup [dev res color name]
   (server/start-server (res :net-port) (res :udp-port) (res :broadcast-port) name)
-  (assoc (client-setup dev res "localhost" name)
+  (assoc (client-setup dev res "localhost" color name)
     :loop server-loop
     :exit (fn [] (client/close-client) (server/close-server))
   )

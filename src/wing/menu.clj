@@ -7,7 +7,7 @@
     [wing.client :as client]
     [wing.scripting :as scripting]
     [wing.mac :refer [--> funcall]]
-    [clojure.java.io :refer [make-parents]]
+    [wing.io :refer [save-profile load-profile]]
   ]
 )
 
@@ -33,17 +33,6 @@
       ["Выход" (constantly nil)]
     ]
   }
-)
-
-(def profile-path "user/profile")
-
-(defn load-profile []
-  (-> profile-path java.io.File. .exists (when (-> profile-path slurp read-string)))
-)
-
-(defn save-profile [p]
-  (make-parents profile-path)
-  (spit profile-path (pr-str p))
 )
 
 (defn profile-menu-loop [dev res state]
@@ -115,7 +104,7 @@
 
 (defn connect-menu-loop [dev res state]
   (let [
-      { :keys [servers gui-asset] } state
+      { :keys [servers gui-asset color] } state
       layout gui/aspect-fit-layout
       _ (menu-loop dev res state)
       bs (mapv
@@ -132,14 +121,14 @@
       serv (->> bs (filter :press?) first)
     ]
     (cond
-      serv ((res :client-setup) dev res (serv :addr) "player")
+      serv ((res :client-setup) dev res (serv :addr) color "player")
       calcel (play-menu-setup dev res)
       :else state
     )
   )
 )
 
-(defn connect-menu-setup [dev res]
+(defn connect-menu-setup [dev res color]
   (let [
       servers (atom ())
     ]
@@ -148,6 +137,7 @@
     )
     {
       :loop connect-menu-loop
+      :color color
       :servers servers
       :gui-asset (res :gui-asset)
       :images [
@@ -158,20 +148,24 @@
 )
 
 (defn play-menu-setup [dev res]
-  {
-    :loop menu-loop
-    :gui-asset (res :gui-asset)
-    :images [
-      [(res :menu-image) gui/aspect-fit-layout [-1.5 -1 3 2]]
+  (let [
+      color (-> load-profile funcall :color)
     ]
-    :buttons [
-      ["1 игрок" (fn [dev res state] ((res :game-setup) dev res 1))]
-      ["2 игрока" (fn [dev res state] ((res :game-setup) dev res 2))]
-      ["Создать сервер" (fn [dev res state] ((res :server-setup) dev res "player"))]
-      ["Подключиться" (fn [dev res state] (connect-menu-setup dev res))]
-      ["Назад" (fn [dev res state] (menu-setup dev res))]
-    ]
-  }
+    {
+      :loop menu-loop
+      :gui-asset (res :gui-asset)
+      :images [
+        [(res :menu-image) gui/aspect-fit-layout [-1.5 -1 3 2]]
+      ]
+      :buttons [
+        ["1 игрок" (fn [dev res state] ((res :game-setup) dev res [color]))]
+        ["2 игрока" (fn [dev res state] ((res :game-setup) dev res (vector color [0 0 1 1])))]
+        ["Создать сервер" (fn [dev res state] ((res :server-setup) dev res color "player"))]
+        ["Подключиться" (fn [dev res state] (connect-menu-setup dev res color))]
+        ["Назад" (fn [dev res state] (menu-setup dev res))]
+      ]
+    }
+  )
 )
 
 (defn error-menu-setup [dev res message]
