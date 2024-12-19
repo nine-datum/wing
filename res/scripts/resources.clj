@@ -41,7 +41,7 @@
         (into {})
       )
       levels (->>  {
-          :city "res/world/city_tex.dae"
+          :city "res/world/city.dae"
         }
         (mapv (fn [[name file]] (vector name {
           :markers (geom/geom-markers-map storage file)

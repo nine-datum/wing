@@ -98,7 +98,10 @@
         (map * c (repeat %))
         (mapv + c pos)
       )
-      campos (math/lerpv campos (new-campos camdist) (* 3 delta-time))
+      campos (cond
+        (-> delt mat/length (> max-camdist)) (new-campos max-camdist)
+        :else (math/lerpv campos (new-campos camdist) (* 3 delta-time))
+      )
       camrot (math/lerpv-angle camrot new-camrot (* 3 delta-time))
     ]
     (assoc player :asset (assoc asset :campos campos :camrot camrot))
