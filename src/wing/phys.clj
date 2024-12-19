@@ -66,6 +66,7 @@
 (declare set-matrix)
 (declare rotmat)
 (declare get-position)
+(declare get-velocity)
 (declare set-angular-velocity)
 
 (defn add-rigid-body [dynamics-world shape pos rot mass]
