@@ -52,25 +52,29 @@
     (.clearColor 1/2 1/2 1/2 1)
   )
   (let [
-      { :keys [player-wings-model anims] } res
+      { :keys [player-model anims] } res
       asset (state :gui-asset)
       layout gui/aspect-fit-layout
-      anim (-> anims (get "idle") :anim (graph/animate 0))
-      model (graph/replace-materials (dev :gl) player-wings-model { "ColorA-material" (state :color)})
+      anim (-> anims (get "walk") :anim (graph/animate (-> dev :get-time funcall)))
+      model (graph/replace-materials (dev :gl) player-model { "ColorA-material" (state :color)})
       w (-> dev :width funcall)
       h (-> dev :height funcall)
-      colors [
-        [1 0 0 1]
-        [0 1 0 1]
-        [0 0 1 1]
-      ]
+      colors (->> (range 64)
+        (map #(vector (quot (rem % 16) 4) (rem % 4) (quot % 16)))
+        (map #(mapv / % (repeat 4)))
+        (map #(conj % 1))
+      )
       cs (mapv
         (fn [c i]
-          [(gui/blank-button asset layout -0.05 (-> i (* 0.1) (- 0.5)) 0.1 0.1 c c c) c]
+          [(gui/blank-button asset layout
+            (-> i (rem 8) (* 0.1))
+            (-> i (quot 8) (* 0.1) (- 0.5))
+            0.1 0.1 c c c) c]
         )
         colors
         (range)
       )
+      _ (gui/text asset layout "Выберите цвет" -0.5 0.5 1 0.1 [1 1 0 1])
       color-selected (nth (->> cs (filter first) first) 1 (state :color))
       ok? (gui/button asset layout "Принять" -0.5 -0.7 1 0.1)
       cancel? (gui/button asset layout "Отмена" -0.5 -0.9 1 0.1)
