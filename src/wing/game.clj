@@ -301,12 +301,10 @@
   )
 )
 
-(defn mat-player-render [player dev res time]
+(defn anim-player-render [player dev res time anim]
   (let [
-      { :keys [anims] } res
-      { :keys [anim model mat color] } player
+      { :keys [model mat color] } player
       model (if model model :player-model)
-      anim (-> anim anims :anim (graph/animate time))
       offset (mapv - player-offset)
       model (make-player-model (dev :gl) (res model) color)
     ]
@@ -315,6 +313,12 @@
     (apply graph/translate offset)
     (graph/animated-model model anim nil)
     (graph/pop-matrix)
+  )
+)
+
+(defn mat-player-render [player dev res time]
+  (anim-player-render player dev res time
+    (-> player :anim ((res :anims)) :anim (graph/animate time))
   )
 )
 
@@ -483,10 +487,7 @@
 )
 
 (defn flip-player [asset]
-  (assoc (jump-player asset)
-    :state :flip
-    :anim "ball"
-  )
+  (assoc (jump-player asset) :state :flip)
 )
 
 (defn flip-player-next [player in time delta-time]
@@ -494,13 +495,32 @@
       body (-> player :asset :body)
       mat (phys/get-matrix body)
       age (-> player :age (+ delta-time))
-      anim (if (> age 1/3) "ball" "jump")
     ]
     (phys/apply-local-force body [Math/PI 0 0] [0 1 0])
     (cond
       (> age 1) (-> player :asset fall-player)
-      :else (assoc player :mat mat :anim anim :age age)
+      :else (assoc player :mat mat :age age)
     )
+  )
+)
+
+(defn flip-player-render [player dev res time]
+  (let [
+      anims (res :anims)
+      age (player :age)
+      jump (-> "jump" anims :anim (graph/animate age))
+      ball (-> "ball" anims :anim (graph/animate time))
+      fall (-> "fall" anims :anim (graph/animate time))
+      n (- age 2/3)
+      n (if (< n 0) (/ n 2/3) (* n 3))
+      anim (impl Skeleton transform [bone]
+        (cond
+          (< n 0) (.lerp (.transform jump bone) (.transform ball bone) (inc n))
+          :else (.lerp (.transform ball bone) (.transform fall bone) n)
+        )
+      )
+    ]
+    (anim-player-render player dev res time anim)
   )
 )
 
@@ -807,7 +827,7 @@
     }
     :flip {
       :next flip-player-next
-      :render mat-player-render
+      :render flip-player-render
       :cam next-run-camera
       :lerp mat-player-lerp
     }
