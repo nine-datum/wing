@@ -36,6 +36,7 @@
 (declare lost-player)
 (declare fly-player)
 (declare parachute-player)
+(declare flip-player)
 
 (defn left-player-controls [keyboard sym]
   (case sym
@@ -475,8 +476,30 @@
     ]
     (phys/set-velocity body vel)
     (cond
-      (or (not w) (= (in :action) :jump) (> age 3)) (-> player :asset reset-asset-body jump-player)
+      (or (not w) (= (in :action) :jump) (> age 3)) (-> player :asset reset-asset-body flip-player)
       :else (assoc player :mat mat :age age)
+    )
+  )
+)
+
+(defn flip-player [asset]
+  (assoc (jump-player asset)
+    :state :flip
+    :anim "ball"
+  )
+)
+
+(defn flip-player-next [player in time delta-time]
+  (let [
+      body (-> player :asset :body)
+      mat (phys/get-matrix body)
+      age (-> player :age (+ delta-time))
+      anim (if (> age 1/3) "ball" "jump")
+    ]
+    (phys/apply-local-force body [Math/PI 0 0] [0 1 0])
+    (cond
+      (> age 1) (-> player :asset fall-player)
+      :else (assoc player :mat mat :anim anim :age age)
     )
   )
 )
@@ -778,6 +801,12 @@
     }
     :wallrun {
       :next wallrun-player-next
+      :render mat-player-render
+      :cam next-run-camera
+      :lerp mat-player-lerp
+    }
+    :flip {
+      :next flip-player-next
       :render mat-player-render
       :cam next-run-camera
       :lerp mat-player-lerp
