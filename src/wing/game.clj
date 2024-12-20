@@ -61,11 +61,21 @@
   }
 )
 
+(defn reset-body [body]
+  (phys/set-gravity body [0 -9.8 0])
+)
+
+(defn reset-asset-body [asset]
+  (-> asset :body reset-body)
+  asset
+)
+
 (defn player-asset [world pos rot controls color]
   {
     :body (doto
       (phys/capsule world (mapv + pos player-offset) rot 0.2 1.6 1)
       (phys/set-group world player-group player-mask)
+      reset-body
     )
     :world world
     :controls controls
@@ -208,6 +218,27 @@
   )
 )
 
+(defn check-wall [player]
+  (let [
+      { :keys [body world] } (player :asset)
+      pos (phys/get-position body)
+      down (-> body
+        phys/get-matrix
+        math/mat4f
+        (.transformVector (math/vec3f 0 -1 0))
+        math/floats-from-vec3f
+        math/normalize
+      )
+      up (mapv - down)
+      d (mapv * down (repeat 3/2))
+      res (phys/sphere-cast world pos (mapv + pos d) 1/4 player-group)
+      { :keys [has-hit? normal] } res
+      dot (mat/dot normal up)
+    ]
+    (when (and has-hit? (> dot 1/3) (-> normal (nth 1) Math/abs (< 1/4))) res)
+  )
+)
+
 (defn move-player [asset state move-anim move-speed]
   (let [
       body (asset :body)
@@ -312,7 +343,7 @@
       next (move-player-next player in time delta-time)
     ]
     (case (in :action)
-      :jump (-> player :asset (jump-player time))
+      :jump (-> player :asset jump-player)
       :run (-> player :asset run-player)
       next
     )
@@ -328,20 +359,27 @@
       next (move-player-next player in time delta-time)
     ]
     (case (in :action)
-      :jump (-> player :asset (jump-player time))
+      :jump (-> player :asset jump-player)
       :run next
       (-> player :asset walk-player)
     )
   )
 )
 
-(defn jump-player [asset time]
+(defn jump-player [asset]
   (let [
       { :keys [body color] } asset
-      rot (-> body body-look math/look-rot)
+      up (-> body
+        phys/get-matrix
+        math/mat4f
+        (.transformVector (math/vec3f 0 1 0))
+        math/floats-from-vec3f
+        math/normalize
+      )
+      force (mapv * up (repeat 10))
     ]
     (phys/set-rotation-enabled body false)
-    (phys/update-velocity body #(mapv + % [0 10 0]))
+    (phys/update-velocity body #(mapv + % force))
     {
       :asset asset
       :color color
@@ -379,6 +417,69 @@
   (assoc (mat-player-lerp a b t) :age (math/lerp (a :age) (b :age) t))
 )
 
+(defn wallrun-player [asset wall]
+  (let [
+      body (asset :body)
+      norm (wall :normal)
+      point (wall :point)
+      plane-mat (->> norm math/look-rot (apply math/rotation))
+      plane-right (-> plane-mat (.transformVector (math/vec3f -1 0 0)) math/floats-from-vec3f)
+      plane-up (-> plane-mat (.transformVector (math/vec3f 0 1 0)) math/floats-from-vec3f)
+      dir (-> asset :body phys/get-look)
+      px (mat/dot dir plane-right)
+      py (mat/dot dir plane-up)
+      [px py] (math/normalize [px py])
+      rot-mat (math/mul
+        plane-mat
+        (math/rotation (/ Math/PI 2) 0 0)
+        (math/rotation 0 (+ (math/clock px py) Math/PI) 0)
+      )
+      pos (phys/get-position body)
+      mat (->> rot-mat
+        (.mul (apply math/translation (map + point norm)))
+        math/floats-from-mat4f
+      )
+    ]
+    (phys/set-matrix body mat)
+    (phys/set-rotation-enabled body false)
+    (phys/set-gravity body [0 0 0])
+    (phys/set-velocity body [0 0 0])
+    (phys/set-angular-velocity body [0 0 0])
+    {
+      :asset asset
+      :state :wallrun
+      :color (asset :color)
+      :mat mat
+      :pr plane-right
+      :pu plane-up
+      :pdir [px py]
+      :anim "run"
+    }
+  )
+)
+
+(defn wallrun-player-next [player in time delta-time]
+  (let [
+      body (-> player :asset :body)
+      w (check-wall player)
+      mat (phys/get-matrix body)
+      { :keys [pr pu pdir] } player
+      [px py] pdir
+      vel (->>
+        (map * pr (repeat px))
+        (map + (map * pu (repeat py)))
+        (mapv * (repeat 10))
+      )
+    ]
+    (phys/set-velocity body vel)
+    (cond
+      (= (in :action) :jump) (-> player :asset reset-asset-body jump-player)
+      w (assoc player :mat mat)
+      :else (-> player :asset reset-asset-body fall-player)
+    )
+  )
+)
+
 (defn fall-player [asset]
   {
     :asset asset
@@ -396,11 +497,16 @@
       [0 5 0]
     )
   )
-  (cond
-    (on-ground? player) (-> player :asset walk-player)
-    (= (in :action) :jump) (-> player :asset parachute-player)
-    (= (in :action) :spec) (-> player :asset lost-player)
-    :else (assoc player :mat (-> player :asset :body phys/get-matrix))
+  (let [
+      w (check-wall player)
+    ]
+    (cond
+      (on-ground? player) (-> player :asset walk-player)
+      (= (in :action) :jump) (-> player :asset parachute-player)
+      (= (in :action) :spec) (-> player :asset lost-player)
+      w (wallrun-player (player :asset) w)
+      :else (assoc player :mat (-> player :asset :body phys/get-matrix))
+    )
   )
 )
 
@@ -667,6 +773,12 @@
     }
     :lost {
       :next lost-player-next
+      :render mat-player-render
+      :cam next-run-camera
+      :lerp mat-player-lerp
+    }
+    :wallrun {
+      :next wallrun-player-next
       :render mat-player-render
       :cam next-run-camera
       :lerp mat-player-lerp

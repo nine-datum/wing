@@ -185,3 +185,7 @@
 )
 
 (defn zero-len? [v] (zero? (mat/length v)))
+
+(defn mul [& ms]
+  (reduce #(.mul %1 %2) ms)
+)

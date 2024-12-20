@@ -320,6 +320,7 @@
     math/mat4f
     (.transformVector (math/vec3f 0 0 1))
     math/floats-from-vec3f
+    math/normalize
   )
 )
 
@@ -392,6 +393,14 @@
   )
 )
 
+(defn make-mask [ignore-groups]
+  (cond
+    (empty? ignore-groups) -1
+    (-> ignore-groups rest empty?) (-> ignore-groups first bit-not short)
+    :else (-> (apply bit-or ignore-groups) bit-not short)
+  )
+)
+
 (defn sphere-check [^DiscreteDynamicsWorld world from to radius & ignore-groups]
   (let [
       ss (SphereShape. radius)
@@ -409,19 +418,14 @@
           1.0
         )
       )
-      mask (cond
-        (empty? ignore-groups) -1
-        (-> ignore-groups rest empty?) (-> ignore-groups first bit-not short)
-        :else (-> (apply bit-or ignore-groups) bit-not short)
-      )
     ]
-    (set! (.collisionFilterMask callback) mask)
+    (set! (.collisionFilterMask callback) (make-mask ignore-groups))
     (.convexSweepTest world ss tfrom tto callback)
     @res
   )
 )
 
-(defn sphere-cast [^DiscreteDynamicsWorld world from to radius]
+(defn sphere-cast [^DiscreteDynamicsWorld world from to radius & ignore-groups]
   (let [
       shape (doto (SphereShape. radius))
       [fx fy fz] from
@@ -436,6 +440,7 @@
           )
         )
       )
+      _ (set! (.collisionFilterMask callback) (make-mask ignore-groups))
       _ (.convexSweepTest world shape ft tt callback)
       has-hit? (.hasHit callback)
       point (-> callback .hitPointWorld extract-vec3)
@@ -459,13 +464,8 @@
       from (Vector3f. fx fy fz)
       to (Vector3f. tx ty tz)
       callback (CollisionWorld$ClosestRayResultCallback. from to)
-      mask (cond
-        (empty? ignore-groups) -1
-        (-> ignore-groups rest empty?) (-> ignore-groups first bit-not short)
-        :else (-> (apply bit-or ignore-groups) bit-not short)
-      )
     ]
-    (set! (.collisionFilterMask callback) mask)
+    (set! (.collisionFilterMask callback) (make-mask ignore-groups))
     (.rayTest world from to callback)
     (let [
         has-hit? (.hasHit callback)
