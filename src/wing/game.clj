@@ -20,6 +20,7 @@
 (def max-run-camdist 4)
 (def cam+ [0 1 0])
 (def player-offset [0 1 0])
+(def flip-length 1/2)
 
 (def player-group 16)
 (def player-mask (bit-not 0))
@@ -496,9 +497,9 @@
       mat (phys/get-matrix body)
       age (-> player :age (+ delta-time))
     ]
-    (phys/apply-local-force body [Math/PI 0 0] [0 1 0])
+    (phys/apply-local-force body [Math/PI 0 0] [0 (/ flip-length) 0])
     (cond
-      (> age 1) (-> player :asset fall-player)
+      (> age flip-length) (-> player :asset fall-player)
       :else (assoc player :mat mat :age age)
     )
   )
@@ -511,7 +512,7 @@
       jump (-> "jump" anims :anim (graph/animate age))
       ball (-> "ball" anims :anim (graph/animate time))
       fall (-> "fall" anims :anim (graph/animate time))
-      n (- age 2/3)
+      n (- (/ age flip-length) 2/3)
       n (if (< n 0) (/ n 2/3) (* n 3))
       anim (impl Skeleton transform [bone]
         (cond
