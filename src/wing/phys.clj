@@ -195,15 +195,16 @@
 
 (defn apply-local-force [^RigidBody body force at]
   (let [
-      [fx fy fz] force
-      [ax ay az] at
-      m (-> body (.getCenterOfMassTransform (Transform.)) .basis)
-      f (Vector3f. fx fy fz)
-      a (Vector3f. ax ay az)
+      [force at] (map
+        #(-> body get-matrix math/mat4f
+          (.transformVector (apply math/vec3f %))
+          math/floats-from-vec3f
+        )
+        [force at]
+      )
     ]
-    (.transform m f)
-    (.transform m a)
-    (.applyForce body f a)
+    (.applyCentralForce body (apply make-vec3 force))
+    (rotate-by-relative-force body force at)
     body
   )
 )

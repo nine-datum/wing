@@ -475,7 +475,7 @@
     (cond
       (= (in :action) :jump) (-> player :asset reset-asset-body jump-player)
       w (assoc player :mat mat)
-      :else (-> player :asset reset-asset-body fall-player)
+      :else (-> player :asset reset-asset-body jump-player)
     )
   )
 )
@@ -491,15 +491,13 @@
 )
 
 (defn fall-player-next [player in time delta-time]
-  (-> player :asset :body
-    (phys/rotate-by-relative-force
-      (in :mov)
-      [0 5 0]
-    )
-  )
   (let [
       w (check-wall player)
+      mov (->> in :raw-mov (apply math/x0y))
     ]
+    (doto (-> player :asset :body)
+      (phys/apply-local-force mov [0 5 0])
+    )
     (cond
       (on-ground? player) (-> player :asset walk-player)
       (= (in :action) :jump) (-> player :asset parachute-player)
