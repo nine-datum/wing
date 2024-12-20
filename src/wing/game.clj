@@ -438,6 +438,7 @@
         (phys/set-angular-velocity body [0 0 0])
         (-> player :asset fly-player)
       )
+      (= (in :action) :jump) (-> player :asset parachute-player)
       :else (assoc player :mat mat)
     )
   )
