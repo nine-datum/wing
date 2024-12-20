@@ -42,15 +42,18 @@
         (into {})
       )
       levels (->>  {
-          :city "res/world/city.dae"
+          :city [ "Нью Йорк" "res/world/city.dae" ]
+          :city-tex [ "Вашингтон" "res/world/city_tex.dae" ]
         }
-        (mapv (fn [[name file]] (vector name {
+        (mapv (fn [[name [label file]]] (vector name {
           :markers (geom/geom-markers-map storage file)
           :model (graph/load-model graphics file)
           :shapes (->>
             (geom/read-geom storage file)
             (mapv #(phys/geom-shape (% :vertex) (% :root)))
           )
+          :label label
+          :name name
         })))
         (into {})
       )

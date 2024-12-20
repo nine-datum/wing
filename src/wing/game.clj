@@ -691,10 +691,10 @@
   )
 )
 
-(defn game-setup [dev res colors]
+(defn game-setup [dev res level-name colors]
   (let [
       world (phys/dynamics-world)
-      level (-> res :levels :city)
+      level (-> res :levels level-name)
       { :keys [markers model shapes] } level
       start (markers "Start")
       spawn-pos (-> start (.transformPoint (math/vec3f 0 0 0)) math/floats-from-vec3f)
@@ -747,17 +747,19 @@
   )
 )
 
-(defn client-setup [dev res addr color name]
+(defn client-setup [dev res level-name addr color name]
   (client/start-client addr (res :net-port) (res :udp-port) name)
-  (assoc (game-setup dev res [color])
+  (assoc (game-setup dev res level-name [color])
     :loop client-loop
     :exit client/close-client
   )
 )
 
-(defn server-setup [dev res color name]
-  (server/start-server (res :net-port) (res :udp-port) (res :broadcast-port) name)
-  (assoc (client-setup dev res "localhost" color name)
+(defn server-setup [dev res level-name color name]
+  (server/start-server (res :net-port) (res :udp-port) (res :broadcast-port)
+    { :name name :level level-name }
+  )
+  (assoc (client-setup dev res level-name "localhost" color name)
     :loop server-loop
     :exit (fn [] (client/close-client) (server/close-server))
   )

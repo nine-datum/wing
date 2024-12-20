@@ -121,7 +121,7 @@
       serv (->> bs (filter :press?) first)
     ]
     (cond
-      serv ((res :client-setup) dev res (serv :addr) color "player")
+      serv ((res :client-setup) dev res (serv :level) (serv :addr) color "player")
       calcel (play-menu-setup dev res)
       :else state
     )
@@ -133,7 +133,7 @@
       servers (atom ())
     ]
     (client/discover-servers (res :broadcast-port)
-      #(swap! servers (partial cons { :addr %1 :name %2 }))
+      (fn [addr data] (swap! servers (partial cons (assoc (read-string data) :addr addr))))
     )
     {
       :loop connect-menu-loop
@@ -147,6 +147,19 @@
   )
 )
 
+(defn level-menu-setup [dev res setup]
+  {
+    :loop menu-loop
+    :gui-asset (res :gui-asset)
+    :images [
+      [(res :menu-image) gui/aspect-fit-layout [-1.5 -1 3 2]]
+    ]
+    :buttons (conj (->> res :levels vals
+      (mapv #(vector (-> % :label str) (fn [dev res state] (-> % :name setup))))
+    ) ["Назад" (fn [dev res state] (play-menu-setup dev res))])
+  }
+)
+
 (defn play-menu-setup [dev res]
   (let [
       color (-> load-profile funcall :color)
@@ -158,9 +171,18 @@
         [(res :menu-image) gui/aspect-fit-layout [-1.5 -1 3 2]]
       ]
       :buttons [
-        ["1 игрок" (fn [dev res state] ((res :game-setup) dev res [color]))]
-        ["2 игрока" (fn [dev res state] ((res :game-setup) dev res (vector color [0 0 1 1])))]
-        ["Создать сервер" (fn [dev res state] ((res :server-setup) dev res color "player"))]
+        ["1 игрок" (fn [dev res state]
+            (level-menu-setup dev res #((res :game-setup) dev res % [color]))
+          )
+        ]
+        ["2 игрока" (fn [dev res state]
+            (level-menu-setup dev res #((res :game-setup) dev res % (vector color [0 0 1 1])))
+          )
+        ]
+        ["Создать сервер" (fn [dev res state]
+            (level-menu-setup dev res #((res :server-setup) dev res % color "player"))
+          )
+        ]
         ["Подключиться" (fn [dev res state] (connect-menu-setup dev res color))]
         ["Назад" (fn [dev res state] (menu-setup dev res))]
       ]

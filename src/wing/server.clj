@@ -45,7 +45,7 @@
 
 (declare start-udp-listener)
 
-(defn start-server [port udp-port broadcast-port name]
+(defn start-server [port udp-port broadcast-port message]
   (reset! active? true)
   (future
     (try
@@ -53,7 +53,7 @@
           serv (ServerSocket. port)
           clients (atom (hash-set))
         ]
-        (start-udp-listener broadcast-port name)
+        (start-udp-listener broadcast-port message)
         (println "server started")
         (future
           (try
@@ -102,7 +102,7 @@
               (let [
                   client-address (.getAddress packet)
                   client-port (.getPort packet)
-                  response-bytes (.getBytes message)
+                  response-bytes (-> message pr-str .getBytes)
                   response-packet (DatagramPacket. response-bytes (count response-bytes) client-address client-port)
                 ]
                 (.send socket response-packet)

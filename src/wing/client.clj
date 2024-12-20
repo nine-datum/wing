@@ -263,7 +263,7 @@
               (result-fn addr server-data)
             )
             (catch Exception e
-              (println "No servers found")
+              (println "No servers found, error : " e)
             )
           )
         )
