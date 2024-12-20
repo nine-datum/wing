@@ -21,12 +21,12 @@
     (try
       (let [
           in (-> sock .getInputStream BufferedInputStream. DataInputStream.)
-          addr (-> sock .getInputStream BufferedInputStream. DataInputStream.)
+          addr (-> sock .getInetAddress .getHostAddress)
           client-active? (atom true)
           last (atom "")
         ]
-        (println "client connected : " name ", clients total : " (count @clients))
-        (client/send-udp (-> sock .getInetAddress .getHostAddress) udp-port running?
+        (println "client connected : " addr ", clients total : " (count @clients))
+        (client/send-udp addr udp-port running?
           (comp client/string->bytes pr-str vals client/archive)
         )
         (while (and active? (not= @last "end"))
