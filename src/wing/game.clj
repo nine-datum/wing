@@ -482,6 +482,7 @@
     (phys/set-velocity body vel)
     (cond
       (or (not w) (= (in :action) :jump) (> age 3)) (-> player :asset reset-asset-body flip-player)
+      (on-ground? player) (-> player :asset reset-asset-body walk-player)
       :else (assoc player :mat mat :age age)
     )
   )
