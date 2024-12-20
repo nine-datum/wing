@@ -450,6 +450,7 @@
       :state :wallrun
       :color (asset :color)
       :mat mat
+      :age 0
       :pr plane-right
       :pu plane-up
       :pdir [px py]
@@ -470,12 +471,12 @@
         (map + (map * pu (repeat py)))
         (mapv * (repeat 10))
       )
+      age (-> player :age (+ delta-time))
     ]
     (phys/set-velocity body vel)
     (cond
-      (= (in :action) :jump) (-> player :asset reset-asset-body jump-player)
-      w (assoc player :mat mat)
-      :else (-> player :asset reset-asset-body jump-player)
+      (or (not w) (= (in :action) :jump) (> age 3)) (-> player :asset reset-asset-body jump-player)
+      :else (assoc player :mat mat :age age)
     )
   )
 )
