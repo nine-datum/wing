@@ -120,6 +120,21 @@
   )
 )
 
+(defn next-wallrun-camera [player time delta-time]
+  (let [
+      { :keys [asset pdir] } player
+      { :keys [campos camrot body] } asset
+      mat (-> body phys/get-matrix math/mat4f)
+      new-campos (-> mat (.transformPoint (math/vec3f 0 6 0)) math/floats-from-vec3f)
+      look-target (-> mat (.transformPoint (math/vec3f 0 0 5)) math/floats-from-vec3f)
+      new-camrot (-> (mapv - look-target new-campos) math/normalize math/look-rot)
+      campos (math/lerpv campos new-campos (* 3 delta-time))
+      camrot (math/lerpv-angle camrot new-camrot (* 3 delta-time))
+    ]
+    (assoc player :asset (assoc asset :campos campos :camrot camrot))
+  )
+)
+
 (defn next-walk-camera [player time delta-time]
   (next-camera player time delta-time camdist max-camdist)
 )
@@ -829,7 +844,7 @@
     :wallrun {
       :next wallrun-player-next
       :render mat-player-render
-      :cam next-run-camera
+      :cam next-wallrun-camera
       :lerp mat-player-lerp
     }
     :flip {
