@@ -289,6 +289,15 @@
   )
 )
 
+(defn rotate [^RigidBody body rot]
+  (set-matrix body
+    (-> body get-matrix math/mat4f
+      (math/mul (apply math/rotation rot))
+      math/floats-from-mat4f
+    )
+  )
+)
+
 (defn set-rotation-enabled [^RigidBody body v]
   (.setAngularFactor body (if v 1 0))
   body

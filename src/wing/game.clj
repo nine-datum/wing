@@ -472,6 +472,10 @@
       mat (phys/get-matrix body)
       { :keys [pr pu pdir] } player
       [px py] pdir
+      ang (math/clock px py)
+      ang+ (-> in :raw-mov first (* 2 delta-time))
+      [px py] (math/clock-xy (+ ang ang+))
+      pdir [px py]
       vel (->>
         (map * pr (repeat px))
         (map + (map * pu (repeat py)))
@@ -480,10 +484,11 @@
       age (-> player :age (+ delta-time))
     ]
     (phys/set-velocity body vel)
+    (phys/rotate body [0 ang+ 0])
     (cond
       (or (not w) (= (in :action) :jump) (> age 3)) (-> player :asset reset-asset-body flip-player)
       (on-ground? player) (-> player :asset reset-asset-body walk-player)
-      :else (assoc player :mat mat :age age)
+      :else (assoc player :mat mat :age age :pdir pdir)
     )
   )
 )
