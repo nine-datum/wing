@@ -162,7 +162,7 @@
 
 (defn play-menu-setup [dev res]
   (let [
-      color (-> load-profile funcall :color)
+      color (-> load-profile funcall (get :color [1 0 0 1]))
     ]
     {
       :loop menu-loop
