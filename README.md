@@ -4,7 +4,7 @@ Game made with Clojure using [my own game engine](https://github.com/taqmuraz/ni
 
 ## Game features :
 - Wingsuit and parachute
-- Wallrun parcour
+- Wallrun parkour
 - Split screen one-device multiplayer
 - Network multiplayer
 - Player customization
